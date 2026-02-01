@@ -1,0 +1,48 @@
+{
+  "signup": {
+    "welcome": "స్వాగతం",
+    "create_account": "మీ ఖాతాను సృష్టించండి",
+    "phone_placeholder": "XXXXXXXXXX",
+    "role": "పాత్ర",
+    "farmer": "రైతు",
+    "buyer": "కొనుగోలుదారు",
+    "otp_hint": "మీ ఖాతా ధృవీకరణ కోసం మేము OTP పంపిస్తాము",
+    "continue": "కొనసాగించండి",
+    "already_account": "ఇప్పటికే ఖాతా ఉందా?",
+    "login": "లాగిన్",
+    "dashboard_title": "రైతు డాష్‌బోర్డ్"
+  },
+   "prefs": {
+    "title": "మీ అభిరుచులను ఎంపిక చేయండి",
+    "select_category": "పంట వర్గాన్ని ఎంచుకోండి",
+    "select_crop": "పంటను ఎంచుకోండి",
+    "add_preference": "అభిరుచి జోడించండి",
+    "preferred_crops": "ఇష్టమైన పంటలు",
+    "category": "వర్గం",
+    "crop": "పంట",
+    "action": "చర్య",
+    "remove": "తొలగించండి",
+    "continue": "కొనసాగించండి"
+  },
+  "role": {
+    "select_role": "మీ పాత్రను ఎంచుకోండి",
+    "farmer_title": "నేను రైతును",
+    "farmer_desc": "మీ పంటలు మరియు అమ్మకాలను నిర్వహించండి",
+    "buyer_title": "నేను కొనుగోలుదారిని",
+    "buyer_desc": "తాజా ఉత్పత్తులను కొనండి"
+  },
+  "auth": {
+  "welcome": "స్వాగతం",
+  "enter_phone": "మీ మొబైల్ నంబర్ నమోదు చేయండి",
+  "phone_placeholder": "XXXXXXXXXX",
+  "otp_hint": "మీ ఖాతా ధృవీకరణ కోసం మేము OTP పంపిస్తాము",
+  "continue": "కొనసాగించండి",
+  "sending_otp": "OTP పంపుతోంది...",
+  "no_account": "ఖాతా లేదా?",
+  "create_new": "కొత్తది సృష్టించండి",
+  "invalid_phone": "చెల్లుబాటు అయ్యే 10 అంకెల మొబైల్ నంబర్ నమోదు చేయండి",
+  "otp_send_failed": "OTP పంపడం విఫలమైంది",
+  "login_failed": "లాగిన్ విఫలమైంది"
+}
+
+}

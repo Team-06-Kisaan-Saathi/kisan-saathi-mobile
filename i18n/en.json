@@ -1,0 +1,48 @@
+{
+  "signup": {
+    "welcome": "WELCOME",
+    "create_account": "Create your account",
+    "phone_placeholder": "XXXXXXXXXX",
+    "role": "Role",
+    "farmer": "Farmer",
+    "buyer": "Buyer",
+    "otp_hint": "We'll send an OTP to verify your account",
+    "continue": "Continue",
+    "already_account": "Already have an account?",
+    "login": "Login",
+    "dashboard_title": "Farmer Dashboard"
+    
+  },
+  "prefs": {
+    "title": "Select Your Preferences",
+    "select_category": "Select Crop Category",
+    "select_crop": "Select Crop",
+    "add_preference": "Add Preference",
+    "preferred_crops": "Preferred Crops",
+    "category": "Category",
+    "crop": "Crop",
+    "action": "Action",
+    "remove": "Remove",
+    "continue": "Continue"
+  },
+  "role": {
+    "select_role": "Select your role",
+    "farmer_title": "I am a Farmer",
+    "farmer_desc": "Manage your crops and sales",
+    "buyer_title": "I am a Buyer",
+    "buyer_desc": "Explore and purchase fresh produce"
+  },
+  "auth": {
+    "welcome": "WELCOME",
+    "enter_phone": "Enter your mobile number",
+    "phone_placeholder": "XXXXXXXXXX",
+    "otp_hint": "We'll send an OTP to verify your account",
+    "continue": "Continue",
+    "sending_otp": "Sending OTP...",
+    "no_account": "Don't have an account?",
+    "create_new": "Create new",
+    "invalid_phone": "Enter a valid 10-digit mobile number",
+    "otp_send_failed": "Failed to send OTP",
+    "login_failed": "Login failed"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "signup": {
+    "welcome": "സ്വാഗതം",
+    "create_account": "നിങ്ങളുടെ അക്കൗണ്ട് സൃഷ്ടിക്കുക",
+    "phone_placeholder": "XXXXXXXXXX",
+    "role": "പങ്ക്",
+    "farmer": "കർഷകൻ",
+    "buyer": "വാങ്ങുന്നവർ",
+    "otp_hint": "അക്കൗണ്ട് സ്ഥിരീകരിക്കാൻ OTP അയക്കും",
+    "continue": "തുടരുക",
+    "already_account": "ഇതിനകം അക്കൗണ്ട് ഉണ്ടോ?",
+    "login": "ലോഗിൻ"
+  },
+  "prefs": {
+    "title": "നിങ്ങളുടെ മുൻഗണനകൾ തിരഞ്ഞെടുക്കുക",
+    "select_category": "വിള വിഭാഗം തിരഞ്ഞെടുക്കുക",
+    "select_crop": "വിള തിരഞ്ഞെടുക്കുക",
+    "add_preference": "മുൻഗണന ചേർക്കുക",
+    "preferred_crops": "മുൻഗണന നൽകിയ വിളകൾ",
+    "category": "വിഭാഗം",
+    "crop": "വിള",
+    "action": "നടപടി",
+    "remove": "നീക്കം ചെയ്യുക",
+    "continue": "തുടരുക"
+  },
+  "role": {
+    "select_role": "നിങ്ങളുടെ പങ്ക് തിരഞ്ഞെടുക്കുക",
+    "farmer_title": "ഞാൻ കർഷകനാണ്",
+    "farmer_desc": "നിങ്ങളുടെ വിളകളും വിൽപ്പനയും കൈകാര്യം ചെയ്യുക",
+    "buyer_title": "ഞാൻ വാങ്ങുന്നവനാണ്",
+    "buyer_desc": "പുതിയ ഉൽപ്പന്നങ്ങൾ വാങ്ങുക"
+  },
+  "auth": {
+  "welcome": "സ്വാഗതം",
+  "enter_phone": "നിങ്ങളുടെ മൊബൈൽ നമ്പർ നൽകുക",
+  "phone_placeholder": "XXXXXXXXXX",
+  "otp_hint": "നിങ്ങളുടെ അക്കൗണ്ട് സ്ഥിരീകരിക്കാൻ ഞങ്ങൾ OTP അയക്കും",
+  "continue": "തുടരുക",
+  "sending_otp": "OTP അയയ്ക്കുന്നു...",
+  "no_account": "അക്കൗണ്ട് ഇല്ലേ?",
+  "create_new": "പുതിയത് സൃഷ്ടിക്കുക",
+  "invalid_phone": "ശരിയായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക",
+  "otp_send_failed": "OTP അയയ്ക്കാൻ കഴിഞ്ഞില്ല",
+  "login_failed": "ലോഗിൻ പരാജയപ്പെട്ടു"
+}
+
+}
