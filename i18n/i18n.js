@@ -30,10 +30,12 @@ i18n.use(initReactI18next).init({
   },
 });
 
-// 🔹 Load saved language after init
-getSavedLanguage().then((lang) => {
-  i18n.changeLanguage(lang);
-});
+// 🔹 Load saved language after init only on client side
+if (typeof window !== "undefined") {
+  getSavedLanguage().then((lang) => {
+    i18n.changeLanguage(lang);
+  });
+}
 
 export const setLanguage = async (lang) => {
   await AsyncStorage.setItem(LANGUAGE_KEY, lang);

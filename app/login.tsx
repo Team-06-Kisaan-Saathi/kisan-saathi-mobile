@@ -48,8 +48,10 @@ export default function LoginScreen() {
       );
 
       if (res.data?.success) {
-        //Expo Router navigation (pass phone to next screen)
-       // router.push({ pathname: "/verify", params: { phone: trimmed } });
+        // Navigate to farmer dashboard (temporary for testing)
+        router.push("/farmer-dashboard");
+        // TODO: Add role selection and OTP verification later
+        // router.push({ pathname: "/verify", params: { phone: trimmed } });
       } else {
         setMsg(res.data?.message || t("auth.otp_send_failed"));
       }
@@ -126,11 +128,13 @@ export default function LoginScreen() {
               {t("auth.no_account")}{" "}
               <Text
                 style={styles.createNew}
-                //onPress={() => router.push("/signup")}
+              //onPress={() => router.push("/signin")}
               >
                 {t("auth.create_new")}
               </Text>
             </Text>
+
+
           </View>
         </View>
       </ImageBackground>
@@ -263,4 +267,5 @@ const styles = StyleSheet.create({
     color: "green",
     textDecorationLine: "underline",
   },
+
 });

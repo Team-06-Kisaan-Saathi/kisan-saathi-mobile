@@ -11,7 +11,6 @@
     "already_account": "Already have an account?",
     "login": "Login",
     "dashboard_title": "Farmer Dashboard"
-    
   },
   "prefs": {
     "title": "Select Your Preferences",
@@ -44,5 +43,36 @@
     "invalid_phone": "Enter a valid 10-digit mobile number",
     "otp_send_failed": "Failed to send OTP",
     "login_failed": "Login failed"
+  },
+  "nav_farmer": {
+    "dashboard": "Dashboard",
+    "my_listings": "My Listings",
+    "add_crop": "Add Crop",
+    "mandi_prices": "Mandi Prices",
+    "ai_insights": "AI Insights",
+    "live_auctions": "Live Auctions",
+    "edit_profile": "Edit Profile",
+    "edit_preferences": "Edit Preferences",
+    "logout": "Logout"
+  },
+  "farmer": {
+    "dashboard_title": "Farmer Dashboard",
+    "welcome_msg": "Welcome to your Farmer Dashboard!",
+    "welcome_sub": "Manage your crops and track your sales easily."
+  },
+  "nav_buyer": {
+    "dashboard": "Dashboard",
+    "browse_crops": "Browse Crops",
+    "live_auctions": "Live Auctions",
+    "my_bids": "My Bids",
+    "market_insights": "Market Insights",
+    "edit_profile": "Edit Profile",
+    "edit_preferences": "Edit Preferences",
+    "logout": "Logout"
+  },
+  "buyer": {
+    "dashboard_title": "Buyer Dashboard",
+    "welcome_msg": "Welcome to your Buyer Dashboard!",
+    "welcome_sub": "Track your bids and explore fresh produce here."
   }
 }
