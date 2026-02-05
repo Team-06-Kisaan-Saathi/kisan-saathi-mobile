@@ -134,6 +134,16 @@ export default function LoginScreen() {
               </Text>
             </Text>
 
+            {/* TEMPORARY TESTING LINK */}
+            <TouchableOpacity
+              style={styles.devButton}
+              onPress={() => router.push("/farmer-dashboard")}
+            >
+              <Text style={styles.devButtonText}>Go to Farmer Dashboard</Text>
+            </TouchableOpacity>
+
+            
+
 
           </View>
         </View>
