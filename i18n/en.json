@@ -55,11 +55,6 @@
     "edit_preferences": "Edit Preferences",
     "logout": "Logout"
   },
-  "farmer": {
-    "dashboard_title": "Farmer Dashboard",
-    "welcome_msg": "Welcome to your Farmer Dashboard!",
-    "welcome_sub": "Manage your crops and track your sales easily."
-  },
   "nav_buyer": {
     "dashboard": "Dashboard",
     "browse_crops": "Browse Crops",
@@ -74,5 +69,17 @@
     "dashboard_title": "Buyer Dashboard",
     "welcome_msg": "Welcome to your Buyer Dashboard!",
     "welcome_sub": "Track your bids and explore fresh produce here."
+  },
+  "farmer": {
+    "dashboard_title": "Farmer Dashboard",
+    "welcome_msg": "Welcome to your Farmer Dashboard!",
+    "welcome_sub": "Manage your crops, track prices, and monitor sales easily.",
+    "add_crop": "Add Crop",
+    "add_crop_sub": "List your harvested crops for buyers to discover and bid on.",
+    "my_listings": "My Listings",
+    "my_listings_sub": "View, edit, and manage all your active and sold crop listings.",
+    "mandi_prices": "Mandi Prices",
+    "mandi_prices_sub": "Check real-time crop prices from nearby mandis."
   }
 }
+

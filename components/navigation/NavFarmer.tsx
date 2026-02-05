@@ -1,206 +1,174 @@
 import React, { useState } from "react";
+import NotificationBell from "../notifications/NotificationBell";
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
 } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function NavFarmer() {
-    const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
 
-    return (
-        <View style={styles.navFarmer}>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.navLeft}
-                contentContainerStyle={styles.navLeftContent}
-            >
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/(tabs)")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_farmer.dashboard")}</Text>
-                </TouchableOpacity>
+  return (
+    <View style={styles.navFarmer}>
+      {/* LEFT: Scrollable Navigation */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.navLeftContent}
+      >
+        <NavItem label={t("nav_farmer.dashboard")} onPress={() => router.push("/farmer-dashboard")} />
+        <NavItem label={t("nav_farmer.my_listings")} onPress={() => router.push("/my-listings")} />
+        <NavItem label={t("nav_farmer.add_crop")} onPress={() => router.push("/add-crop")} />
+        <NavItem label={t("nav_farmer.mandi_prices")} onPress={() => router.push("/mandi-prices")} />
+        <NavItem label={t("nav_farmer.ai_insights")} onPress={() => router.push("/ai-insights")} />
+        <NavItem label={t("nav_farmer.live_auctions")} onPress={() => router.push("/live-auctions")} />
+      </ScrollView>
 
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/my-listings")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_farmer.my_listings")}</Text>
-                </TouchableOpacity>
+      {/* RIGHT: Notification + Profile */}
+      <View style={styles.navRight}>
+        <NotificationBell />
 
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/add-crop")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_farmer.add_crop")}</Text>
-                </TouchableOpacity>
+        <TouchableOpacity onPress={() => setOpen(!open)} activeOpacity={0.7}>
+          <Ionicons name="person-circle-outline" size={34} color="#bbf7d0" />
+        </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/mandi-prices")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_farmer.mandi_prices")}</Text>
-                </TouchableOpacity>
+        {open && (
+          <View style={styles.profileDropdown}>
+            <DropdownItem
+              label={t("nav_farmer.edit_profile")}
+              onPress={() => {
+                setOpen(false);
+                router.push("/edit-profile");
+              }}
+            />
 
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/ai-insights")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_farmer.ai_insights")}</Text>
-                </TouchableOpacity>
+            <DropdownItem
+              label={t("nav_farmer.edit_preferences")}
+              onPress={() => {
+                setOpen(false);
+                router.push("/farmer-preferences");
+              }}
+            />
 
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/live-auctions")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_farmer.live_auctions")}</Text>
-                </TouchableOpacity>
-            </ScrollView>
+            <View style={styles.dropdownDivider} />
 
-            <View style={styles.navRight}>
-                <TouchableOpacity onPress={() => setOpen(!open)} activeOpacity={0.7}>
-                    <Ionicons name="person-circle-outline" size={32} color="#bbf7d0" />
-                </TouchableOpacity>
+            <DropdownItem
+              label={t("nav_farmer.logout")}
+              danger
+              onPress={() => {
+                setOpen(false);
+                router.replace("/login");
+              }}
+            />
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
 
-                {open && (
-                    <View style={styles.profileDropdown}>
-                        <TouchableOpacity
-                            style={styles.dropdownButton}
-                            onPress={() => {
-                                setOpen(false);
-                                router.push("/edit-profile");
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.dropdownText}>
-                                {t("nav_farmer.edit_profile")}
-                            </Text>
-                        </TouchableOpacity>
+/* 🔹 Reusable Nav Item */
+function NavItem({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
+      <Text style={styles.navText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
 
-                        <TouchableOpacity
-                            style={styles.dropdownButton}
-                            onPress={() => {
-                                setOpen(false);
-                                router.push("/farmer-preferences");
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.dropdownText}>
-                                {t("nav_farmer.edit_preferences")}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.dropdownDivider} />
-
-                        <TouchableOpacity
-                            style={[styles.dropdownButton, styles.logoutBtn]}
-                            onPress={() => {
-                                setOpen(false);
-                                router.push("/login");
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.logoutText}>{t("nav_farmer.logout")}</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </View>
-        </View>
-    );
+/* 🔹 Reusable Dropdown Item */
+function DropdownItem({
+  label,
+  onPress,
+  danger = false,
+}: {
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <TouchableOpacity style={styles.dropdownButton} onPress={onPress}>
+      <Text style={[styles.dropdownText, danger && styles.logoutText]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 }
 
 const styles = StyleSheet.create({
-    navFarmer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        backgroundColor: "#1a4b84",
-        borderBottomWidth: 3,
-        borderBottomColor: "#81c784",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 10, // Increased elevation for Android
-        zIndex: 1000, // Ensure it stays on top of content
-    },
-    navLeft: {
-        flex: 1,
-    },
-    navLeftContent: {
-        alignItems: "center",
-        gap: 24,
-        paddingRight: 16,
-    },
-    navItem: {
-        paddingVertical: 8,
-        paddingHorizontal: 4,
-    },
-    navText: {
-        fontWeight: "600",
-        color: "#fdf5e6",
-        fontSize: 15,
-    },
-    navRight: {
-        position: "relative",
-        alignItems: "center",
-        justifyContent: "center",
-        marginLeft: 8,
-    },
-    profileDropdown: {
-        position: "absolute",
-        top: 50,
-        right: 0,
-        width: 220,
-        backgroundColor: "#fdfbf7",
-        borderRadius: 10,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.15,
-        shadowRadius: 30,
-        elevation: 10,
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-        overflow: "hidden",
-        zIndex: 1000,
-    },
-    dropdownButton: {
-        paddingVertical: 14,
-        paddingHorizontal: 18,
-        backgroundColor: "transparent",
-    },
-    dropdownText: {
-        fontWeight: "600",
-        color: "#1a365d",
-        fontSize: 14,
-    },
-    dropdownDivider: {
-        height: 1,
-        backgroundColor: "#cbd5e0",
-        marginVertical: 4,
-    },
-    logoutBtn: {
-        // Special styling for logout button
-    },
-    logoutText: {
-        color: "#c53030",
-        fontWeight: "600",
-        fontSize: 14,
-    },
+  navFarmer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1a4b84",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 3,
+    borderBottomColor: "#81c784",
+    elevation: 10,
+    zIndex: 1000,
+  },
+
+  navLeftContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 24,
+    paddingRight: 12,
+  },
+
+  navItem: {
+    paddingVertical: 8,
+  },
+
+  navText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fdf5e6",
+  },
+
+  navRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 8,
+    position: "relative",
+  },
+
+  profileDropdown: {
+    position: "absolute",
+    top: 48,
+    right: 0,
+    width: 220,
+    backgroundColor: "#fdfbf7",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    elevation: 12,
+    zIndex: 2000,
+  },
+
+  dropdownButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+
+  dropdownText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1a365d",
+  },
+
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#cbd5e0",
+  },
+
+  logoutText: {
+    color: "#c53030",
+  },
 });

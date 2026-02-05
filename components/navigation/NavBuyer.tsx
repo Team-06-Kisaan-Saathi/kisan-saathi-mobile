@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     navText: {
         fontWeight: "600",
         color: "#fdf5e6",
-        fontSize: 15,
+        fontSize: 20,
     },
     navRight: {
         position: "relative",
