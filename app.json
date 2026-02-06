@@ -6,8 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "digitalmarketplace",
+    "newArchEnabled": true,
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -33,7 +33,6 @@
     },
     "plugins": [
       "expo-router",
-
       [
         "expo-splash-screen",
         {
@@ -46,21 +45,23 @@
           }
         }
       ],
-
-      "expo-router",
       [
-        "expo-splash-screen",
+        "react-native-vosk",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
+          "models": ["assets/vosk/en", "assets/vosk/hi", "assets/vosk/te"],
+          "iOSMicrophonePermission": "Allow microphone for voice navigation"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "25.1.8937393"
           }
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
