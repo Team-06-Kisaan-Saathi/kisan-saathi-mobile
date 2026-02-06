@@ -23,11 +23,13 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack initialRouteName="marketplace">
+     <Stack initialRouteName="login">
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="verify" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+        <Stack.Screen name="marketplace" options={{ headerShown: false }} />  // 
+    </Stack>
+
 
       <AccessibilityFab onPress={() => setOpen(true)} />
       <VoiceNavButton />
@@ -43,5 +45,9 @@ export default function RootLayout() {
         setLanguage={setLanguage}
       />
     </>
+    <Stack initialRouteName="login">
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    </Stack>
   );
 }
