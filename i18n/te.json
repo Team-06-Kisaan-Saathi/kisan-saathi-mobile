@@ -42,7 +42,18 @@
   "create_new": "కొత్తది సృష్టించండి",
   "invalid_phone": "చెల్లుబాటు అయ్యే 10 అంకెల మొబైల్ నంబర్ నమోదు చేయండి",
   "otp_send_failed": "OTP పంపడం విఫలమైంది",
-  "login_failed": "లాగిన్ విఫలమైంది"
+  "login_failed": "లాగిన్ విఫలమైంది",
+
+  "verify_title": "ధృవీకరణ",
+    "verify_subtitle": "మీ నంబర్‌కు ఒక కోడ్ పంపాము",
+    "enter_otp": "OTP నమోదు చేయండి",
+    "verify": "ధృవీకరించండి",
+    "verifying": "ధృవీకరిస్తోంది...",
+    "resend": "OTP మళ్లీ పంపండి",
+    "didnt_get_code": "కోడ్ రాలేదా?",
+    "invalid_otp": "దయచేసి సరైన OTP నమోదు చేయండి",
+    "otp_verify_failed": "OTP ధృవీకరణ విఫలమైంది",
+    "otp_resent": "OTP మళ్లీ పంపబడింది"
 }
 
 }

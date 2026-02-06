@@ -33,19 +33,27 @@
     "buyer_desc": "ताज़ा उत्पाद खरीदें और देखें"
   },
   "auth": {
-  "welcome": "स्वागत है",
-  "enter_phone": "अपना मोबाइल नंबर दर्ज करें",
-  "phone_placeholder": "XXXXXXXXXX",
-  "otp_hint": "आपके खाते की पुष्टि के लिए हम OTP भेजेंगे",
-  "continue": "जारी रखें",
-  "sending_otp": "OTP भेजा जा रहा है...",
-  "no_account": "खाता नहीं है?",
-  "create_new": "नया बनाएं",
-  "invalid_phone": "कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें",
-  "otp_send_failed": "OTP भेजने में विफल",
-  "login_failed": "लॉगिन विफल"
-}
+    "welcome": "स्वागत है",
+    "enter_phone": "अपना मोबाइल नंबर दर्ज करें",
+    "phone_placeholder": "XXXXXXXXXX",
+    "otp_hint": "आपके खाते की पुष्टि के लिए हम OTP भेजेंगे",
+    "continue": "जारी रखें",
+    "sending_otp": "OTP भेजा जा रहा है...",
+    "no_account": "खाता नहीं है?",
+    "create_new": "नया बनाएं",
+    "invalid_phone": "कृपया 10 अंकों का वैध मोबाइल नंबर दर्ज करें",
+    "otp_send_failed": "OTP भेजने में विफल",
+    "login_failed": "लॉगिन विफल",
 
-
-
+    "verify_title": "सत्यापन",
+    "verify_subtitle": "हमने आपके नंबर पर एक कोड भेजा है",
+    "enter_otp": "ओटीपी दर्ज करें",
+    "verify": "सत्यापित करें",
+    "verifying": "सत्यापित किया जा रहा है...",
+    "resend": "ओटीपी दोबारा भेजें",
+    "didnt_get_code": "कोड नहीं मिला?",
+    "invalid_otp": "कृपया मान्य ओटीपी दर्ज करें",
+    "otp_verify_failed": "ओटीपी सत्यापन विफल",
+    "otp_resent": "ओटीपी दोबारा भेज दिया गया है"
+  }
 }
