@@ -11,7 +11,6 @@ export default function RootLayout() {
   const { i18n } = useTranslation();
 
   const [open, setOpen] = useState(false);
-
   const [fontScale, setFontScale] = useState(1);
   const [highContrast, setHighContrast] = useState(false);
   const [language, setLang] = useState(i18n.language || "en");
@@ -23,13 +22,13 @@ export default function RootLayout() {
 
   return (
     <>
-     <Stack initialRouteName="login">
+      <Stack initialRouteName="login">
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="verify" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="marketplace" options={{ headerShown: false }} />  // 
-    </Stack>
-
+        <Stack.Screen name="marketplace" options={{ headerShown: false }} />
+        {/* add more screens here */}
+      </Stack>
 
       <AccessibilityFab onPress={() => setOpen(true)} />
       <VoiceNavButton />
@@ -45,9 +44,5 @@ export default function RootLayout() {
         setLanguage={setLanguage}
       />
     </>
-    <Stack initialRouteName="login">
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
   );
 }
