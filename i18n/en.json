@@ -11,7 +11,6 @@
     "already_account": "Already have an account?",
     "login": "Login",
     "dashboard_title": "Farmer Dashboard"
-    
   },
   "prefs": {
     "title": "Select Your Preferences",
@@ -43,6 +42,18 @@
     "create_new": "Create new",
     "invalid_phone": "Enter a valid 10-digit mobile number",
     "otp_send_failed": "Failed to send OTP",
-    "login_failed": "Login failed"
+    "login_failed": "Login failed",
+
+    "verify_title": "Verify",
+    "verify_subtitle": "We sent a code to your number",
+    "enter_otp": "Enter OTP",
+    "verify": "Verify",
+    "verifying": "Verifying...",
+    "resend": "Resend OTP",
+    "didnt_get_code": "Didn't get a code?",
+    "invalid_otp": "Please enter a valid OTP",
+    "otp_verify_failed": "OTP verification failed",
+    "otp_resent": "OTP resent successfully"
   }
 }
+
