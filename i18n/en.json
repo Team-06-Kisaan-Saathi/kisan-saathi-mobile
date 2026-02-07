@@ -12,6 +12,7 @@
     "login": "Login",
     "dashboard_title": "Farmer Dashboard"
   },
+
   "prefs": {
     "title": "Select Your Preferences",
     "select_category": "Select Crop Category",
@@ -24,6 +25,7 @@
     "remove": "Remove",
     "continue": "Continue"
   },
+
   "role": {
     "select_role": "Select your role",
     "farmer_title": "I am a Farmer",
@@ -31,6 +33,7 @@
     "buyer_title": "I am a Buyer",
     "buyer_desc": "Explore and purchase fresh produce"
   },
+
   "auth": {
     "welcome": "WELCOME",
     "enter_phone": "Enter your mobile number",
@@ -55,9 +58,9 @@
     "otp_verify_failed": "OTP verification failed",
     "otp_resent": "OTP resent successfully"
   },
+
   "farmer": {
     "dashboard_title": "Farmer Dashboard",
-
     "welcome_msg": "Welcome to your Farmer Dashboard!",
     "welcome_sub": "Manage your crops, track prices, and monitor sales easily.",
 
@@ -70,21 +73,39 @@
     "mandi_prices": "Mandi Prices",
     "mandi_prices_sub": "Check real-time crop prices from nearby mandis.",
 
-    "live_auctions" : "Live Auctions",
-    "live_auctions_sub" : "Connect with buyers and sell crops through live market auctions."
+    "live_auctions": "Live Auctions",
+    "live_auctions_sub": "Connect with buyers and sell crops through live market auctions."
   },
-  "nav_farmer" :{
-    "dashboard" : "Dashboard",
-    "my_listings" : "My Listings",
-    "add_crop" : "Add Crop",
-    "mandi_prices" : "Mandi Prices",
-    "ai_insights" : "AI Insights",
-    "live_auctions" : "Live Auctions",
-    "edit_profile" : "Edit Profile",
-    "edit_preferences" : "Edit Preferences",
-    "logout" : "Logout"
+
+  "nav_farmer": {
+    "dashboard": "Dashboard",
+    "my_listings": "My Listings",
+    "add_crop": "Add Crop",
+    "mandi_prices": "Mandi Prices",
+    "ai_insights": "AI Insights",
+    "live_auctions": "Live Auctions",
+    "edit_profile": "Edit Profile",
+    "edit_preferences": "Edit Preferences",
+    "logout": "Logout"
+  },
+
+  "buyer": {
+    "dashboard_title": "Buyer Dashboard",
+    "dashboard_sub": "Discover crops, compare prices, and bid with confidence",
+
+    "marketplace": "Marketplace",
+    "marketplace_sub": "Browse available crops from verified farmers",
+
+    "live_auctions": "Live Auctions",
+    "live_auctions_sub": "Participate in real-time crop bidding",
+
+    "my_bids": "My Bids",
+    "my_bids_sub": "Track your active and past bids",
+
+    "market_insights": "Market Insights",
+    "market_insights_sub": "Compare prices and market trends",
+
+    "trusted_farmers": "Trusted Farmers",
+    "trusted_farmers_sub": "Buy from verified farmer profiles"
   }
-
-
 }
-
