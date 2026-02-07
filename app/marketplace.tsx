@@ -1,385 +1,260 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
-  TextInput,
-  Platform,
   ScrollView,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
-//Map
+import { useLocation } from "../hooks/useLocation";
+import {
+  Crop,
+  fetchMandiPrices,
+  fetchNearbyMandis,
+  MandiPriceDoc,
+} from "../services/mandiService";
+
+// Map (optional dependency)
 let MapView: any = null;
 let Marker: any = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
 } catch (e) {
-  // if map not available - UI fallback
+  // react-native-maps not installed (optional)
 }
 
-/** -----------------------------
- * Types  - (fetch from backend)
- * ----------------------------- */
-type Crop = "Tomato" | "Onion" | "Potato" | "Wheat" | "Rice" | "Maize";
+type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
 
-type PriceUnit = "₹/kg" | "₹/quintal";
+type WatchItem = { crop: Crop; lastAvgPricePerQuintal?: number };
 
-type RawPriceRow = {
-  mandiId: string;
-  mandiName: string;
+type LiveFeedItem = {
+  key: string;
   crop: Crop;
-  // raw formats can be messy (string / number / mixed units)
-  price: number | string;
-  unit: PriceUnit | "Rs/kg" | "Rs/quintal" | "INR/kg" | "INR/quintal";
-  updatedAt: string; // ISO string
-  quality?: "FAQ" | "Average" | "Premium";
-};
-
-type CleanPriceRow = {
-  mandiId: string;
   mandiName: string;
-  crop: Crop;
-  pricePerKg: number; // standardized
-  displayPrice: string; // e.g. "₹ 28.50 / kg"
-  updatedAt: string; // ISO
+  pricePerQuintal: number;
+  displayPrice: string;
+  updatedAt: string;
   quality?: string;
 };
 
-type Mandi = {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  district?: string;
-  state?: string;
-};
-
-type LiveFeedItem = CleanPriceRow & {
-  key: string;
-};
-
-type WatchItem = {
-  crop: Crop;
-  // last known avg price (for trigger demo)
-  lastAvgPricePerKg?: number;
-};
-
-/** -----------------------------
- * Mock data
- * ----------------------------- */
-const MOCK_MANDIS: Mandi[] = [
-  { id: "m1", name: "APMC Mandi - Ameerpet", lat: 17.4375, lng: 78.4483, district: "Hyderabad", state: "Telangana" },
-  { id: "m2", name: "APMC Mandi - Kukatpally", lat: 17.4948, lng: 78.3996, district: "Hyderabad", state: "Telangana" },
-  { id: "m3", name: "APMC Mandi - Bowenpally", lat: 17.4760, lng: 78.4841, district: "Hyderabad", state: "Telangana" },
-  { id: "m4", name: "APMC Mandi - Uppal", lat: 17.4055, lng: 78.5591, district: "Hyderabad", state: "Telangana" },
-  { id: "m5", name: "APMC Mandi - LB Nagar", lat: 17.3456, lng: 78.5548, district: "Hyderabad", state: "Telangana" },
-  { id: "m6", name: "APMC Mandi - Kompally", lat: 17.5397, lng: 78.4867, district: "Hyderabad", state: "Telangana" },
-];
-
-const ALL_CROPS: Crop[] = ["Tomato", "Onion", "Potato", "Wheat", "Rice", "Maize"];
-
-/** -----------------------------
- * Utilities
- * ----------------------------- */
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function formatTime(iso: string) {
-  const d = new Date(iso);
+function formatTime(isoLike: string) {
+  const d = new Date(isoLike);
+  if (Number.isNaN(d.getTime())) return "--:--";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Haversine distance in KM
-function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(bLat - aLat);
-  const dLng = toRad(bLng - aLng);
-  const s1 = Math.sin(dLat / 2) ** 2;
-  const s2 = Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
-  const c = 2 * Math.asin(Math.sqrt(s1 + s2));
-  return R * c;
-}
-
-function normalizeUnit(unit: RawPriceRow["unit"]): PriceUnit {
-  const u = unit.toLowerCase();
-  if (u.includes("quintal")) return "₹/quintal";
-  return "₹/kg";
-}
-
-// Convert various price + unit formats into pricePerKg
-function cleansePriceRow(row: RawPriceRow): CleanPriceRow | null {
-  const unit = normalizeUnit(row.unit);
-
-  // parse price number safely
-  let num: number | null = null;
-  if (typeof row.price === "number") num = row.price;
-  else {
-    const cleaned = row.price.replace(/[₹, ]/g, "").trim();
-    const parsed = Number(cleaned);
-    num = Number.isFinite(parsed) ? parsed : null;
-  }
-  if (num === null) return null;
-
-  // Standardize to ₹/kg
-  let pricePerKg = num;
-  if (unit === "₹/quintal") {
-    // 1 quintal = 100 kg
-    pricePerKg = num / 100;
-  }
-
-  // clamp/guard against weird values
-  if (!Number.isFinite(pricePerKg) || pricePerKg <= 0) return null;
-
-  return {
-    mandiId: row.mandiId,
-    mandiName: row.mandiName,
-    crop: row.crop,
-    pricePerKg,
-    displayPrice: `₹ ${pricePerKg.toFixed(2)} / kg`,
-    updatedAt: row.updatedAt,
-    quality: row.quality ?? "—",
-  };
-}
-
-/** -----------------------------
- * Mock “central mandi API fetch”
- * Replace this later with your backend call.
- * ----------------------------- */
-async function mockFetchCentralMandiPrices(params: { crops?: Crop[]; mandiIds?: string[] }): Promise<RawPriceRow[]> {
-  // simulate network delay
-  await new Promise((r) => setTimeout(r, 500));
-
-  const crops = params.crops?.length ? params.crops : ALL_CROPS;
-  const mandiIds = params.mandiIds?.length ? params.mandiIds : MOCK_MANDIS.map((m) => m.id);
-
-  // generate “messy” price formats intentionally
-  const rows: RawPriceRow[] = [];
-  for (const mandiId of mandiIds) {
-    const mandi = MOCK_MANDIS.find((m) => m.id === mandiId)!;
-
-    // pick 2 random crops per mandi
-    const picked = shuffle([...crops]).slice(0, 2);
-    for (const crop of picked) {
-      const useQuintal = Math.random() < 0.35; // mixed units
-      const base = basePrice(crop);
-      const variance = (Math.random() - 0.5) * 0.35 * base; // +/- 17.5%
-      const pricePerKg = Math.max(3, base + variance);
-
-      const unit: RawPriceRow["unit"] = useQuintal ? "Rs/quintal" : "INR/kg";
-      const price = useQuintal
-        ? `₹ ${(pricePerKg * 100).toFixed(0)}` // quintal
-        : `${pricePerKg.toFixed(1)}`; // kg
-
-      rows.push({
-        mandiId,
-        mandiName: mandi.name,
-        crop,
-        price,
-        unit,
-        updatedAt: nowIso(),
-        quality: Math.random() < 0.33 ? "Premium" : Math.random() < 0.66 ? "FAQ" : "Average",
-      });
-    }
-  }
-  return rows;
-}
-
-function shuffle<T>(arr: T[]) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function basePrice(crop: Crop) {
-  switch (crop) {
-    case "Tomato":
-      return 26;
-    case "Onion":
-      return 32;
-    case "Potato":
-      return 24;
-    case "Wheat":
-      return 20;
-    case "Rice":
-      return 36;
-    case "Maize":
-      return 18;
-    default:
-      return 25;
-  }
-}
-
-/** -----------------------------
- * Location (placeholder)
- * Replace with Expo Location / RN Geolocation later.
- * ----------------------------- */
-function useMockLocation() {
-  // near Hyderabad by default (you can replace this later)
-  const [coords, setCoords] = useState({ lat: 17.4375, lng: 78.4483 });
-  const [permission, setPermission] = useState<"granted" | "denied" | "unknown">("unknown");
-
-  const requestPermissionAndGet = async () => {
-    // mock permission granted
-    await new Promise((r) => setTimeout(r, 300));
-    setPermission("granted");
-
-    // small random drift to simulate movement
-    setCoords((p) => ({
-      lat: p.lat + (Math.random() - 0.5) * 0.01,
-      lng: p.lng + (Math.random() - 0.5) * 0.01,
-    }));
-  };
-
-  return { coords, permission, requestPermissionAndGet };
-}
-
-/** -----------------------------
- * Main Screen
- * ----------------------------- */
-type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
+const ALL_CROPS: Crop[] = [
+  "Tomato",
+  "Onion",
+  "Potato",
+  "Wheat",
+  "Rice",
+  "Maize",
+];
 
 export default function MarketplaceScreen() {
-  const { coords, permission, requestPermissionAndGet } = useMockLocation();
+  const { coords, permission, requestAndGetLocation } = useLocation();
 
-  // watchlist
+  const [tab, setTab] = useState<TabKey>("Live");
+  const [searchCrop, setSearchCrop] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [nearbyMandis, setNearbyMandis] = useState<
+    Array<{
+      id: string;
+      name: string;
+      lat: number;
+      lng: number;
+      distKm: number;
+    }>
+  >([]);
+
+  const [feed, setFeed] = useState<LiveFeedItem[]>([]);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+
   const [watch, setWatch] = useState<WatchItem[]>([
     { crop: "Tomato" },
     { crop: "Onion" },
   ]);
 
-  // UI
-  const [tab, setTab] = useState<TabKey>("Live");
-  const [searchCrop, setSearchCrop] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-
-  // live feed + compare data
-  const [feed, setFeed] = useState<LiveFeedItem[]>([]);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
-
-  // auto refresh timer (live feed)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const selectedCrop: Crop | null = useMemo(() => {
+    const c = titleCase(searchCrop.trim());
+    return ALL_CROPS.includes(c as Crop) ? (c as Crop) : null;
+  }, [searchCrop]);
 
-  const followedCrops = useMemo(() => watch.map((w) => w.crop), [watch]);
+  // Normalize backend response -> always return an array
+  const normalizeArray = (res: any): any[] => {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.mandis)) return res.mandis;
+    if (Array.isArray(res?.results)) return res.results;
+    return [];
+  };
 
-  // Nearby mandis (top 5)
-  const nearestMandis = useMemo(() => {
-    const withDist = MOCK_MANDIS.map((m) => ({
-      ...m,
-      distKm: distanceKm(coords.lat, coords.lng, m.lat, m.lng),
-    })).sort((a, b) => a.distKm - b.distKm);
+  const loadNearby = async () => {
+    if (!coords) return;
 
-    return withDist.slice(0, 5);
-  }, [coords.lat, coords.lng]);
-
-  // Helper: fetch -> cleanse -> update state
-  const fetchAndUpdate = async (reason: "auto" | "manual") => {
     try {
-      const raw = await mockFetchCentralMandiPrices({
-        crops: searchCrop.trim()
-          ? ([titleCase(searchCrop.trim())] as Crop[])
-          : undefined,
-        mandiIds: nearestMandis.map((m) => m.id),
+      const res = await fetchNearbyMandis({
+        lat: coords.lat,
+        lng: coords.lng,
+        distKm: 50, // ✅ keep 50 for real use (use 3000 only for testing)
+        limit: 5,
       });
 
-      // cleanse
-      const cleaned: CleanPriceRow[] = raw
-        .map(cleansePriceRow)
-        .filter(Boolean) as CleanPriceRow[];
+      const mandis = normalizeArray(res);
 
-      // build a live feed list
-      const items: LiveFeedItem[] = cleaned
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .map((r, idx) => ({
-          ...r,
-          key: `${r.mandiId}-${r.crop}-${idx}-${r.updatedAt}`,
-        }));
-
-      setFeed(items);
-      setLastUpdatedAt(nowIso());
-
-      // mock “trigger notification” for watchlist price changes
-      maybeTriggerWatchAlerts(cleaned, watch, setWatch, reason);
-    } catch (e) {
-      Alert.alert("Error", "Failed to load mandi prices (mock).");
+      setNearbyMandis(
+        mandis
+          .map((m: any) => ({
+            id: String(m.mandiId ?? m._id ?? m.id ?? m.mandi ?? ""),
+            name: String(m.mandiName ?? m.locationName ?? m.name ?? "Unknown"),
+            lng: Number(m.lng ?? m.coordinates?.[0]),
+            lat: Number(m.lat ?? m.coordinates?.[1]),
+            distKm: Number(m.distanceKm ?? m.distKm ?? 0),
+          }))
+          .filter((m: any) => Number.isFinite(m.lat) && Number.isFinite(m.lng)),
+      );
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
+      setNearbyMandis([]);
     }
   };
 
+  const loadPrices = async (reason: "auto" | "manual") => {
+    try {
+      const res = await fetchMandiPrices({
+        crop: selectedCrop ?? undefined,
+        sort: "latest",
+      });
 
-  
-  // first load
-useEffect(() => {
-  if (timerRef.current) clearInterval(timerRef.current);
+      const prices = normalizeArray(res);
 
-  timerRef.current = setInterval(() => {
-    if (tab === "Live") fetchAndUpdate("auto");
-  }, 10000);
+      const items: LiveFeedItem[] = prices.map((p: any, idx: number) => ({
+        key: `${p._id ?? p.id ?? "row"}-${idx}`,
+        crop: p.crop,
+        mandiName: p.locationName || p.mandi || "Unknown mandi",
+        pricePerQuintal: Number(p.pricePerQuintal || 0),
+        displayPrice: `₹ ${Number(p.pricePerQuintal || 0).toFixed(0)} / quintal`,
+        updatedAt: p.updatedAt || p.date || new Date().toISOString(),
+      }));
 
-  return () => {
-    if (timerRef.current) clearInterval(timerRef.current);
+      items.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+
+      setFeed(items);
+      setLastUpdatedAt(new Date().toISOString());
+
+      maybeTriggerWatchAlertsQuintal(items, watch, setWatch, reason);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to load mandi prices.");
+      setFeed([]);
+    }
   };
-}, [tab, nearestMandis, searchCrop, watch]);
 
+  // Initial: request location + load prices
+  useEffect(() => {
+    (async () => {
+      if (permission !== "granted") {
+        await requestAndGetLocation();
+      }
+      await loadPrices("manual");
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When coords becomes available / changes -> load nearby
+  useEffect(() => {
+    if (coords) loadNearby();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coords?.lat, coords?.lng]);
+
+  // Auto refresh live feed every 10s when on Live tab
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      if (tab === "Live") loadPrices("auto");
+    }, 10000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, selectedCrop, watch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAndUpdate("manual");
+    await Promise.all([loadNearby(), loadPrices("manual")]);
     setRefreshing(false);
   };
 
-  // derived data for Compare table: aggregate best price per mandi for a chosen crop
-  const compareCrop: Crop = useMemo(() => {
-    const s = searchCrop.trim();
-    const c = titleCase(s);
-    return (ALL_CROPS.includes(c as Crop) ? (c as Crop) : "Tomato") as Crop;
-  }, [searchCrop]);
+  // Compare
+  const compareCrop: Crop = useMemo(
+    () => selectedCrop ?? "Tomato",
+    [selectedCrop],
+  );
+  const [compareRows, setCompareRows] = useState<MandiPriceDoc[]>([]);
 
-  const compareRows = useMemo(() => {
-    // take the latest entry per mandi for compareCrop
-    const byMandi = new Map<string, CleanPriceRow>();
+  const loadCompare = async () => {
+    try {
+      const res = await fetchMandiPrices({
+        crop: compareCrop,
+        sort: "price_desc",
+      });
 
-    for (const item of feed) {
-      if (item.crop !== compareCrop) continue;
-      const existing = byMandi.get(item.mandiId);
-      if (!existing) {
-        byMandi.set(item.mandiId, item);
-      } else {
-        if (new Date(item.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
-          byMandi.set(item.mandiId, item);
-        }
-      }
+      const rows = normalizeArray(res) as MandiPriceDoc[];
+      setCompareRows(rows);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to load compare data.");
+      setCompareRows([]);
     }
+  };
 
-    const rows = Array.from(byMandi.values()).sort((a, b) => b.pricePerKg - a.pricePerKg);
-    const best = rows[0]?.mandiId ?? null;
-
-    return rows.map((r) => ({ ...r, isBest: r.mandiId === best }));
-  }, [feed, compareCrop]);
+  useEffect(() => {
+    if (tab === "Compare") loadCompare();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, compareCrop]);
 
   return (
     <View style={styles.root}>
       <Header />
 
-      {/* Tabs */}
       <View style={styles.tabs}>
-        <TabButton label="Live" active={tab === "Live"} onPress={() => setTab("Live")} />
-        <TabButton label="Nearby" active={tab === "Nearby"} onPress={() => setTab("Nearby")} />
-        <TabButton label="Compare" active={tab === "Compare"} onPress={() => setTab("Compare")} />
-        <TabButton label="Watchlist" active={tab === "Watchlist"} onPress={() => setTab("Watchlist")} />
+        <TabButton
+          label="Live"
+          active={tab === "Live"}
+          onPress={() => setTab("Live")}
+        />
+        <TabButton
+          label="Nearby"
+          active={tab === "Nearby"}
+          onPress={() => setTab("Nearby")}
+        />
+        <TabButton
+          label="Compare"
+          active={tab === "Compare"}
+          onPress={() => setTab("Compare")}
+        />
+        <TabButton
+          label="Watchlist"
+          active={tab === "Watchlist"}
+          onPress={() => setTab("Watchlist")}
+        />
       </View>
 
-      {/* Search / Filter + Refresh */}
       <View style={styles.controls}>
         <View style={styles.searchBox}>
           <Text style={styles.searchLabel}>Crop</Text>
@@ -400,10 +275,14 @@ useEffect(() => {
       <Text style={styles.meta}>
         {lastUpdatedAt ? `Updated: ${formatTime(lastUpdatedAt)}` : "Updating…"}
         {"  •  "}
-        Location: {permission === "granted" ? "On" : permission === "denied" ? "Off" : "Unknown"}
+        Location:{" "}
+        {permission === "granted"
+          ? "On"
+          : permission === "denied"
+            ? "Off"
+            : "Unknown"}
       </Text>
 
-      {/* Content */}
       {tab === "Live" && (
         <LiveFeed
           feed={feed}
@@ -418,8 +297,8 @@ useEffect(() => {
         <NearbyMandis
           coords={coords}
           permission={permission}
-          requestPermission={requestPermissionAndGet}
-          nearestMandis={nearestMandis}
+          onEnableLocation={requestAndGetLocation}
+          nearestMandis={nearbyMandis}
         />
       )}
 
@@ -443,22 +322,35 @@ useEffect(() => {
   );
 }
 
-/** -----------------------------
- * Components
- * ----------------------------- */
+/** UI Components */
 function Header() {
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>Marketplace</Text>
-      <Text style={styles.headerSub}>Live mandi prices • Nearby mandis • Compare • Watchlist</Text>
+      <Text style={styles.headerSub}>
+        Live mandi prices • Nearby mandis • Compare • Watchlist
+      </Text>
     </View>
   );
 }
 
-function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function TabButton({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
-    <Pressable onPress={onPress} style={[styles.tabBtn, active && styles.tabBtnActive]}>
-      <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
+    <Pressable
+      onPress={onPress}
+      style={[styles.tabBtn, active && styles.tabBtnActive]}
+    >
+      <Text style={[styles.tabText, active && styles.tabTextActive]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -480,20 +372,32 @@ function LiveFeed({
     <FlatList
       data={feed}
       keyExtractor={(it) => it.key}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
       contentContainerStyle={{ paddingBottom: 28 }}
       ListEmptyComponent={
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>No price data</Text>
-          <Text style={styles.emptySub}>Pull to refresh.</Text>
+          <Text style={styles.emptySub}>
+            Add mandi prices in DB and refresh.
+          </Text>
         </View>
       }
       renderItem={({ item }) => (
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.cardTitle}>{item.crop}</Text>
-            <Pressable onPress={() => onStarCrop(item.crop)} style={styles.starBtn}>
-              <Text style={[styles.starText, isCropStarred(item.crop) && styles.starOn]}>
+            <Pressable
+              onPress={() => onStarCrop(item.crop)}
+              style={styles.starBtn}
+            >
+              <Text
+                style={[
+                  styles.starText,
+                  isCropStarred(item.crop) && styles.starOn,
+                ]}
+              >
                 {isCropStarred(item.crop) ? "★" : "☆"}
               </Text>
             </Pressable>
@@ -505,8 +409,6 @@ function LiveFeed({
             <Text style={styles.price}>{item.displayPrice}</Text>
             <Text style={styles.time}>⏱ {formatTime(item.updatedAt)}</Text>
           </View>
-
-          <Text style={styles.badge}>Quality: {item.quality}</Text>
         </View>
       )}
     />
@@ -516,23 +418,38 @@ function LiveFeed({
 function NearbyMandis({
   coords,
   permission,
-  requestPermission,
+  onEnableLocation,
   nearestMandis,
 }: {
-  coords: { lat: number; lng: number };
+  coords: { lat: number; lng: number } | null;
   permission: "granted" | "denied" | "unknown";
-  requestPermission: () => Promise<void>;
-  nearestMandis: Array<Mandi & { distKm: number }>;
+  onEnableLocation: () => Promise<void>;
+  nearestMandis: Array<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    distKm: number;
+  }>;
 }) {
+  const hasCoords = !!coords;
+
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your location</Text>
-        <Text style={styles.sectionSub}>
-          Lat: {coords.lat.toFixed(4)} • Lng: {coords.lng.toFixed(4)}
-        </Text>
 
-        <Pressable onPress={requestPermission} style={styles.primaryBtn}>
+        {hasCoords ? (
+          <Text style={styles.sectionSub}>
+            Lat: {coords!.lat.toFixed(4)} • Lng: {coords!.lng.toFixed(4)}
+          </Text>
+        ) : (
+          <Text style={styles.sectionSub}>
+            Location not available yet. Please enable location.
+          </Text>
+        )}
+
+        <Pressable onPress={onEnableLocation} style={styles.primaryBtn}>
           <Text style={styles.primaryBtnText}>
             {permission === "granted" ? "Update Location" : "Enable Location"}
           </Text>
@@ -540,39 +457,45 @@ function NearbyMandis({
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nearest 5 Mandis</Text>
+        <Text style={styles.sectionTitle}>Nearest Mandis</Text>
 
-        {nearestMandis.map((m) => (
-          <View key={m.id} style={styles.listRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.listTitle}>{m.name}</Text>
-              <Text style={styles.listSub}>
-                {(m.district ?? "") + (m.state ? `, ${m.state}` : "")}
-              </Text>
-            </View>
-            <Text style={styles.km}>{m.distKm.toFixed(2)} km</Text>
+        {nearestMandis.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>No nearby mandis</Text>
+            <Text style={styles.emptySub}>
+              Add mandi points near your current location (within 50 km).
+            </Text>
           </View>
-        ))}
+        ) : (
+          nearestMandis.map((m) => (
+            <View key={m.id} style={styles.listRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.listTitle}>{m.name}</Text>
+              </View>
+              <Text style={styles.km}>{m.distKm.toFixed(2)} km</Text>
+            </View>
+          ))
+        )}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Map</Text>
-        {MapView ? (
+
+        {MapView && hasCoords ? (
           <View style={styles.mapWrap}>
             <MapView
               style={StyleSheet.absoluteFill}
               initialRegion={{
-                latitude: coords.lat,
-                longitude: coords.lng,
+                latitude: coords!.lat,
+                longitude: coords!.lng,
                 latitudeDelta: 0.08,
                 longitudeDelta: 0.08,
               }}
             >
               {Marker && (
                 <Marker
-                  coordinate={{ latitude: coords.lat, longitude: coords.lng }}
+                  coordinate={{ latitude: coords!.lat, longitude: coords!.lng }}
                   title="You"
-                  description="Current location"
                 />
               )}
 
@@ -589,10 +512,13 @@ function NearbyMandis({
           </View>
         ) : (
           <View style={styles.mapFallback}>
-            <Text style={styles.mapFallbackTitle}>Map not installed</Text>
+            <Text style={styles.mapFallbackTitle}>
+              Map not installed / no location
+            </Text>
             <Text style={styles.mapFallbackSub}>
-              Install <Text style={{ fontWeight: "700" }}>react-native-maps</Text> to show the map,
-              otherwise this fallback UI is fine for now.
+              Install{" "}
+              <Text style={{ fontWeight: "700" }}>react-native-maps</Text> and
+              enable location.
             </Text>
           </View>
         )}
@@ -608,7 +534,7 @@ function CompareTable({
   isCropStarred,
 }: {
   crop: Crop;
-  rows: Array<CleanPriceRow & { isBest: boolean }>;
+  rows: MandiPriceDoc[];
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
@@ -618,7 +544,9 @@ function CompareTable({
         <View style={styles.rowBetween}>
           <Text style={styles.sectionTitle}>Compare prices: {crop}</Text>
           <Pressable onPress={() => onStarCrop(crop)} style={styles.starBtn}>
-            <Text style={[styles.starText, isCropStarred(crop) && styles.starOn]}>
+            <Text
+              style={[styles.starText, isCropStarred(crop) && styles.starOn]}
+            >
               {isCropStarred(crop) ? "★" : "☆"}
             </Text>
           </Pressable>
@@ -630,24 +558,41 @@ function CompareTable({
 
         <View style={styles.tableHeader}>
           <Text style={[styles.th, { flex: 2 }]}>Mandi</Text>
-          <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Price</Text>
+          <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>
+            ₹ / quintal
+          </Text>
         </View>
 
         {rows.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No rows for {crop}</Text>
-            <Text style={styles.emptySub}>Try Refresh or change crop.</Text>
+            <Text style={styles.emptySub}>
+              Add mandi price docs for this crop in DB.
+            </Text>
           </View>
         ) : (
-          rows.map((r) => (
-            <View key={`${r.mandiId}-${r.crop}`} style={[styles.tableRow, r.isBest && styles.bestRow]}>
+          rows.map((r: any) => (
+            <View
+              key={r._id}
+              style={[styles.tableRow, r.isBestPrice && styles.bestRow]}
+            >
               <View style={{ flex: 2 }}>
-                <Text style={[styles.tdTitle, r.isBest && styles.bestText]} numberOfLines={2}>
-                  {r.mandiName}
+                <Text
+                  style={[styles.tdTitle, r.isBestPrice && styles.bestText]}
+                  numberOfLines={2}
+                >
+                  {r.locationName || r.mandi || "Unknown mandi"}
                 </Text>
-                <Text style={styles.tdSub}>Updated: {formatTime(r.updatedAt)}</Text>
+                <Text style={styles.tdSub}>
+                  Updated:{" "}
+                  {formatTime(
+                    r.updatedAt || r.date || new Date().toISOString(),
+                  )}
+                </Text>
               </View>
-              <Text style={[styles.tdPrice, r.isBest && styles.bestText]}>{r.displayPrice}</Text>
+              <Text style={[styles.tdPrice, r.isBestPrice && styles.bestText]}>
+                ₹ {Number(r.pricePerQuintal || 0).toFixed(0)}
+              </Text>
             </View>
           ))
         )}
@@ -666,11 +611,10 @@ function Watchlist({
   latestFeed: LiveFeedItem[];
 }) {
   const latestAvg = useMemo(() => {
-    // compute avg price/kg per crop from latestFeed
     const map = new Map<Crop, { sum: number; count: number }>();
     for (const it of latestFeed) {
       const v = map.get(it.crop) ?? { sum: 0, count: 0 };
-      v.sum += it.pricePerKg;
+      v.sum += it.pricePerQuintal;
       v.count += 1;
       map.set(it.crop, v);
     }
@@ -684,13 +628,15 @@ function Watchlist({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>My Watchlist</Text>
         <Text style={styles.sectionSub}>
-          Follow crops to track prices and trigger notifications (backend later).
+          Follow crops to track prices (backend notifications later).
         </Text>
 
         {watch.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No watched crops</Text>
-            <Text style={styles.emptySub}>Star a crop from Live or Compare.</Text>
+            <Text style={styles.emptySub}>
+              Star a crop from Live or Compare.
+            </Text>
           </View>
         ) : (
           watch.map((w) => {
@@ -700,11 +646,14 @@ function Watchlist({
                 <View style={{ flex: 1 }}>
                   <Text style={styles.watchTitle}>{w.crop}</Text>
                   <Text style={styles.watchSub}>
-                    Avg now: {avg ? `₹ ${avg.toFixed(2)} / kg` : "—"}
+                    Avg now: {avg ? `₹ ${avg.toFixed(0)} / quintal` : "—"}
                   </Text>
                 </View>
 
-                <Pressable onPress={() => onRemove(w.crop)} style={styles.removeBtn}>
+                <Pressable
+                  onPress={() => onRemove(w.crop)}
+                  style={styles.removeBtn}
+                >
                   <Text style={styles.removeBtnText}>Remove</Text>
                 </Pressable>
               </View>
@@ -716,7 +665,8 @@ function Watchlist({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Backend trigger (later)</Text>
         <Text style={styles.sectionSub}>
-          When connected to backend: store watched crops, compare new prices vs old, and send push/SMS when change crosses a threshold.
+          Store watched crops, compare new prices vs old, and send push/SMS when
+          change crosses threshold.
         </Text>
         <View style={styles.tipBox}>
           <Text style={styles.tipText}>
@@ -728,81 +678,67 @@ function Watchlist({
   );
 }
 
-/** -----------------------------
- * Watchlist helpers + “trigger demo”
- * ----------------------------- */
-function toggleWatchCrop(crop: Crop, watch: WatchItem[], setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>) {
-  const exists = watch.some((w) => w.crop === crop);
-  if (exists) {
-    setWatch(watch.filter((w) => w.crop !== crop));
-  } else {
-    setWatch([...watch, { crop }]);
-  }
-}
-
-function maybeTriggerWatchAlerts(
-  cleaned: CleanPriceRow[],
+/** Watchlist helpers */
+function toggleWatchCrop(
+  crop: Crop,
   watch: WatchItem[],
   setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>,
-  reason: "auto" | "manual"
 ) {
-  // Demo logic:
-  // compute avg per watched crop, compare with stored lastAvgPricePerKg, if changed by >= 10% => show alert
+  const exists = watch.some((w) => w.crop === crop);
+  setWatch(
+    exists ? watch.filter((w) => w.crop !== crop) : [...watch, { crop }],
+  );
+}
+
+function maybeTriggerWatchAlertsQuintal(
+  feed: LiveFeedItem[],
+  watch: WatchItem[],
+  setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>,
+  reason: "auto" | "manual",
+) {
   const watched = new Set(watch.map((w) => w.crop));
   const agg = new Map<Crop, { sum: number; count: number }>();
 
-  for (const r of cleaned) {
+  for (const r of feed) {
     if (!watched.has(r.crop)) continue;
     const v = agg.get(r.crop) ?? { sum: 0, count: 0 };
-    v.sum += r.pricePerKg;
+    v.sum += r.pricePerQuintal;
     v.count += 1;
     agg.set(r.crop, v);
   }
 
-  const updates: WatchItem[] = watch.map((w) => {
+  const updates = watch.map((w) => {
     const v = agg.get(w.crop);
     if (!v) return w;
 
     const avg = v.sum / Math.max(1, v.count);
-    const prev = w.lastAvgPricePerKg;
+    const prev = w.lastAvgPricePerQuintal;
+    const updated = { ...w, lastAvgPricePerQuintal: avg };
 
-    // store the new avg
-    const updated: WatchItem = { ...w, lastAvgPricePerKg: avg };
-
-    if (prev && prev > 0) {
+    if (prev && prev > 0 && reason === "manual") {
       const pct = Math.abs(avg - prev) / prev;
-      if (pct >= 0.1 && reason === "manual") {
-        // Only pop alert on manual refresh (so auto refresh doesn't annoy user)
+      if (pct >= 0.1) {
         Alert.alert(
           "Watchlist Alert",
-          `${w.crop} price changed by ${(pct * 100).toFixed(0)}% (avg now ₹ ${avg.toFixed(2)} / kg)`
+          `${w.crop} changed ${(pct * 100).toFixed(0)}% (avg ₹ ${avg.toFixed(0)} / quintal)`,
         );
       }
     }
     return updated;
   });
 
-  // Update stored “last avg” values
   setWatch(updates);
 }
 
-/** -----------------------------
- * Small helpers
- * ----------------------------- */
 function titleCase(s: string) {
-  // Make input like "tomato" -> "Tomato"
-  // Keep safe for unknown crop names.
   if (!s) return s;
   const t = s.toLowerCase();
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-/** -----------------------------
- * Styles
- * ----------------------------- */
+/** Styles (unchanged from yours) */
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0b0f14" },
-
   header: { paddingTop: 14, paddingHorizontal: 16, paddingBottom: 10 },
   headerTitle: { color: "#fff", fontSize: 22, fontWeight: "800" },
   headerSub: { color: "#a7b0bb", marginTop: 4, fontSize: 12 },
@@ -843,8 +779,17 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 10,
   },
-  searchLabel: { color: "#8fa0b2", fontSize: 11, marginBottom: 6, fontWeight: "700" },
-  searchInput: { color: "#fff", fontSize: 14, paddingVertical: Platform.OS === "android" ? 0 : 4 },
+  searchLabel: {
+    color: "#8fa0b2",
+    fontSize: 11,
+    marginBottom: 6,
+    fontWeight: "700",
+  },
+  searchInput: {
+    color: "#fff",
+    fontSize: 14,
+    paddingVertical: Platform.OS === "android" ? 0 : 4,
+  },
 
   refreshBtn: {
     backgroundColor: "#1f6feb",
@@ -854,7 +799,12 @@ const styles = StyleSheet.create({
   },
   refreshText: { color: "#fff", fontWeight: "800" },
 
-  meta: { color: "#a7b0bb", fontSize: 12, paddingHorizontal: 12, paddingBottom: 8 },
+  meta: {
+    color: "#a7b0bb",
+    fontSize: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
 
   card: {
     backgroundColor: "#101823",
@@ -865,25 +815,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginTop: 10,
   },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   cardTitle: { color: "#fff", fontSize: 16, fontWeight: "900" },
   cardSub: { color: "#9fb0c3", marginTop: 4, fontSize: 12 },
   price: { color: "#d7f7c2", marginTop: 10, fontSize: 16, fontWeight: "900" },
   time: { color: "#a7b0bb", marginTop: 10, fontSize: 12 },
-  badge: {
-    marginTop: 10,
-    alignSelf: "flex-start",
-    backgroundColor: "#0b0f14",
-    borderWidth: 1,
-    borderColor: "#223140",
-    color: "#b7c2ce",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    overflow: "hidden",
-    fontSize: 12,
-    fontWeight: "700",
-  },
 
   starBtn: { paddingHorizontal: 6, paddingVertical: 4 },
   starText: { fontSize: 20, color: "#a7b0bb" },
@@ -922,7 +862,6 @@ const styles = StyleSheet.create({
     borderTopColor: "#1e2a35",
   },
   listTitle: { color: "#fff", fontWeight: "800" },
-  listSub: { color: "#a7b0bb", marginTop: 2, fontSize: 12 },
   km: { color: "#d7f7c2", fontWeight: "900" },
 
   mapWrap: {
@@ -942,7 +881,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#0b0f14",
   },
   mapFallbackTitle: { color: "#fff", fontWeight: "900" },
-  mapFallbackSub: { color: "#a7b0bb", marginTop: 6, fontSize: 12, lineHeight: 16 },
+  mapFallbackSub: {
+    color: "#a7b0bb",
+    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 16,
+  },
 
   tableHeader: {
     marginTop: 12,
@@ -954,6 +898,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#1e2a35",
   },
   th: { color: "#8fa0b2", fontWeight: "900", fontSize: 12 },
+
   tableRow: {
     flexDirection: "row",
     paddingVertical: 12,
