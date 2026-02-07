@@ -54,6 +54,37 @@
     "invalid_otp": "Please enter a valid OTP",
     "otp_verify_failed": "OTP verification failed",
     "otp_resent": "OTP resent successfully"
+  },
+  "farmer": {
+    "dashboard_title": "Farmer Dashboard",
+
+    "welcome_msg": "Welcome to your Farmer Dashboard!",
+    "welcome_sub": "Manage your crops, track prices, and monitor sales easily.",
+
+    "add_crop": "Add Crop",
+    "add_crop_sub": "List your harvested crops for buyers to discover and bid on.",
+
+    "my_listings": "My Listings",
+    "my_listings_sub": "View, edit, and manage all your active and sold crop listings.",
+
+    "mandi_prices": "Mandi Prices",
+    "mandi_prices_sub": "Check real-time crop prices from nearby mandis.",
+
+    "live_auctions" : "Live Auctions",
+    "live_auctions_sub" : "Connect with buyers and sell crops through live market auctions."
+  },
+  "nav_farmer" :{
+    "dashboard" : "Dashboard",
+    "my_listings" : "My Listings",
+    "add_crop" : "Add Crop",
+    "mandi_prices" : "Mandi Prices",
+    "ai_insights" : "AI Insights",
+    "live_auctions" : "Live Auctions",
+    "edit_profile" : "Edit Profile",
+    "edit_preferences" : "Edit Preferences",
+    "logout" : "Logout"
   }
+
+
 }
 
