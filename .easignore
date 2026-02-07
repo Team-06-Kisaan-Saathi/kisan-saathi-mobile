@@ -1,0 +1,9 @@
+node_modules
+.expo
+.git
+*.log
+
+# Let EAS generate native folders
+android
+ios
+

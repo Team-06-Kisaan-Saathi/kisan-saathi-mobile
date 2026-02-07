@@ -11,8 +11,12 @@ type Lang = "en" | "hi" | "te";
  * expo-speech = Text → Speech (app talks)
  * react-native-vosk = Speech → Text (app listens)  ✅ requires custom dev client / EAS build
  */
+const MODELS: Record<Lang, string> = {
+  en: "vosk/en",
+  hi: "vosk/hi",
+  te: "vosk/te",
+};
 
-const MODELS: Record<Lang, string> = { en: "en", hi: "hi", te: "te" };
 const LANG_LABEL: Record<Lang, string> = { en: "EN", hi: "HI", te: "TE" };
 
 const GRAMMAR: Record<Lang, string[]> = {
