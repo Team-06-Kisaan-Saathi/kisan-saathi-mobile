@@ -8,13 +8,12 @@
     "scheme": "digitalmarketplace",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
-    "assetBundlePatterns": ["**/*"],
-
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
-
     "android": {
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -31,12 +30,10 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.digitalmarketplace"
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -52,17 +49,16 @@
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b8cde442-813c-4d13-b408-bf3e21fa6fff"
+        "projectId": "71d1a27d-9242-4bbe-b1e2-424e149ead5a"
       }
-    }
+    },
+    "owner": "unni2005"
   }
 }
