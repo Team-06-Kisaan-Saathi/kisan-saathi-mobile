@@ -1,19 +1,22 @@
+import axios from "axios";
+import { router } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
   Image,
   ImageBackground,
   StyleSheet,
-  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
-import axios from "axios";
-import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
 
-const API = "http://localhost:5001/api/auth";
+const HOST = "10.125.64.251";
+const API = `http://${HOST}:5001/api/auth`;
+
+console.log("API CONST =", API);
 
 type SendOtpResponse = {
   success?: boolean;
@@ -32,33 +35,52 @@ export default function LoginScreen() {
 
     const trimmed = phone.trim();
 
-    // ✅ validate Indian 10-digit mobile
     if (!/^\d{10}$/.test(trimmed)) {
       setMsg(t("auth.invalid_phone"));
       return;
     }
 
+    const url = `${API}/send-otp`;
+    const body = { phone: trimmed };
+
+    console.log("➡️ SEND OTP URL:", url);
+    console.log("➡️ SEND OTP BODY:", body);
+
     try {
       setLoading(true);
 
-      const res = await axios.post<SendOtpResponse>(
-        `${API}/send-otp`,
-        { phone: trimmed },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const res = await axios.post(url, body, {
+        headers: { "Content-Type": "application/json" },
+        timeout: 10000,
+      });
+
+      console.log("✅ STATUS:", res.status);
+      console.log("✅ DATA:", res.data);
 
       if (res.data?.success) {
-        // Navigate to farmer dashboard (temporary for testing)
-        router.push("/farmer-dashboard");
-        // TODO: Add role selection and OTP verification later
-        // router.push({ pathname: "/verify", params: { phone: trimmed } });
+        router.push({ pathname: "/verify", params: { phone: trimmed } });
       } else {
         setMsg(res.data?.message || t("auth.otp_send_failed"));
       }
-    } catch (err: unknown) {
-      // Optional: show backend message if present
-      const e = err as any;
-      setMsg(e?.response?.data?.message || e?.message || t("auth.login_failed"));
+    } catch (err: any) {
+      console.log("❌ AXIOS ERROR MESSAGE:", err?.message);
+
+      if (err?.response) {
+        console.log("❌ STATUS:", err.response.status);
+        console.log("❌ DATA:", err.response.data);
+        console.log("❌ HEADERS:", err.response.headers);
+
+        setMsg(
+          err.response.data?.message ||
+            `HTTP ${err.response.status}: request failed`,
+        );
+      } else if (err?.request) {
+        console.log("❌ NO RESPONSE. REQUEST:", err.request);
+        setMsg("No response from server (network / IP / firewall issue).");
+      } else {
+        console.log("❌ UNKNOWN ERROR:", err);
+        setMsg(err?.message || "Unknown error");
+      }
     } finally {
       setLoading(false);
     }
@@ -80,6 +102,7 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
+
             <Text style={styles.appName}>
               <Text style={styles.green}>KISSAAN</Text>{" "}
               <Text style={styles.blue}>SAATHI</Text>
@@ -117,7 +140,10 @@ export default function LoginScreen() {
               {loading ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator />
-                  <Text style={styles.buttonText}> {t("auth.sending_otp")}</Text>
+                  <Text style={styles.buttonText}>
+                    {" "}
+                    {t("auth.sending_otp")}
+                  </Text>
                 </View>
               ) : (
                 <Text style={styles.buttonText}>{t("auth.continue")}</Text>
@@ -128,23 +154,11 @@ export default function LoginScreen() {
               {t("auth.no_account")}{" "}
               <Text
                 style={styles.createNew}
-              //onPress={() => router.push("/signin")}
+                onPress={() => router.push("/signin")}
               >
                 {t("auth.create_new")}
               </Text>
             </Text>
-
-            {/* TEMPORARY TESTING LINK */}
-            <TouchableOpacity
-              style={styles.devButton}
-              onPress={() => router.push("/farmer-dashboard")}
-            >
-              <Text style={styles.devButtonText}>Go to Farmer Dashboard</Text>
-            </TouchableOpacity>
-
-            
-
-
           </View>
         </View>
       </ImageBackground>
@@ -277,5 +291,4 @@ const styles = StyleSheet.create({
     color: "green",
     textDecorationLine: "underline",
   },
-
 });
