@@ -65,3 +65,7 @@ assets/vosk/
 # App examples / scratch
 # =====================
 app-example
+.env
+assets/en/
+assets/hi/
+assets/te/
