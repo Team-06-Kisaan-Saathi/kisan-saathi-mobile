@@ -10,10 +10,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
-const HOST = "10.125.64.251";
+const HOST = "10.12.252.131";
 const API = `http://${HOST}:5001/api/auth`;
 
 console.log("API CONST =", API);
@@ -54,8 +54,8 @@ export default function LoginScreen() {
         timeout: 10000,
       });
 
-      console.log("✅ STATUS:", res.status);
-      console.log("✅ DATA:", res.data);
+      console.log("STATUS:", res.status);
+      console.log("DATA:", res.data);
 
       if (res.data?.success) {
         router.push({ pathname: "/verify", params: { phone: trimmed } });

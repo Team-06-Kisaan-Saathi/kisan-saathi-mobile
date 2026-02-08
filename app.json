@@ -6,15 +6,18 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "digitalmarketplace",
-    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAVXLK60fTLjxMWpvNFEtKX6xDt5QooJWo"
+        }
+      },
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -45,6 +48,25 @@
           "backgroundColor": "#ffffff",
           "dark": {
             "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "react-native-vosk",
+        {
+          "models": [
+            "assets/vosk-model-small-en-in-0.4",
+            "assets/vosk-model-small-hi-0.22",
+            "assets/vosk-model-small-te-0.42"
+          ],
+          "iOSMicrophonePermission": "Allow microphone for voice navigation"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "25.1.8937393"
           }
         }
       ]

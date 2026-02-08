@@ -1,22 +1,18 @@
 import React, { useState } from "react";
 import NotificationBell from "../notifications/NotificationBell";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NavFarmer() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.navFarmer}>
+    <View style={[styles.navFarmer, { paddingTop: insets.top + 12 }]}>
       {/* LEFT: Scrollable Navigation */}
       <ScrollView
         horizontal

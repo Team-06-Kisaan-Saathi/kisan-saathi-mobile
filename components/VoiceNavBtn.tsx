@@ -1,20 +1,23 @@
+
 import { Ionicons } from "@expo/vector-icons";
+import { Animated, PanResponder } from "react-native";
+
 import { useRouter, type Href } from "expo-router";
 import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import * as Vosk from "react-native-vosk";
 
 type Lang = "en" | "hi" | "te";
 
 /**
  * expo-speech = Text → Speech (app talks)
- * react-native-vosk = Speech → Text (app listens)  ✅ requires custom dev client / EAS build
+ * react-native-vosk = Speech → Text (app listens)  requires custom dev client / EAS build
  */
 const MODELS: Record<Lang, string> = {
-  en: "vosk/en",
-  hi: "vosk/hi",
-  te: "vosk/te",
+  en: "vosk-model-small-en-in-0.4",
+  hi: "vosk-model-small-hi-0.22",
+  te: "vosk-model-small-te-0.42",
 };
 
 const LANG_LABEL: Record<Lang, string> = { en: "EN", hi: "HI", te: "TE" };
@@ -287,59 +290,88 @@ export default function VoiceNavBtn() {
     }
   };
 
-  return (
-    <>
-      {/* Language toggle pill */}
-      <Pressable
-        onPress={cycleLanguage}
-        style={{
-          position: "absolute",
-          bottom: 92,
-          right: 24,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderRadius: 999,
-          backgroundColor: "#111827",
-          opacity: ready ? 1 : 0.6,
-          zIndex: 999999,
-          elevation: 999999,
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Change voice language"
-      >
-        {/* Using Ionicons only on main button; pill shows text via accessibility label */}
-        {/* If you want visible text, replace with <Text> but keep it simple for now */}
-        <Ionicons name="language" size={18} color="#fff" />
-      </Pressable>
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
-      {/* Mic button */}
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
+
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          // @ts-ignore
+          x: pan.x.__getValue(),
+          // @ts-ignore
+          y: pan.y.__getValue(),
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+      },
+    }),
+  ).current;
+  return (
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={{
+        position: "absolute",
+        bottom: 100,
+        right: 24,
+        zIndex: 999999,
+        elevation: 999999,
+        transform: pan.getTranslateTransform(),
+      }}
+    >
       <Pressable
         onPress={toggleListening}
+        onLongPress={cycleLanguage} // long press switches EN/HI/TE
         style={{
-          position: "absolute",
-          bottom: 24,
-          right: 24,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
+          width: 64,
+          height: 64,
+          borderRadius: 32,
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: listening ? "#dc4a26" : "#2d6ec9",
           opacity: ready ? 1 : 0.6,
-          zIndex: 999999,
-          elevation: 999999,
         }}
         accessibilityRole="button"
         accessibilityLabel={
-          listening ? "Stop voice input" : "Start voice input"
+          listening
+            ? `Stop voice input (${LANG_LABEL[lang]})`
+            : `Start voice input (${LANG_LABEL[lang]})`
         }
+        accessibilityHint="Drag to move. Long press to change language."
       >
         {listening ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Ionicons name="mic" size={24} color="#fff" />
+          <Ionicons name="mic" size={26} color="#fff" />
         )}
+
+        {/* Language label INSIDE the button */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            bottom: 6,
+            right: 6,
+            backgroundColor: "rgba(0,0,0,0.55)",
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+            {LANG_LABEL[lang]}
+          </Text>
+        </View>
       </Pressable>
-    </>
+    </Animated.View>
   );
 }
