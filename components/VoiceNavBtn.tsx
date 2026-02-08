@@ -1,13 +1,25 @@
+
 import { Ionicons } from "@expo/vector-icons";
+import { Animated, PanResponder } from "react-native";
 
 import { useRouter, type Href } from "expo-router";
+import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import * as Vosk from "react-native-vosk";
 
 type Lang = "en" | "hi" | "te";
 
-const MODELS: Record<Lang, string> = { en: "en", hi: "hi", te: "te" };
+/**
+ * expo-speech = Text → Speech (app talks)
+ * react-native-vosk = Speech → Text (app listens)  requires custom dev client / EAS build
+ */
+const MODELS: Record<Lang, string> = {
+  en: "vosk-model-small-en-in-0.4",
+  hi: "vosk-model-small-hi-0.22",
+  te: "vosk-model-small-te-0.42",
+};
+
 const LANG_LABEL: Record<Lang, string> = { en: "EN", hi: "HI", te: "TE" };
 
 const GRAMMAR: Record<Lang, string[]> = {
@@ -16,39 +28,50 @@ const GRAMMAR: Record<Lang, string[]> = {
   te: ["లాగిన్", "మార్కెట్", "హోమ్", "వెనక్కి"],
 };
 
-export default function VoiceNavButton() {
-  const router = useRouter();
+function speak(text: string) {
+  try {
+    Speech.stop();
+    Speech.speak(text, { rate: 0.95, pitch: 1.0 });
+  } catch {}
+}
 
-  const handlersBoundRef = useRef(false);
-  const loadedLangRef = useRef<Lang | null>(null);
+function normalizeText(e: any): string {
+  if (!e) return "";
+  if (typeof e === "string") return e;
+  return String(e?.result ?? e?.text ?? e?.value ?? e?.partial ?? "");
+}
+
+export default function VoiceNavBtn() {
+  const router = useRouter();
 
   const [lang, setLang] = useState<Lang>("en");
   const [ready, setReady] = useState(false);
   const [listening, setListening] = useState(false);
 
+  const loadedLangRef = useRef<Lang | null>(null);
+  const handlersBoundRef = useRef(false);
+  const unmountedRef = useRef(false);
+
   const log = (...args: any[]) => console.log("[VOICE]", ...args);
 
   const stop = async (reason = "manual") => {
     try {
-      await Vosk.stop?.();
+      await (Vosk as any).stop?.();
     } catch {}
     setListening(false);
-    log("🛑 STOP", reason);
+    log("🛑 STOP:", reason);
   };
 
   const unload = async () => {
     try {
-      await Vosk.unload?.();
+      await (Vosk as any).unload?.();
     } catch {}
     loadedLangRef.current = null;
     log("🧹 UNLOAD");
   };
 
   const loadModel = async (target: Lang) => {
-    if (loadedLangRef.current === target) {
-      log("✅ model already loaded:", target);
-      return;
-    }
+    if (loadedLangRef.current === target) return;
 
     await stop("before-load");
     await unload();
@@ -56,20 +79,18 @@ export default function VoiceNavButton() {
     const key = MODELS[target];
     log("📦 Loading model:", key);
 
-    await Vosk.loadModel(key);
-    loadedLangRef.current = target;
+    await (Vosk as any).loadModel(key);
 
+    loadedLangRef.current = target;
     log("✅ Model loaded:", key);
   };
 
   const routeTo = async (path: Href) => {
-    log("➡ ROUTE:", path);
     await stop("navigate");
     router.push(path);
   };
 
   const goBack = async () => {
-    log("⬅ ROUTE: back()");
     await stop("navigate");
     router.back();
   };
@@ -78,7 +99,7 @@ export default function VoiceNavButton() {
     const text = (raw || "").trim().toLowerCase();
     if (!text) return;
 
-    log("✅ HEARD (final):", text);
+    log("✅ HEARD:", text);
 
     // LOGIN
     if (
@@ -89,6 +110,7 @@ export default function VoiceNavButton() {
       text.includes("लॉगिन") ||
       text.includes("లాగిన్")
     ) {
+      speak("Opening login");
       await routeTo("/login");
       return;
     }
@@ -100,6 +122,7 @@ export default function VoiceNavButton() {
       text.includes("मार्केट") ||
       text.includes("మార్కెట్")
     ) {
+      speak("Opening marketplace");
       await routeTo("/marketplace");
       return;
     }
@@ -110,6 +133,7 @@ export default function VoiceNavButton() {
       text.includes("होम") ||
       text.includes("హోమ్")
     ) {
+      speak("Going home");
       await routeTo("/");
       return;
     }
@@ -120,21 +144,22 @@ export default function VoiceNavButton() {
       text.includes("वापस") ||
       text.includes("వెనక్కి")
     ) {
+      speak("Going back");
       await goBack();
       return;
     }
 
-    log("❔ No matching command");
+    speak("Command not recognized");
   };
 
-  const bindAllHandlers = () => {
+  const bindHandlersOnce = () => {
     const anyVosk: any = Vosk;
 
-    const tryBind = (name: string, fn: any) => {
-      const f = anyVosk?.[name];
-      if (typeof f === "function") {
+    const bind = (name: string, fn: any) => {
+      const b = anyVosk?.[name];
+      if (typeof b === "function") {
         try {
-          f(fn);
+          b(fn);
           log("🔗 bound", name);
         } catch (e) {
           log("⚠️ bind failed", name, e);
@@ -144,171 +169,172 @@ export default function VoiceNavButton() {
       }
     };
 
-    tryBind("onResult", (e: any) => {
-      log("📨 onResult:", e);
-
-      const t =
-        typeof e === "string"
-          ? e
-          : (e?.result ?? e?.text ?? e?.value ?? "").toString();
-
+    bind("onFinalResult", (e: any) => {
+      const t = normalizeText(e);
       if (t) handleCommand(t);
     });
 
-    tryBind("onFinalResult", (e: any) => {
-      log("📨 onFinalResult:", e);
-
-      const t =
-        typeof e === "string"
-          ? e
-          : (e?.result ?? e?.text ?? e?.value ?? "").toString();
-
+    // fallback: some versions emit onResult
+    bind("onResult", (e: any) => {
+      const t = normalizeText(e);
       if (t) handleCommand(t);
     });
 
-    tryBind("onPartialResult", (e: any) => {
-      const p = (e?.partial ?? e?.text ?? e?.value ?? "").toString();
+    bind("onPartialResult", (e: any) => {
+      const p = normalizeText(e);
       if (p) log("… partial:", p);
     });
 
-    tryBind("onPartial", (e: any) => {
-      const p = (e?.partial ?? e?.text ?? e?.value ?? "").toString();
+    bind("onPartial", (e: any) => {
+      const p = normalizeText(e);
       if (p) log("… partial:", p);
     });
 
-    tryBind("onEvent", (e: any) => {
-      log("📨 onEvent:", e);
-    });
-
-    tryBind("onError", (e: any) => {
+    bind("onError", (e: any) => {
       log("❌ onError:", e);
       setListening(false);
+      speak("Voice error");
+    });
+
+    bind("onEvent", (e: any) => {
+      log("📨 onEvent:", e);
     });
   };
 
   useEffect(() => {
-    let alive = true;
+    unmountedRef.current = false;
 
     const init = async () => {
       try {
         if (!handlersBoundRef.current) {
           handlersBoundRef.current = true;
-          bindAllHandlers();
+          bindHandlersOnce();
         }
 
         await loadModel("en");
 
-        if (alive) setReady(true);
+        if (!unmountedRef.current) setReady(true);
       } catch (err) {
         log("❌ init failed:", err);
-        if (alive) setReady(false);
-        Alert.alert("Voice", "Model could not be loaded.");
+        if (!unmountedRef.current) setReady(false);
+        Alert.alert(
+          "Voice",
+          "Vosk model could not be loaded.\nMake sure you are using a custom dev client and models are available.",
+        );
       }
     };
 
     init();
 
     return () => {
-      alive = false;
+      unmountedRef.current = true;
       stop("unmount");
       unload();
+      try {
+        Speech.stop();
+      } catch {}
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cycleLanguage = async () => {
     const next: Lang = lang === "en" ? "hi" : lang === "hi" ? "te" : "en";
-    log("🌐 Switch", lang, "→", next);
-
     setLang(next);
 
     try {
       setReady(false);
+      speak(next === "en" ? "English" : next === "hi" ? "Hindi" : "Telugu");
       await loadModel(next);
       setReady(true);
     } catch (e) {
-      log("❌ Language switch failed:", e);
+      log("❌ language switch failed:", e);
+      setReady(false);
       Alert.alert(
         "Voice model error",
-        "Model missing/incomplete on device.\nFix: Settings → Apps → digital-marketplace → Storage → Clear storage.\nThen open app again.",
+        "Model missing/incomplete on device.\nEnsure Vosk models exist for this language.",
       );
-      setReady(false);
     }
   };
 
   const toggleListening = async () => {
+    // ✅ prevent start before init/model load
+    if (!ready) {
+      Alert.alert("Voice", "Model is not ready yet.");
+      return;
+    }
+
+    if (listening) {
+      speak("Stopped");
+      await stop("toggle");
+      return;
+    }
+
     try {
-      if (!ready) {
-        Alert.alert("Voice", "Model is not ready yet.");
-        return;
-      }
-
-      if (listening) {
-        await stop("toggle");
-        return;
-      }
-
       await loadModel(lang);
 
       setListening(true);
+      speak("Listening");
       log("🎙 START (lang:", lang, ")");
 
       // Most compatible start: no args first
       try {
-        await Vosk.start?.();
-      } catch (e1) {
+        await (Vosk as any).start?.();
+      } catch {
         // fallback with options
-        try {
-          await Vosk.start?.({ grammar: GRAMMAR[lang], timeout: 8000 });
-        } catch (e2) {
-          log("❌ start failed:", e1, e2);
-          setListening(false);
-        }
+        await (Vosk as any).start?.({ grammar: GRAMMAR[lang], timeout: 8000 });
       }
     } catch (e) {
-      log("❌ toggle error:", e);
+      log("❌ start failed:", e);
       setListening(false);
+      speak("Could not start listening");
     }
   };
 
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
+
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          // @ts-ignore
+          x: pan.x.__getValue(),
+          // @ts-ignore
+          y: pan.y.__getValue(),
+        });
+        pan.setValue({ x: 0, y: 0 });
+      },
+
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+      },
+    }),
+  ).current;
   return (
-    <View
-      pointerEvents="box-none"
+    <Animated.View
+      {...panResponder.panHandlers}
       style={{
         position: "absolute",
         bottom: 100,
         right: 24,
         zIndex: 999999,
         elevation: 999999,
-        alignItems: "center",
+        transform: pan.getTranslateTransform(),
       }}
     >
-      {/* Language pill */}
-      <Pressable
-        onPress={cycleLanguage}
-        style={{
-          marginBottom: 10,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderRadius: 999,
-          backgroundColor: "#111827",
-          opacity: ready ? 1 : 0.6,
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Change voice language"
-      >
-        <Text style={{ color: "white", fontWeight: "800" }}>
-          {LANG_LABEL[lang]}
-        </Text>
-      </Pressable>
-
-      {/* Mic button */}
       <Pressable
         onPress={toggleListening}
+        onLongPress={cycleLanguage} // long press switches EN/HI/TE
         style={{
-          width: 56,
-          height: 56,
-          borderRadius: 28,
+          width: 64,
+          height: 64,
+          borderRadius: 32,
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: listening ? "#dc4a26" : "#2d6ec9",
@@ -316,15 +342,36 @@ export default function VoiceNavButton() {
         }}
         accessibilityRole="button"
         accessibilityLabel={
-          listening ? "Stop voice input" : "Start voice input"
+          listening
+            ? `Stop voice input (${LANG_LABEL[lang]})`
+            : `Start voice input (${LANG_LABEL[lang]})`
         }
+        accessibilityHint="Drag to move. Long press to change language."
       >
         {listening ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Ionicons name="mic" size={24} color="#fff" />
+          <Ionicons name="mic" size={26} color="#fff" />
         )}
+
+        {/* Language label INSIDE the button */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            bottom: 6,
+            right: 6,
+            backgroundColor: "rgba(0,0,0,0.55)",
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+            {LANG_LABEL[lang]}
+          </Text>
+        </View>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }

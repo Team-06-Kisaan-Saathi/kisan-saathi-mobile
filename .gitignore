@@ -42,3 +42,8 @@ app-example
 /ios
 /android
 
+.env
+
+assets/vosk-model-*/
+assets/vosk/
+assets/vosk/

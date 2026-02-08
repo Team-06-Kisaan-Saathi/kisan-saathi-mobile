@@ -1,18 +1,18 @@
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
+  ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
   TouchableWithoutFeedback,
-  Keyboard,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { useTranslation } from "react-i18next";
-import { router, useLocalSearchParams } from "expo-router";
 
 type VerifyOtpResponse = {
   success?: boolean;
@@ -20,7 +20,7 @@ type VerifyOtpResponse = {
   token?: string;
 };
 
-const API = "http://10.125.64.251:5001/api/auth";
+const API = "http://10.12.252.131:5001/api/auth";
 
 export default function VerifyScreen() {
   const { t } = useTranslation();
@@ -188,7 +188,9 @@ export default function VerifyScreen() {
             <Text style={styles.title}>{t("auth.verify_title")}</Text>
             <Text style={styles.subtitle}>
               {t("auth.sent_code")}{" "}
-              <Text style={styles.phoneText}>{phone ? `+91 ${phone}` : ""}</Text>
+              <Text style={styles.phoneText}>
+                {phone ? `+91 ${phone}` : ""}
+              </Text>
             </Text>
           </View>
 
@@ -209,7 +211,9 @@ export default function VerifyScreen() {
                   ]}
                   value={digits[i]}
                   onChangeText={(v) => setDigit(i, v)}
-                  onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
+                  onKeyPress={({ nativeEvent }) =>
+                    onKeyPress(i, nativeEvent.key)
+                  }
                   keyboardType="number-pad"
                   maxLength={1}
                   returnKeyType={i === 5 ? "done" : "next"}

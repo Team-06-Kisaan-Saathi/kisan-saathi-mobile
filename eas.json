@@ -5,6 +5,9 @@
   },
   "build": {
     "development": {
+      "env": {
+        "NODE_ENV": "production"
+      },
       "developmentClient": true,
       "distribution": "internal"
     },
