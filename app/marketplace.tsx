@@ -42,6 +42,7 @@ let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
 
 try {
+  // TODO: Uncomment before committing to git
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
