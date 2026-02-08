@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
 import * as Location from "expo-location";
+import { useCallback, useState } from "react";
 
 type PermissionState = "granted" | "denied" | "unknown";
 
