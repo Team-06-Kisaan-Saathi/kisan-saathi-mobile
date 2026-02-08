@@ -12,7 +12,6 @@
     "login": "Login",
     "dashboard_title": "Farmer Dashboard"
   },
-
   "prefs": {
     "title": "Select Your Preferences",
     "select_category": "Select Crop Category",
@@ -25,7 +24,6 @@
     "remove": "Remove",
     "continue": "Continue"
   },
-
   "role": {
     "select_role": "Select your role",
     "farmer_title": "I am a Farmer",
@@ -33,7 +31,6 @@
     "buyer_title": "I am a Buyer",
     "buyer_desc": "Explore and purchase fresh produce"
   },
-
   "auth": {
     "welcome": "WELCOME",
     "enter_phone": "Enter your mobile number",
@@ -46,7 +43,6 @@
     "invalid_phone": "Enter a valid 10-digit mobile number",
     "otp_send_failed": "Failed to send OTP",
     "login_failed": "Login failed",
-
     "verify_title": "Verify",
     "verify_subtitle": "We sent a code to your number",
     "enter_otp": "Enter OTP",
@@ -58,25 +54,19 @@
     "otp_verify_failed": "OTP verification failed",
     "otp_resent": "OTP resent successfully"
   },
-
   "farmer": {
     "dashboard_title": "Farmer Dashboard",
     "welcome_msg": "Welcome to your Farmer Dashboard!",
     "welcome_sub": "Manage your crops, track prices, and monitor sales easily.",
-
     "add_crop": "Add Crop",
     "add_crop_sub": "List your harvested crops for buyers to discover and bid on.",
-
     "my_listings": "My Listings",
     "my_listings_sub": "View, edit, and manage all your active and sold crop listings.",
-
     "mandi_prices": "Mandi Prices",
     "mandi_prices_sub": "Check real-time crop prices from nearby mandis.",
-
     "live_auctions": "Live Auctions",
     "live_auctions_sub": "Connect with buyers and sell crops through live market auctions."
   },
-
   "nav_farmer": {
     "dashboard": "Dashboard",
     "my_listings": "My Listings",
@@ -88,24 +78,26 @@
     "edit_preferences": "Edit Preferences",
     "logout": "Logout"
   },
-
   "buyer": {
     "dashboard_title": "Buyer Dashboard",
     "dashboard_sub": "Discover crops, compare prices, and bid with confidence",
-
     "marketplace": "Marketplace",
     "marketplace_sub": "Browse available crops from verified farmers",
-
     "live_auctions": "Live Auctions",
     "live_auctions_sub": "Participate in real-time crop bidding",
-
     "my_bids": "My Bids",
     "my_bids_sub": "Track your active and past bids",
-
     "market_insights": "Market Insights",
     "market_insights_sub": "Compare prices and market trends",
-
     "trusted_farmers": "Trusted Farmers",
     "trusted_farmers_sub": "Buy from verified farmer profiles"
+  },
+  "listing": {
+    "select_category": "Select Category",
+    "select_crop": "Select Crop",
+    "quantity": "Quantity (kg)",
+    "price": "Price (₹/kg)",
+    "add": "Add",
+    "add_crop_listings": "Add Crop Listings"
   }
 }
