@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 
-import VoiceNavButton from "../components/VoiceNavBtn";
+// import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
 import "../i18n/i18n";
@@ -40,7 +40,7 @@ export default function RootLayout() {
       {/* ✅ Floating overlay ABOVE everything */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
-        <VoiceNavButton />
+        {/* <VoiceNavButton /> */} {/* Disabled - requires native module build */}
       </View>
 
       {/* Sheet */}

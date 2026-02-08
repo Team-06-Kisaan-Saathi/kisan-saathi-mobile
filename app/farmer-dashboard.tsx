@@ -1,19 +1,22 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Stack, useRouter } from "expo-router";
 import NavFarmer from "../components/navigation/NavFarmer";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function FarmerDashboard() {
   const { t } = useTranslation();
   const router = useRouter();
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    // Get user name from AsyncStorage
+    AsyncStorage.getItem("userName").then((name) => {
+      if (name) setUserName(name);
+    });
+  }, []);
 
   return (
     <>
@@ -25,51 +28,68 @@ export default function FarmerDashboard() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.headerIcon}>
-              <Ionicons name="leaf" size={28} color="#fff" />
-            </View>
-            <Text style={styles.title}>{t("farmer.welcome_msg")}</Text>
+            <Text style={styles.title}>
+              Welcome {userName || "Farmer"}!
+            </Text>
             <Text style={styles.subtitle}>
-              {t("farmer.welcome_sub")}
+              Fair prices, real-time markets, zero middlemen
             </Text>
           </View>
 
           {/* Grid */}
           <View style={styles.grid}>
-            {/* Add Crop */}
+            {/* Marketplace */}
             <DashboardTile
-              bg="#34a853"
-              icon="leaf-outline"
-              title={t("farmer.add_crop")}
-              sub={t("farmer.add_crop_sub")}
-              onPress={() => router.push("/add-crop")}
-            />
-
-            {/* My Listings */}
-            <DashboardTile
-              bg="#3b82f6"
-              icon="list-outline"
-              title={t("farmer.my_listings")}
-              sub={t("farmer.my_listings_sub")}
-              onPress={() => router.push("/my-listings")}
-            />
-
-            {/* Mandi Prices */}
-            <DashboardTile
-              bg="#f97316"
-              icon="trending-up-outline"
-              title={t("farmer.mandi_prices")}
-              sub={t("farmer.mandi_prices_sub")}
-              onPress={() => router.push("/mandi-prices")}
+              iconBg="#c8e6c9"
+              iconColor="#2e7d32"
+              icon="storefront"
+              title={t("farmer.marketplace", "farmer.marketplace")}
+              onPress={() => router.push("/marketplace")}
             />
 
             {/* Live Auctions */}
             <DashboardTile
-              bg="#ef4444"
-              icon="hammer-outline"
+              iconBg="#ffcdd2"
+              iconColor="#c62828"
+              icon="hammer"
               title={t("farmer.live_auctions")}
-              sub={t("farmer.live_auctions_sub")}
               onPress={() => router.push("/live-auctions")}
+            />
+
+            {/* My Listings */}
+            <DashboardTile
+              iconBg="#bbdefb"
+              iconColor="#1565c0"
+              icon="list"
+              title={t("farmer.my_listings")}
+              onPress={() => router.push("/my-listings")}
+            />
+
+            {/* Add Crop */}
+            <DashboardTile
+              iconBg="#ffe0b2"
+              iconColor="#e65100"
+              icon="add-circle"
+              title={t("farmer.add_crop")}
+              onPress={() => router.push("/add-crop")}
+            />
+
+            {/* Messages */}
+            <DashboardTile
+              iconBg="#e1bee7"
+              iconColor="#6a1b9a"
+              icon="chatbubbles"
+              title={t("farmer.messages", "farmer.messages")}
+              onPress={() => router.push("/messages")}
+            />
+
+            {/* Alerts */}
+            <DashboardTile
+              iconBg="#ffccbc"
+              iconColor="#d84315"
+              icon="notifications"
+              title={t("farmer.alerts", "farmer.alerts")}
+              onPress={() => router.push("/alerts")}
             />
           </View>
         </ScrollView>
@@ -79,39 +99,52 @@ export default function FarmerDashboard() {
 }
 
 function DashboardTile({
-  bg,
+  iconBg,
+  iconColor,
   icon,
   title,
-  sub,
   onPress,
 }: {
-  bg: string;
+  iconBg: string;
+  iconColor: string;
   icon: any;
   title: string;
-  sub: string;
   onPress: () => void;
 }) {
+  // Debug: log the colors
+  console.log(`Tile: ${title}, iconBg: ${iconBg}, iconColor: ${iconColor}`);
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.tile,
-        { backgroundColor: bg },
+        { backgroundColor: iconBg + "40" }, // 25% opacity pastel background for tile
         pressed && styles.tilePressed,
       ]}
     >
-      <Ionicons name={icon} size={32} color="#fff" />
+      <View
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          justifyContent: "center",
+          alignItems: "center",
+          marginBottom: 12,
+          backgroundColor: iconBg,
+        }}
+      >
+        <Ionicons name={icon} size={36} color={iconColor} />
+      </View>
       <Text style={styles.tileTitle}>{title}</Text>
-      <Text style={styles.tileSub}>{sub}</Text>
     </Pressable>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f6faf7",
+    backgroundColor: "#f5f5f5",
   },
 
   scrollContent: {
@@ -120,73 +153,57 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    alignItems: "center",
-    marginBottom: 28,
-  },
-
-  headerIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2e7d32",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
+    alignItems: "flex-start",
+    marginBottom: 24,
   },
 
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
     color: "#1a4b84",
+    marginBottom: 4,
   },
 
   subtitle: {
     fontSize: 14,
     color: "#6b7280",
-    marginTop: 4,
   },
 
   grid: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  gap: 16,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 16,
   },
 
   tile: {
-  width: "90%",         
-  maxWidth: 320,        
-  height: 160,
-  borderRadius: 18,
-  padding: 16,
-  justifyContent: "center",
-  alignItems: "center",
-
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.15,
-  shadowRadius: 12,
-  elevation: 6,
+    width: "47%",
+    aspectRatio: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-
   tilePressed: {
-    transform: [{ translateY: -6 }],
-    shadowOpacity: 0.25,
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
+  },
+
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
   },
 
   tileTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
-    marginTop: 10,
-    textAlign: "center",
-  },
-
-  tileSub: {
-    fontSize: 12,
-    color: "#f0fdf4",
-    marginTop: 6,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
     textAlign: "center",
   },
 });
