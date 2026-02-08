@@ -23,10 +23,13 @@ import {
 // Map (optional dependency)
 let MapView: any = null;
 let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
+
 try {
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
 } catch (e) {
   // react-native-maps not installed (optional)
 }
@@ -108,7 +111,7 @@ export default function MarketplaceScreen() {
       const res = await fetchNearbyMandis({
         lat: coords.lat,
         lng: coords.lng,
-        distKm: 50, // ✅ keep 50 for real use (use 3000 only for testing)
+        distKm: 50, // keep 50 for real use
         limit: 5,
       });
 
@@ -116,13 +119,20 @@ export default function MarketplaceScreen() {
 
       setNearbyMandis(
         mandis
-          .map((m: any) => ({
-            id: String(m.mandiId ?? m._id ?? m.id ?? m.mandi ?? ""),
-            name: String(m.mandiName ?? m.locationName ?? m.name ?? "Unknown"),
-            lng: Number(m.lng ?? m.coordinates?.[0]),
-            lat: Number(m.lat ?? m.coordinates?.[1]),
-            distKm: Number(m.distanceKm ?? m.distKm ?? 0),
-          }))
+          .map((m: any) => {
+            const lat = Number(m.lat ?? m.coordinates?.[1]);
+            const lng = Number(m.lng ?? m.coordinates?.[0]);
+
+            return {
+              id: String(m.mandiId ?? m._id ?? m.id ?? m.mandi ?? ""),
+              name: String(
+                m.mandiName ?? m.locationName ?? m.name ?? "Unknown",
+              ),
+              lat,
+              lng,
+              distKm: Number(m.distanceKm ?? m.distKm ?? 0),
+            };
+          })
           .filter((m: any) => Number.isFinite(m.lat) && Number.isFinite(m.lng)),
       );
     } catch (e: any) {
@@ -140,14 +150,20 @@ export default function MarketplaceScreen() {
 
       const prices = normalizeArray(res);
 
-      const items: LiveFeedItem[] = prices.map((p: any, idx: number) => ({
-        key: `${p._id ?? p.id ?? "row"}-${idx}`,
-        crop: p.crop,
-        mandiName: p.locationName || p.mandi || "Unknown mandi",
-        pricePerQuintal: Number(p.pricePerQuintal || 0),
-        displayPrice: `₹ ${Number(p.pricePerQuintal || 0).toFixed(0)} / quintal`,
-        updatedAt: p.updatedAt || p.date || new Date().toISOString(),
-      }));
+      const items: LiveFeedItem[] = prices.map((p: any, idx: number) => {
+        const price = Number(p.pricePerQuintal || 0);
+        const updatedAt = p.updatedAt || p.date || new Date().toISOString();
+
+        return {
+          key: `${p._id ?? p.id ?? "row"}-${idx}`,
+          crop: p.crop,
+          mandiName: p.locationName || p.mandi || "Unknown mandi",
+          pricePerQuintal: price,
+          displayPrice: `₹ ${price.toFixed(0)} / quintal`,
+          updatedAt,
+          quality: p.quality,
+        };
+      });
 
       items.sort(
         (a, b) =>
@@ -434,6 +450,17 @@ function NearbyMandis({
 }) {
   const hasCoords = !!coords;
 
+  // ✅ Controlled region so the map updates when coords change
+  const region = useMemo(() => {
+    if (!coords) return null;
+    return {
+      latitude: Number(coords.lat),
+      longitude: Number(coords.lng),
+      latitudeDelta: 0.08,
+      longitudeDelta: 0.08,
+    };
+  }, [coords?.lat, coords?.lng]);
+
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
       <View style={styles.section}>
@@ -481,44 +508,52 @@ function NearbyMandis({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Map</Text>
 
-        {MapView && hasCoords ? (
+        {MapView && hasCoords && region ? (
           <View style={styles.mapWrap}>
             <MapView
               style={StyleSheet.absoluteFill}
-              initialRegion={{
-                latitude: coords!.lat,
-                longitude: coords!.lng,
-                latitudeDelta: 0.08,
-                longitudeDelta: 0.08,
-              }}
+              provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+              region={region}
+              showsUserLocation={permission === "granted"}
+              showsMyLocationButton={true}
             >
               {Marker && (
                 <Marker
-                  coordinate={{ latitude: coords!.lat, longitude: coords!.lng }}
+                  coordinate={{
+                    latitude: Number(coords!.lat),
+                    longitude: Number(coords!.lng),
+                  }}
                   title="You"
                 />
               )}
 
               {Marker &&
-                nearestMandis.map((m) => (
-                  <Marker
-                    key={m.id}
-                    coordinate={{ latitude: m.lat, longitude: m.lng }}
-                    title={m.name}
-                    description={`${m.distKm.toFixed(2)} km away`}
-                  />
-                ))}
+                nearestMandis
+                  .map((m) => ({
+                    ...m,
+                    lat: Number(m.lat),
+                    lng: Number(m.lng),
+                  }))
+                  .filter(
+                    (m) => Number.isFinite(m.lat) && Number.isFinite(m.lng),
+                  )
+                  .map((m) => (
+                    <Marker
+                      key={m.id}
+                      coordinate={{ latitude: m.lat, longitude: m.lng }}
+                      title={m.name}
+                      description={`${m.distKm.toFixed(2)} km away`}
+                    />
+                  ))}
             </MapView>
           </View>
         ) : (
           <View style={styles.mapFallback}>
-            <Text style={styles.mapFallbackTitle}>
-              Map not installed / no location
-            </Text>
+            <Text style={styles.mapFallbackTitle}>Map not ready</Text>
             <Text style={styles.mapFallbackSub}>
-              Install{" "}
-              <Text style={{ fontWeight: "700" }}>react-native-maps</Text> and
-              enable location.
+              {!MapView
+                ? 'Install "react-native-maps" (Dev Client rebuild required).'
+                : "Enable location to show the map."}
             </Text>
           </View>
         )}

@@ -8,25 +8,33 @@
     "scheme": "digitalmarketplace",
     "newArchEnabled": true,
     "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "RECORD_AUDIO"
-      ],
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.digitalmarketplace"
-    },
+  "config": {
+    "googleMaps": {
+      "apiKey": "AIzaSyAVXLK60fTLjxMWpvNFEtKX6xDt5QooJWo"
+    }
+  },
+  "permissions": [
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION",
+    "RECORD_AUDIO"
+  ],
+  "adaptiveIcon": {
+    "backgroundColor": "#E6F4FE",
+    "foregroundImage": "./assets/images/android-icon-foreground.png",
+    "backgroundImage": "./assets/images/android-icon-background.png",
+    "monochromeImage": "./assets/images/android-icon-monochrome.png"
+  },
+  "edgeToEdgeEnabled": true,
+  "predictiveBackGestureEnabled": false,
+  "package": "com.anonymous.digitalmarketplace"
+},
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -48,7 +56,11 @@
       [
         "react-native-vosk",
         {
-          "models": ["assets/vosk/en", "assets/vosk/hi", "assets/vosk/te"],
+          "models": [
+            "assets/vosk-model-small-en-in-0.4",
+            "assets/vosk-model-small-hi-0.22",
+            "assets/vosk-model-small-te-0.42"
+          ],
           "iOSMicrophonePermission": "Allow microphone for voice navigation"
         }
       ],
@@ -61,7 +73,6 @@
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
@@ -69,8 +80,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b8cde442-813c-4d13-b408-bf3e21fa6fff"
+        "projectId": "71d1a27d-9242-4bbe-b1e2-424e149ead5a"
       }
-    }
+    },
+    "owner": "unni2005"
   }
 }

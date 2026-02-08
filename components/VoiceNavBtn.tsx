@@ -8,7 +8,12 @@ import * as Vosk from "react-native-vosk";
 
 type Lang = "en" | "hi" | "te";
 
-const MODELS: Record<Lang, string> = { en: "en", hi: "hi", te: "te" };
+const MODELS: Record<Lang, string> = {
+  en: "vosk-model-small-en-in-0.4",
+  hi: "vosk-model-small-hi-0.22",
+  te: "vosk-model-small-te-0.42",
+};
+
 const LANG_LABEL: Record<Lang, string> = { en: "EN", hi: "HI", te: "TE" };
 
 const GRAMMAR: Record<Lang, string[]> = {
