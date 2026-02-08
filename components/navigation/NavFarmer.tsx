@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import NotificationBell from "../notifications/NotificationBell";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import {View,Text,TouchableOpacity,StyleSheet,ScrollView,} from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";

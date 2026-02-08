@@ -1,7 +1,8 @@
+
 import { Ionicons } from "@expo/vector-icons";
 
 import { useRouter, type Href } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import * as Vosk from "react-native-vosk";
 
