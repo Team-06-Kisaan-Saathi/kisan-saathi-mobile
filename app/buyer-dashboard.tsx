@@ -4,13 +4,13 @@ import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from "react-native";
 import NavBuyer from "../components/navigation/NavBuyer";
-import VoiceNavBtn from "../components/VoiceNavBtn";
+// import VoiceNavBtn from "../components/VoiceNavBtn"; // Disabled - requires native module build
 
 export default function BuyerDashboard() {
   const { t } = useTranslation();
@@ -23,17 +23,17 @@ export default function BuyerDashboard() {
       <View style={styles.container}>
         {/* Bottom Navigation */}
         <NavBuyer />
-           
-           <Pressable
-  onPress={() => {
-    router.replace("/login");
-  }}
-  style={{ alignSelf: "flex-end", padding: 12 }}
->
-  <Text style={{ color: "red", fontWeight: "600" }}>
-    Logout
-  </Text>
-</Pressable>
+
+        <Pressable
+          onPress={() => {
+            router.replace("/login");
+          }}
+          style={{ alignSelf: "flex-end", padding: 12 }}
+        >
+          <Text style={{ color: "red", fontWeight: "600" }}>
+            Logout
+          </Text>
+        </Pressable>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Header */}
@@ -117,7 +117,7 @@ export default function BuyerDashboard() {
         </ScrollView>
 
         {/* Voice Navigation (Multimodal Access) */}
-        <VoiceNavBtn />
+        {/* <VoiceNavBtn /> */} {/* Disabled - requires native module build */}
       </View>
     </>
   );

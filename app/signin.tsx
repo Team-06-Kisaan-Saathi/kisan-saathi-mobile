@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SigninScreen() {
   const { t } = useTranslation();
@@ -19,7 +20,11 @@ export default function SigninScreen() {
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
 
-  const onContinue = () => {
+  const onContinue = async () => {
+    // Save user name to AsyncStorage
+    if (name.trim()) {
+      await AsyncStorage.setItem("userName", name.trim());
+    }
     // UI only:
     router.push("/verify");
   };
