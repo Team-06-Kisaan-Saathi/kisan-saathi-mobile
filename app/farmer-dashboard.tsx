@@ -1,192 +1,174 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from "react-native";
-import { useTranslation } from "react-i18next";
-import { Stack, useRouter } from "expo-router";
-import NavFarmer from "../components/navigation/NavFarmer";
 import { Ionicons } from "@expo/vector-icons";
+import { Stack, useRouter } from "expo-router";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 export default function FarmerDashboard() {
   const { t } = useTranslation();
   const router = useRouter();
 
   return (
-    <>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.container}>
-        <NavFarmer />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>{t("farmer.welcome_msg")}</Text>
+          <Text style={styles.subtitle}>{t("farmer.welcome_sub")}</Text>
+        </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerIcon}>
-              <Ionicons name="leaf" size={28} color="#fff" />
-            </View>
-            <Text style={styles.title}>{t("farmer.welcome_msg")}</Text>
-            <Text style={styles.subtitle}>
-              {t("farmer.welcome_sub")}
-            </Text>
-          </View>
+        {/* 2-Column Grid */}
+        <View style={styles.grid}>
+          {/* Marketplace */}
+          <Tile
+            icon="basket-outline"
+            color="#2e7d32" // Green
+            title={t("farmer.marketplace") || "Marketplace"}
+            onPress={() => router.push("/marketplace")}
+          />
 
-          {/* Grid */}
-          <View style={styles.grid}>
-            {/* Add Crop */}
-            <DashboardTile
-              bg="#34a853"
-              icon="leaf-outline"
-              title={t("farmer.add_crop")}
-              sub={t("farmer.add_crop_sub")}
-              onPress={() => router.push("/add-crop")}
-            />
+          {/* Live Auctions */}
+          <Tile
+            icon="hammer-outline"
+            color="#d32f2f" // Red
+            title={t("farmer.live_auctions") || "Live Auctions"}
+            onPress={() => router.push("/live-auctions")}
+          />
 
-            {/* My Listings */}
-            <DashboardTile
-              bg="#3b82f6"
-              icon="list-outline"
-              title={t("farmer.my_listings")}
-              sub={t("farmer.my_listings_sub")}
-              onPress={() => router.push("/my-listings")}
-            />
+          {/* My Inventory */}
+          <Tile
+            icon="list-outline"
+            color="#1565c0" // Blue
+            title={t("farmer.my_listings") || "My Inventory"}
+            onPress={() => router.push("/my-listings")}
+          />
 
-            {/* Mandi Prices */}
-            <DashboardTile
-              bg="#f97316"
-              icon="trending-up-outline"
-              title={t("farmer.mandi_prices")}
-              sub={t("farmer.mandi_prices_sub")}
-              onPress={() => router.push("/mandi-prices")}
-            />
+          {/* Add Crop */}
+          <Tile
+            icon="add-circle-outline"
+            color="#f97316" // Orange
+            title={t("farmer.add_crop") || "Add Crop"}
+            onPress={() => router.push("/add-crop")}
+          />
 
-            {/* Live Auctions */}
-            <DashboardTile
-              bg="#ef4444"
-              icon="hammer-outline"
-              title={t("farmer.live_auctions")}
-              sub={t("farmer.live_auctions_sub")}
-              onPress={() => router.push("/live-auctions")}
-            />
-          </View>
-        </ScrollView>
-      </View>
-    </>
+          {/* Messages */}
+          <Tile
+            icon="chatbubbles-outline"
+            color="#7b1fa2" // Purple
+            title={t("farmer.messages") || "Messages"}
+            onPress={() => router.push("/messages" as any)} // Placeholder
+          />
+
+          {/* Expiry Alerts */}
+          <Tile
+            icon="alarm-outline"
+            color="#c62828" // Dark Red
+            title={t("farmer.alerts") || "Expiry Alerts"}
+            onPress={() => router.push("/notifications" as any)} // Using notifications for alerts
+          />
+        </View>
+      </ScrollView>
+
+      {/* Fixed Bottom Layout handles Nav */}
+      <NavFarmer />
+    </View>
   );
 }
 
-function DashboardTile({
-  bg,
+function Tile({
   icon,
+  color,
   title,
-  sub,
   onPress,
 }: {
-  bg: string;
   icon: any;
+  color: string;
   title: string;
-  sub: string;
   onPress: () => void;
 }) {
   return (
     <Pressable
+      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.tile,
-        { backgroundColor: bg },
-        pressed && styles.tilePressed,
-      ]}
     >
-      <Ionicons name={icon} size={32} color="#fff" />
+      <View style={[styles.iconBox, { backgroundColor: color + "20" }]}>
+        <Ionicons name={icon} size={32} color={color} />
+      </View>
       <Text style={styles.tileTitle}>{title}</Text>
-      <Text style={styles.tileSub}>{sub}</Text>
     </Pressable>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f6faf7",
+    backgroundColor: "#f8fafc",
   },
-
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 90, // Space for bottom nav
   },
-
   header: {
-    alignItems: "center",
-    marginBottom: 28,
+    marginBottom: 24,
+    marginTop: 12,
   },
-
-  headerIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#2e7d32",
+  title: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#1e293b",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#64748b",
+    marginTop: 4,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    justifyContent: "space-between",
+  },
+  tile: {
+    width: "47%", // ~Half width minus gap
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 4,
+    aspectRatio: 1, // Square tiles
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  tilePressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  iconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
-
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1a4b84",
-  },
-
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-
-  grid: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  gap: 16,
-  },
-
-  tile: {
-  width: "90%",         
-  maxWidth: 320,        
-  height: 160,
-  borderRadius: 18,
-  padding: 16,
-  justifyContent: "center",
-  alignItems: "center",
-
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.15,
-  shadowRadius: 12,
-  elevation: 6,
-  },
-
-
-  tilePressed: {
-    transform: [{ translateY: -6 }],
-    shadowOpacity: 0.25,
-  },
-
   tileTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
-    marginTop: 10,
-    textAlign: "center",
-  },
-
-  tileSub: {
-    fontSize: 12,
-    color: "#f0fdf4",
-    marginTop: 6,
+    color: "#334155",
     textAlign: "center",
   },
 });

@@ -1,6 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -13,73 +14,96 @@ import {
   View,
 } from "react-native";
 
+// TIP: Keep HOST in one place. If you change Wi-Fi / backend machine, this must change too.
 const HOST = "10.12.252.131";
-const API = `http://${HOST}:5001/api/auth`;
-
-console.log("API CONST =", API);
-
-type SendOtpResponse = {
-  success?: boolean;
-  message?: string;
-};
+const API_BASE = `http://${HOST}:5001/api`; // base
+const AUTH_API = `${API_BASE}/auth`; // your auth base
 
 export default function LoginScreen() {
   const { t } = useTranslation();
 
   const [phone, setPhone] = useState<string>("");
+  const [pin, setPin] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [msg, setMsg] = useState<string>("");
 
-  const handleContinue = async (): Promise<void> => {
+  const url = useMemo(() => `${AUTH_API}/login`, []);
+
+  const handleLogin = async (): Promise<void> => {
     setMsg("");
 
-    const trimmed = phone.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedPin = pin.trim();
 
-    if (!/^\d{10}$/.test(trimmed)) {
-      setMsg(t("auth.invalid_phone"));
+    // ✅ validation
+    if (!/^\d{10}$/.test(trimmedPhone)) {
+      setMsg(t("auth.invalid_phone") || "Invalid phone number");
       return;
     }
 
-    const url = `${API}/send-otp`;
-    const body = { phone: trimmed };
+    if (!/^\d{4,6}$/.test(trimmedPin)) {
+      setMsg("PIN must be 4 to 6 digits");
+      return;
+    }
 
-    console.log("➡️ SEND OTP URL:", url);
-    console.log("➡️ SEND OTP BODY:", body);
+    const body = {
+      phone: trimmedPhone,
+      pin: trimmedPin,
+    };
 
     try {
       setLoading(true);
 
       const res = await axios.post(url, body, {
         headers: { "Content-Type": "application/json" },
-        timeout: 10000,
+        timeout: 15000,
       });
 
-      console.log("STATUS:", res.status);
-      console.log("DATA:", res.data);
+      // ✅ success detection (backend-agnostic)
+      const ok =
+        res.data?.success === true ||
+        res.data?.status === "SUCCESS" ||
+        res.data?.status === "success";
 
-      if (res.data?.success) {
-        router.push({ pathname: "/verify", params: { phone: trimmed } });
+      if (!ok) {
+        setMsg(res.data?.message || t("auth.login_failed") || "Login failed");
+        return;
+      }
+
+      // ✅ SAVE TOKEN (this fixes your mandi 401)
+      const token =
+        res.data?.token || res.data?.accessToken || res.data?.data?.token;
+
+      if (!token) {
+        setMsg("Login succeeded but token missing in response");
+        return;
+      }
+
+      await AsyncStorage.setItem("token", String(token));
+
+      // ✅ user + role
+      const user = res.data?.user || res.data?.data?.user;
+
+      if (!user) {
+        setMsg("Login succeeded but user data missing in response");
+        return;
+      }
+
+      // ✅ routing
+      if (user.role === "farmer") {
+        router.replace("/farmer-dashboard");
       } else {
-        setMsg(res.data?.message || t("auth.otp_send_failed"));
+        router.replace("/buyer-dashboard");
       }
     } catch (err: any) {
-      console.log("❌ AXIOS ERROR MESSAGE:", err?.message);
-
       if (err?.response) {
-        console.log("❌ STATUS:", err.response.status);
-        console.log("❌ DATA:", err.response.data);
-        console.log("❌ HEADERS:", err.response.headers);
-
-        setMsg(
-          err.response.data?.message ||
-            `HTTP ${err.response.status}: request failed`,
-        );
-      } else if (err?.request) {
-        console.log("❌ NO RESPONSE. REQUEST:", err.request);
-        setMsg("No response from server (network / IP / firewall issue).");
+        console.log("❌ LOGIN status:", err?.response?.status);
+        console.log("❌ LOGIN data:", err?.response?.data);
+        setMsg(err.response.data?.message || "Invalid credentials");
+      } else if (err?.code === "ECONNABORTED") {
+        setMsg("Request timed out. Check Wi-Fi / backend IP.");
       } else {
-        console.log("❌ UNKNOWN ERROR:", err);
-        setMsg(err?.message || "Unknown error");
+        setMsg("Network error. Check backend is running and reachable.");
       }
     } finally {
       setLoading(false);
@@ -127,23 +151,35 @@ export default function LoginScreen() {
               />
             </View>
 
-            <Text style={styles.hint}>{t("auth.otp_hint")}</Text>
+            <Text style={[styles.label, { marginTop: 16, marginBottom: 8 }]}>
+              Enter PIN
+            </Text>
+
+            <View style={styles.phoneInput}>
+              <TextInput
+                style={styles.phoneTextInput}
+                placeholder="****"
+                placeholderTextColor="#777"
+                keyboardType="number-pad"
+                value={pin}
+                maxLength={6}
+                secureTextEntry
+                onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
+              />
+            </View>
 
             {msg ? <Text style={styles.errorMsg}>{msg}</Text> : null}
 
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleContinue}
+              onPress={handleLogin}
               disabled={loading}
               activeOpacity={0.9}
             >
               {loading ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator />
-                  <Text style={styles.buttonText}>
-                    {" "}
-                    {t("auth.sending_otp")}
-                  </Text>
+                  <ActivityIndicator color="#fff" />
+                  <Text style={styles.buttonText}> Logging In...</Text>
                 </View>
               ) : (
                 <Text style={styles.buttonText}>{t("auth.continue")}</Text>
@@ -244,13 +280,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     paddingVertical: 4,
-  },
-
-  hint: {
-    fontSize: 12,
-    color: "#555",
-    marginTop: 10,
-    marginBottom: 14,
   },
 
   errorMsg: {

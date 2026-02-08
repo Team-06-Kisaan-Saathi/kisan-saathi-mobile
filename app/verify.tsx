@@ -17,15 +17,23 @@ import {
 type VerifyOtpResponse = {
   success?: boolean;
   message?: string;
-  token?: string;
 };
 
-const API = "http://10.12.252.131:5001/api/auth";
+const HOST = "10.12.252.131";
+const API = `http://${HOST}:5001/api/auth`;
 
 export default function VerifyScreen() {
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ phone?: string }>();
-  const phone = String(params.phone ?? ""); // always string
+
+  const params = useLocalSearchParams<{
+    phone?: string;
+    name?: string;
+    role?: string;
+  }>();
+  const role = String(params.role ?? "Farmer");
+
+  const phone = String(params.phone ?? "");
+  const name = String(params.name ?? "");
 
   const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -88,6 +96,11 @@ export default function VerifyScreen() {
   const verify = async () => {
     setMsg("");
 
+    if (!phone) {
+      setMsg("Missing phone number. Go back and try again.");
+      return;
+    }
+
     if (!canSubmit) {
       setMsg(t("auth.invalid_otp"));
       return;
@@ -125,14 +138,16 @@ export default function VerifyScreen() {
       }
 
       if (parsed.success) {
-        // if you want to store token:
-        // if (parsed.token) await AsyncStorage.setItem("token", parsed.token);
-        router.replace("./marketplace");
+        // ✅ Go to set-pin with everything needed for complete-signup
+        router.replace({
+          pathname: "/set-pin",
+          params: { phone, name, role },
+        });
       } else {
         setMsg(parsed.message || t("auth.otp_verify_failed"));
       }
     } catch (e: any) {
-      console.log(" VERIFY ERROR:", e);
+      console.log("VERIFY ERROR:", e);
       setMsg(e?.message || t("auth.otp_verify_failed"));
     } finally {
       setLoading(false);
@@ -143,6 +158,11 @@ export default function VerifyScreen() {
     setMsg("");
     setDigits(["", "", "", "", "", ""]);
     setTimeout(() => inputs.current[0]?.focus(), 80);
+
+    if (!phone) {
+      setMsg("Missing phone number. Go back and try again.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -166,6 +186,7 @@ export default function VerifyScreen() {
       const raw = await res.text();
       console.log("RESEND RAW:", raw);
 
+      // optional: parse response, but message is fine
       setMsg(t("auth.otp_resent"));
     } catch (e: any) {
       console.log("RESEND ERROR:", e);

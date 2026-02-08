@@ -1,12 +1,9 @@
-// app/profile-location.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { API_BASE } from "@/constants/api";
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +13,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { registerUser } from "../services/userServices";
 
 const API = "http://10.12.252.131:5001/api";
 
@@ -25,11 +23,19 @@ type Place = {
   lat: number;
   lng: number;
 };
-
 export default function ProfileLocation() {
-  const params = useLocalSearchParams<{ phone?: string; lang?: string }>();
+  const params = useLocalSearchParams<{
+    phone?: string;
+    lang?: string;
+    name?: string;
+    role?: string;
+    pin?: string;
+  }>();
   const phone = String(params.phone ?? "");
-  const lang = String(params.lang ?? "");
+  const lang = String(params.lang ?? "en");
+  const name = String(params.name ?? "");
+  const role = String(params.role ?? "farmer");
+  const pin = String(params.pin ?? "");
 
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -39,24 +45,89 @@ export default function ProfileLocation() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
-  // Load dropdown places from backend
+  // ... (helpers helpers remain same) ...
+
+  const toNum = (v: any) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const normalizePlaces = (json: any): Place[] => {
+    const list =
+      json?.places ||
+      json?.mandis ||
+      json?.data ||
+      json?.items ||
+      json?.results ||
+      json;
+
+    if (!Array.isArray(list)) return [];
+
+    return list
+      .map((x: any, idx: number) => {
+        const id = String(x?._id ?? x?.id ?? idx);
+
+        // ✅ include fields your /mandi API actually returns
+        const name = String(
+          x?.locationName ??
+          x?.mandi ?? // e.g., "Azadpur Mandi"
+          x?.name ??
+          x?.mandiName ??
+          x?.market ??
+          x?.place ??
+          "Unknown",
+        ).trim();
+
+        // ✅ support more coordinate shapes
+        const lat =
+          x?.lat ??
+          x?.latitude ??
+          x?.location?.lat ??
+          x?.location?.latitude ??
+          x?.coords?.lat ??
+          x?.locationCoordinates?.[1] ??
+          x?.location?.coordinates?.[1]; // GeoJSON [lng, lat]
+
+        const lng =
+          x?.lng ??
+          x?.longitude ??
+          x?.location?.lng ??
+          x?.location?.longitude ??
+          x?.coords?.lng ??
+          x?.locationCoordinates?.[0] ??
+          x?.location?.coordinates?.[0]; // GeoJSON [lng, lat]
+
+        return {
+          id,
+          name,
+          lat: toNum(lat),
+          lng: toNum(lng),
+        } as Place;
+      })
+      .filter((p: Place) => p.name.length > 0);
+  };
+
   const loadPlaces = async () => {
     try {
-      console.log("📡 Fetching locations from backend..."); ///////////////////////////////debug
-      const res = await fetch(`${API}/locations`);
-      console.log("📡 /locations status:", res.status); ///////////////////////////debug
+      setMsg("");
+      console.log("📡 Fetching places (mandis) from backend...");
+      const res = await fetch(`${API}/mandi`);
+      console.log("📡 /mandi status:", res.status);
+
       if (!res.ok) {
         setMsg("Could not load places.");
         return;
       }
 
       const json = await res.json();
-      console.log("📦 /locations response:", json); ////////////////debug
-      if (json?.status === "SUCCESS" && Array.isArray(json.places)) {
-        setPlaces(json.places);
-      } else {
-        setMsg("Unexpected locations response.");
+      console.log("📦 /mandi response:", json);
+
+      const mapped = normalizePlaces(json);
+
+      if (mapped.length === 0) {
+        setMsg("No places found from backend.");
       }
+      setPlaces(mapped);
     } catch (e) {
       console.log("Failed to load places", e);
       setMsg("Network error while loading places.");
@@ -73,45 +144,34 @@ export default function ProfileLocation() {
     return places.filter((p) => p.name.toLowerCase().includes(q));
   }, [searchQuery, places]);
 
-  // Save to backend (ALWAYS sends address + lat + lng)
+  // ---- Save location to backend -------------------------------------------
   const saveLatLng = async (lat: number, lng: number, address: string) => {
     setLoading(true);
     setMsg("");
 
     try {
-      const token = await AsyncStorage.getItem("token"); // change key if needed
-      if (!token) {
-        setMsg("Please login again.");
-        return;
-      }
-      console.log("📤 Sending location to backend:");
-      console.log({
-        lat,
-        lng,
-        address,
+      console.log("📤 Registering user with all data...");
+
+      const res = await registerUser({
+        phone,
+        pin,
+        name,
+        role,
+        language: lang,
+        location: { lat, lng, address },
       });
 
-      const res = await fetch(`${API_BASE}/locations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ lat, lng, address }),
-      });
+      console.log("✅ Registration successful", res);
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.log("Save failed:", res.status, text);
-        setMsg("Could not save location. Try again.");
-        return;
+      if (res.token) {
+        await AsyncStorage.setItem("token", res.token);
       }
 
-      router.replace("/marketplace");
+      // Next step
+      router.replace(role.toLowerCase() === 'farmer' ? "/farmer-dashboard" : "/buyer-dashboard");
     } catch (e: any) {
-      console.log("Save error:", e?.message || e);
-      setMsg("Network error. Try again.");
+      console.log("Registration error:", e?.message || e);
+      setMsg(e?.message || "Registration failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -136,7 +196,6 @@ export default function ProfileLocation() {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
 
-      // Reverse geocode -> build a readable address string
       const geo = await Location.reverseGeocodeAsync({
         latitude: lat,
         longitude: lng,
@@ -144,14 +203,14 @@ export default function ProfileLocation() {
 
       const address = geo?.[0]
         ? [
-            geo[0].name, // street/building (may be undefined)
-            geo[0].district,
-            geo[0].city,
-            geo[0].region,
-            geo[0].country,
-          ]
-            .filter(Boolean)
-            .join(", ")
+          geo[0].name,
+          geo[0].district,
+          geo[0].city,
+          geo[0].region,
+          geo[0].country,
+        ]
+          .filter(Boolean)
+          .join(", ")
         : "Current Location";
 
       await saveLatLng(lat, lng, address);
@@ -165,13 +224,18 @@ export default function ProfileLocation() {
 
   const toggleDropdown = () => setEditing((v) => !v);
 
-  // Dropdown flow: use selected place name + lat/lng
   const onPickPlace = async (p: Place) => {
     setSelectedPlace(p);
     setEditing(false);
     setSearchQuery("");
     await saveLatLng(p.lat, p.lng, p.name);
   };
+
+  // -------------------------------------------------------------------------
+  // NOTE: We removed FlatList to fix:
+  // "VirtualizedLists should never be nested inside plain ScrollViews..."
+  // We render the list manually since dropdown lists are typically small.
+  // -------------------------------------------------------------------------
 
   return (
     <KeyboardAvoidingView
@@ -249,32 +313,43 @@ export default function ProfileLocation() {
                   autoFocus
                 />
 
-                <FlatList
-                  data={filteredPlaces}
-                  keyExtractor={(item) => item.id}
-                  keyboardShouldPersistTaps="handled"
-                  style={{ maxHeight: 220 }}
-                  renderItem={({ item }) => (
-                    <Pressable
-                      onPress={() => onPickPlace(item)}
-                      disabled={loading}
-                      style={({ pressed }) => [
-                        s.placeRow,
-                        pressed && !loading && s.actionPressed,
-                      ]}
-                    >
-                      <Text style={s.placeName}>{item.name}</Text>
-                      <Text style={s.placeMeta}>
-                        {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-                      </Text>
-                    </Pressable>
-                  )}
-                  ListEmptyComponent={
+                <View style={{ maxHeight: 220 }}>
+                  {filteredPlaces.length === 0 ? (
                     <Text style={s.emptyText}>
                       {places.length === 0 ? "Loading places..." : "No matches"}
                     </Text>
-                  }
-                />
+                  ) : (
+                    <ScrollView
+                      style={{ maxHeight: 220 }}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator
+                    >
+                      {filteredPlaces.map((item) => (
+                        <Pressable
+                          key={item.id}
+                          onPress={() => onPickPlace(item)}
+                          disabled={loading}
+                          style={({ pressed }) => [
+                            s.placeRow,
+                            pressed && !loading && s.actionPressed,
+                          ]}
+                        >
+                          <Text style={s.placeName}>{item.name}</Text>
+                          <Text style={s.placeMeta}>
+                            {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+
+                {filteredPlaces.length > 60 ? (
+                  <Text style={s.hintText}>
+                    Refine search to see more results…
+                  </Text>
+                ) : null}
               </View>
             )}
 
@@ -403,6 +478,7 @@ const s = StyleSheet.create({
     fontWeight: "500",
   },
   emptyText: { paddingVertical: 12, color: "#6B7280" },
+  hintText: { paddingTop: 8, color: "#6B7280", fontSize: 12 },
 
   selectedBox: {
     marginTop: 12,
