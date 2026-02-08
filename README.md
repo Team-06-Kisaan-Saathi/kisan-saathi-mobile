@@ -48,3 +48,22 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Voice Models (Required)
+
+This project uses Vosk speech recognition.
+
+Download the following models and place them in `assets/`:
+
+- vosk-model-small-en-in-0.4
+- vosk-model-small-hi-0.22
+- vosk-model-small-te-0.42
+
+Folder structure:
+assets/
+vosk-model-small-en-in-0.4/
+vosk-model-small-hi-0.22/
+vosk-model-small-te-0.42/
+
+⚠️ The app will not run correctly without these models.
+Make sure they are downloaded before starting the app or building with EAS.

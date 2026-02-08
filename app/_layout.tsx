@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { StyleSheet, View } from "react-native";
+
+import VoiceNavButton from "../components/VoiceNavBtn";
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
-import VoiceNavButton from "../components/VoiceNavBtn";
 import "../i18n/i18n";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
 
@@ -21,18 +23,27 @@ export default function RootLayout() {
   };
 
   return (
-    <>
-      <Stack initialRouteName="login">
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="verify" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="marketplace" options={{ headerShown: false }} />
-        {/* add more screens here */}
+    <View style={styles.root}>
+      {/* Screens */}
+      <Stack
+        initialRouteName="login"
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="login" />
+        <Stack.Screen name="verify" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="marketplace" />
       </Stack>
 
-      <AccessibilityFab onPress={() => setOpen(true)} />
-      <VoiceNavButton />
+      {/* ✅ Floating overlay ABOVE everything */}
+      <View pointerEvents="box-none" style={styles.overlay}>
+        <AccessibilityFab onPress={() => setOpen(true)} />
+        <VoiceNavButton />
+      </View>
 
+      {/* Sheet */}
       <AccessibilitySheet
         visible={open}
         onClose={() => setOpen(false)}
@@ -43,6 +54,15 @@ export default function RootLayout() {
         language={language}
         setLanguage={setLanguage}
       />
-    </>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999999,
+    elevation: 999999,
+  },
+});

@@ -20,6 +20,7 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -40,17 +41,18 @@ import { getMyLocation, updateMyLocation } from "../services/userServices";
 let MapView: any = null;
 let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
+
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
 } catch (e) {
   // react-native-maps not installed (optional)
 }
 
 type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
+
 type WatchItem = { crop: Crop; lastAvgPricePerQuintal?: number };
 
 type LiveFeedItem = {
@@ -134,7 +136,7 @@ export default function MarketplaceScreen() {
 
   const loadPrices = async (reason: "auto" | "manual") => {
     try {
-      const rows = await fetchMandiPrices({
+      const res = await fetchMandiPrices({
         crop: selectedCrop ?? undefined,
         sort: "latest",
       });
