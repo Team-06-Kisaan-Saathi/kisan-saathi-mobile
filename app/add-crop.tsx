@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 type CropData = {
   [key: string]: string[];
@@ -98,8 +99,8 @@ export default function AddCrop() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t("listing.add_crop_listings") || "Add Crop Listing" }} />
-
+      <Stack.Screen options={{ headerShown: false }} />
+      <NavFarmer />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

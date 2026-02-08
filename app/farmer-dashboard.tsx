@@ -29,11 +29,11 @@ export default function FarmerDashboard() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>
-              Welcome {userName || "Farmer"}!
+              {t("farmer.welcome_user", {
+                name: userName || t("farmer.default_user"),
+              })}
             </Text>
-            <Text style={styles.subtitle}>
-              Fair prices, real-time markets, zero middlemen
-            </Text>
+            <Text style={styles.subtitle}>{t("farmer.tagline")}</Text>
           </View>
 
           {/* Grid */}
@@ -43,7 +43,7 @@ export default function FarmerDashboard() {
               iconBg="#c8e6c9"
               iconColor="#2e7d32"
               icon="storefront"
-              title={t("farmer.marketplace", "farmer.marketplace")}
+              title={t("farmer.marketplace")}
               onPress={() => router.push("/marketplace")}
             />
 
@@ -79,7 +79,7 @@ export default function FarmerDashboard() {
               iconBg="#e1bee7"
               iconColor="#6a1b9a"
               icon="chatbubbles"
-              title={t("farmer.messages", "farmer.messages")}
+              title={t("farmer.messages")}
               onPress={() => router.push("/messages")}
             />
 
@@ -88,7 +88,7 @@ export default function FarmerDashboard() {
               iconBg="#ffccbc"
               iconColor="#d84315"
               icon="notifications"
-              title={t("farmer.alerts", "farmer.alerts")}
+              title={t("farmer.alerts")}
               onPress={() => router.push("/alerts")}
             />
           </View>
