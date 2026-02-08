@@ -1,464 +1,449 @@
+// src/screens/MarketplaceScreen.tsx
+import {
+  BarChart2,
+  IndianRupee,
+  MapPin,
+  RefreshCw,
+  Star as StarIcon,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  Wheat,
+} from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
-  TextInput,
-  Platform,
+  SafeAreaView,
   ScrollView,
-  Alert,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import { useLocation } from "../hooks/useLocation";
+import {
+  Crop,
+  fetchMandiPrices,
+  fetchNearbyMandis,
+  MandiPriceDoc,
+  NearbyMandi,
+} from "../services/mandiService";
+import { getToken } from "../services/token";
+import { getMyLocation, updateMyLocation } from "../services/userServices";
 
-//Map
+// Map (optional dependency)
 let MapView: any = null;
 let Marker: any = null;
+let PROVIDER_GOOGLE: any = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
 } catch (e) {
-  // if map not available - UI fallback
+  // react-native-maps not installed (optional)
 }
 
-/** -----------------------------
- * Types  - (fetch from backend)
- * ----------------------------- */
-type Crop = "Tomato" | "Onion" | "Potato" | "Wheat" | "Rice" | "Maize";
+type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
+type WatchItem = { crop: Crop; lastAvgPricePerQuintal?: number };
 
-type PriceUnit = "₹/kg" | "₹/quintal";
-
-type RawPriceRow = {
-  mandiId: string;
-  mandiName: string;
+type LiveFeedItem = {
+  key: string;
   crop: Crop;
-  // raw formats can be messy (string / number / mixed units)
-  price: number | string;
-  unit: PriceUnit | "Rs/kg" | "Rs/quintal" | "INR/kg" | "INR/quintal";
-  updatedAt: string; // ISO string
-  quality?: "FAQ" | "Average" | "Premium";
-};
-
-type CleanPriceRow = {
-  mandiId: string;
   mandiName: string;
-  crop: Crop;
-  pricePerKg: number; // standardized
-  displayPrice: string; // e.g. "₹ 28.50 / kg"
-  updatedAt: string; // ISO
+  pricePerQuintal: number;
+  displayPrice: string;
+  updatedAt: string;
   quality?: string;
 };
 
-type Mandi = {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  district?: string;
-  state?: string;
-};
+type CompareRow = MandiPriceDoc & { isBestPrice?: boolean };
 
-type LiveFeedItem = CleanPriceRow & {
-  key: string;
-};
-
-type WatchItem = {
-  crop: Crop;
-  // last known avg price (for trigger demo)
-  lastAvgPricePerKg?: number;
-};
-
-/** -----------------------------
- * Mock data
- * ----------------------------- */
-const MOCK_MANDIS: Mandi[] = [
-  { id: "m1", name: "APMC Mandi - Ameerpet", lat: 17.4375, lng: 78.4483, district: "Hyderabad", state: "Telangana" },
-  { id: "m2", name: "APMC Mandi - Kukatpally", lat: 17.4948, lng: 78.3996, district: "Hyderabad", state: "Telangana" },
-  { id: "m3", name: "APMC Mandi - Bowenpally", lat: 17.4760, lng: 78.4841, district: "Hyderabad", state: "Telangana" },
-  { id: "m4", name: "APMC Mandi - Uppal", lat: 17.4055, lng: 78.5591, district: "Hyderabad", state: "Telangana" },
-  { id: "m5", name: "APMC Mandi - LB Nagar", lat: 17.3456, lng: 78.5548, district: "Hyderabad", state: "Telangana" },
-  { id: "m6", name: "APMC Mandi - Kompally", lat: 17.5397, lng: 78.4867, district: "Hyderabad", state: "Telangana" },
-];
-
-const ALL_CROPS: Crop[] = ["Tomato", "Onion", "Potato", "Wheat", "Rice", "Maize"];
-
-/** -----------------------------
- * Utilities
- * ----------------------------- */
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function formatTime(iso: string) {
-  const d = new Date(iso);
+function formatTime(isoLike: string) {
+  const d = new Date(isoLike);
+  if (Number.isNaN(d.getTime())) return "--:--";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Haversine distance in KM
-function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(bLat - aLat);
-  const dLng = toRad(bLng - aLng);
-  const s1 = Math.sin(dLat / 2) ** 2;
-  const s2 = Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
-  const c = 2 * Math.asin(Math.sqrt(s1 + s2));
-  return R * c;
-}
-
-function normalizeUnit(unit: RawPriceRow["unit"]): PriceUnit {
-  const u = unit.toLowerCase();
-  if (u.includes("quintal")) return "₹/quintal";
-  return "₹/kg";
-}
-
-// Convert various price + unit formats into pricePerKg
-function cleansePriceRow(row: RawPriceRow): CleanPriceRow | null {
-  const unit = normalizeUnit(row.unit);
-
-  // parse price number safely
-  let num: number | null = null;
-  if (typeof row.price === "number") num = row.price;
-  else {
-    const cleaned = row.price.replace(/[₹, ]/g, "").trim();
-    const parsed = Number(cleaned);
-    num = Number.isFinite(parsed) ? parsed : null;
-  }
-  if (num === null) return null;
-
-  // Standardize to ₹/kg
-  let pricePerKg = num;
-  if (unit === "₹/quintal") {
-    // 1 quintal = 100 kg
-    pricePerKg = num / 100;
-  }
-
-  // clamp/guard against weird values
-  if (!Number.isFinite(pricePerKg) || pricePerKg <= 0) return null;
-
-  return {
-    mandiId: row.mandiId,
-    mandiName: row.mandiName,
-    crop: row.crop,
-    pricePerKg,
-    displayPrice: `₹ ${pricePerKg.toFixed(2)} / kg`,
-    updatedAt: row.updatedAt,
-    quality: row.quality ?? "—",
-  };
-}
-
-/** -----------------------------
- * Mock “central mandi API fetch”
- * Replace this later with your backend call.
- * ----------------------------- */
-async function mockFetchCentralMandiPrices(params: { crops?: Crop[]; mandiIds?: string[] }): Promise<RawPriceRow[]> {
-  // simulate network delay
-  await new Promise((r) => setTimeout(r, 500));
-
-  const crops = params.crops?.length ? params.crops : ALL_CROPS;
-  const mandiIds = params.mandiIds?.length ? params.mandiIds : MOCK_MANDIS.map((m) => m.id);
-
-  // generate “messy” price formats intentionally
-  const rows: RawPriceRow[] = [];
-  for (const mandiId of mandiIds) {
-    const mandi = MOCK_MANDIS.find((m) => m.id === mandiId)!;
-
-    // pick 2 random crops per mandi
-    const picked = shuffle([...crops]).slice(0, 2);
-    for (const crop of picked) {
-      const useQuintal = Math.random() < 0.35; // mixed units
-      const base = basePrice(crop);
-      const variance = (Math.random() - 0.5) * 0.35 * base; // +/- 17.5%
-      const pricePerKg = Math.max(3, base + variance);
-
-      const unit: RawPriceRow["unit"] = useQuintal ? "Rs/quintal" : "INR/kg";
-      const price = useQuintal
-        ? `₹ ${(pricePerKg * 100).toFixed(0)}` // quintal
-        : `${pricePerKg.toFixed(1)}`; // kg
-
-      rows.push({
-        mandiId,
-        mandiName: mandi.name,
-        crop,
-        price,
-        unit,
-        updatedAt: nowIso(),
-        quality: Math.random() < 0.33 ? "Premium" : Math.random() < 0.66 ? "FAQ" : "Average",
-      });
-    }
-  }
-  return rows;
-}
-
-function shuffle<T>(arr: T[]) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function basePrice(crop: Crop) {
-  switch (crop) {
-    case "Tomato":
-      return 26;
-    case "Onion":
-      return 32;
-    case "Potato":
-      return 24;
-    case "Wheat":
-      return 20;
-    case "Rice":
-      return 36;
-    case "Maize":
-      return 18;
-    default:
-      return 25;
-  }
-}
-
-/** -----------------------------
- * Location (placeholder)
- * Replace with Expo Location / RN Geolocation later.
- * ----------------------------- */
-function useMockLocation() {
-  // near Hyderabad by default (you can replace this later)
-  const [coords, setCoords] = useState({ lat: 17.4375, lng: 78.4483 });
-  const [permission, setPermission] = useState<"granted" | "denied" | "unknown">("unknown");
-
-  const requestPermissionAndGet = async () => {
-    // mock permission granted
-    await new Promise((r) => setTimeout(r, 300));
-    setPermission("granted");
-
-    // small random drift to simulate movement
-    setCoords((p) => ({
-      lat: p.lat + (Math.random() - 0.5) * 0.01,
-      lng: p.lng + (Math.random() - 0.5) * 0.01,
-    }));
-  };
-
-  return { coords, permission, requestPermissionAndGet };
-}
-
-/** -----------------------------
- * Main Screen
- * ----------------------------- */
-type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
+const ALL_CROPS: Crop[] = [
+  "Tomato",
+  "Onion",
+  "Potato",
+  "Wheat",
+  "Rice",
+  "Maize",
+];
 
 export default function MarketplaceScreen() {
-  const { coords, permission, requestPermissionAndGet } = useMockLocation();
+  const {
+    coords: gpsCoords,
+    permission,
+    requestAndGetLocation,
+  } = useLocation();
 
-  // watchlist
-  const [watch, setWatch] = useState<WatchItem[]>([
-    { crop: "Tomato" },
-    { crop: "Onion" },
-  ]);
+  const [backendCoords, setBackendCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [coordsSource, setCoordsSource] = useState<"backend" | "gps" | "none">(
+    "none",
+  );
+  const activeCoords = backendCoords ?? gpsCoords ?? null;
 
-  // UI
   const [tab, setTab] = useState<TabKey>("Live");
   const [searchCrop, setSearchCrop] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  // live feed + compare data
+  const [nearbyMandis, setNearbyMandis] = useState<NearbyMandi[]>([]);
   const [feed, setFeed] = useState<LiveFeedItem[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
-  // auto refresh timer (live feed)
+  const [watch, setWatch] = useState<WatchItem[]>([
+    { crop: "Tomato" },
+    { crop: "Onion" },
+  ]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const selectedCrop: Crop | null = useMemo(() => {
+    const c = titleCase(searchCrop.trim());
+    return ALL_CROPS.includes(c as Crop) ? (c as Crop) : null;
+  }, [searchCrop]);
 
-  const followedCrops = useMemo(() => watch.map((w) => w.crop), [watch]);
-
-  // Nearby mandis (top 5)
-  const nearestMandis = useMemo(() => {
-    const withDist = MOCK_MANDIS.map((m) => ({
-      ...m,
-      distKm: distanceKm(coords.lat, coords.lng, m.lat, m.lng),
-    })).sort((a, b) => a.distKm - b.distKm);
-
-    return withDist.slice(0, 5);
-  }, [coords.lat, coords.lng]);
-
-  // Helper: fetch -> cleanse -> update state
-  const fetchAndUpdate = async (reason: "auto" | "manual") => {
+  // ----------------------- Loaders -----------------------
+  const loadNearby = async () => {
+    if (!activeCoords) return;
     try {
-      const raw = await mockFetchCentralMandiPrices({
-        crops: searchCrop.trim()
-          ? ([titleCase(searchCrop.trim())] as Crop[])
-          : undefined,
-        mandiIds: nearestMandis.map((m) => m.id),
+      const rows = await fetchNearbyMandis({
+        lat: activeCoords.lat,
+        lng: activeCoords.lng,
+        distKm: 50,
+        limit: 5,
       });
-
-      // cleanse
-      const cleaned: CleanPriceRow[] = raw
-        .map(cleansePriceRow)
-        .filter(Boolean) as CleanPriceRow[];
-
-      // build a live feed list
-      const items: LiveFeedItem[] = cleaned
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .map((r, idx) => ({
-          ...r,
-          key: `${r.mandiId}-${r.crop}-${idx}-${r.updatedAt}`,
-        }));
-
-      setFeed(items);
-      setLastUpdatedAt(nowIso());
-
-      // mock “trigger notification” for watchlist price changes
-      maybeTriggerWatchAlerts(cleaned, watch, setWatch, reason);
-    } catch (e) {
-      Alert.alert("Error", "Failed to load mandi prices (mock).");
+      setNearbyMandis(rows);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
+      setNearbyMandis([]);
     }
   };
 
+  const loadPrices = async (reason: "auto" | "manual") => {
+    try {
+      const rows = await fetchMandiPrices({
+        crop: selectedCrop ?? undefined,
+        sort: "latest",
+      });
 
-  
-  // first load
-useEffect(() => {
-  if (timerRef.current) clearInterval(timerRef.current);
+      const items: LiveFeedItem[] = (rows || []).map((p: any, idx: number) => {
+        const price = Number(p.pricePerQuintal || 0);
+        const updatedAt = p.updatedAt || p.date || new Date().toISOString();
+        return {
+          key: `${p._id ?? p.id ?? "row"}-${idx}`,
+          crop: p.crop,
+          mandiName: p.locationName || p.mandi || "Unknown mandi",
+          pricePerQuintal: price,
+          displayPrice: `₹${price.toFixed(0)}`,
+          updatedAt,
+          quality: p.quality,
+        };
+      });
 
-  timerRef.current = setInterval(() => {
-    if (tab === "Live") fetchAndUpdate("auto");
-  }, 10000);
+      items.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
 
-  return () => {
-    if (timerRef.current) clearInterval(timerRef.current);
+      setFeed(items);
+      setLastUpdatedAt(new Date().toISOString());
+      maybeTriggerWatchAlertsQuintal(items, watch, setWatch, reason);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to load mandi prices.");
+      setFeed([]);
+    }
   };
-}, [tab, nearestMandis, searchCrop, watch]);
 
+  // ----------------------- Compare -----------------------
+  const compareCrop: Crop = useMemo(
+    () => selectedCrop ?? "Tomato",
+    [selectedCrop],
+  );
+  const [compareRows, setCompareRows] = useState<CompareRow[]>([]);
+
+  const loadCompare = async () => {
+    try {
+      const rows = await fetchMandiPrices({
+        crop: compareCrop,
+        sort: "price_desc",
+      });
+
+      const sorted = [...rows].sort(
+        (a: any, b: any) =>
+          Number(b.pricePerQuintal || 0) - Number(a.pricePerQuintal || 0),
+      );
+
+      const withBest: CompareRow[] = sorted.map((r, idx) => ({
+        ...(r as MandiPriceDoc),
+        isBestPrice: idx === 0,
+      }));
+
+      setCompareRows(withBest);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to load compare data.");
+      setCompareRows([]);
+    }
+  };
+
+  // ----------------------- Init -----------------------
+  useEffect(() => {
+    (async () => {
+      let foundBackend = false;
+
+      try {
+        const token = await getToken();
+        if (token) {
+          const loc = await getMyLocation(token);
+          if (loc?.lat != null && loc?.lng != null) {
+            foundBackend = true;
+            setBackendCoords({ lat: Number(loc.lat), lng: Number(loc.lng) });
+            setCoordsSource("backend");
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      if (!foundBackend) {
+        if (permission !== "granted") {
+          await requestAndGetLocation();
+        }
+        if (gpsCoords) setCoordsSource("gps");
+      }
+
+      await loadPrices("manual");
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (activeCoords) loadNearby();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCoords?.lat, activeCoords?.lng]);
+
+  // Auto refresh live feed every 12s when on Live tab
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      if (tab === "Live") loadPrices("auto");
+    }, 12000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, selectedCrop, watch]);
+
+  useEffect(() => {
+    if (tab === "Compare") loadCompare();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, compareCrop]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAndUpdate("manual");
+    await Promise.all([loadNearby(), loadPrices("manual")]);
     setRefreshing(false);
   };
 
-  // derived data for Compare table: aggregate best price per mandi for a chosen crop
-  const compareCrop: Crop = useMemo(() => {
-    const s = searchCrop.trim();
-    const c = titleCase(s);
-    return (ALL_CROPS.includes(c as Crop) ? (c as Crop) : "Tomato") as Crop;
-  }, [searchCrop]);
-
-  const compareRows = useMemo(() => {
-    // take the latest entry per mandi for compareCrop
-    const byMandi = new Map<string, CleanPriceRow>();
-
-    for (const item of feed) {
-      if (item.crop !== compareCrop) continue;
-      const existing = byMandi.get(item.mandiId);
-      if (!existing) {
-        byMandi.set(item.mandiId, item);
-      } else {
-        if (new Date(item.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
-          byMandi.set(item.mandiId, item);
-        }
+  const onUpdateLocation = async () => {
+    try {
+      await requestAndGetLocation();
+      if (!gpsCoords) {
+        Alert.alert("Location", "Could not fetch GPS location. Try again.");
+        return;
       }
+
+      // Immediate UI update
+      setBackendCoords({ lat: gpsCoords.lat, lng: gpsCoords.lng });
+      setCoordsSource("gps");
+
+      // Save to backend if possible
+      try {
+        const token = await getToken();
+        if (token) {
+          await updateMyLocation(token, {
+            lat: gpsCoords.lat,
+            lng: gpsCoords.lng,
+          });
+          setCoordsSource("backend");
+        }
+      } catch {
+        // ignore; GPS still works
+      }
+
+      await loadNearby();
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to update location.");
     }
-
-    const rows = Array.from(byMandi.values()).sort((a, b) => b.pricePerKg - a.pricePerKg);
-    const best = rows[0]?.mandiId ?? null;
-
-    return rows.map((r) => ({ ...r, isBest: r.mandiId === best }));
-  }, [feed, compareCrop]);
+  };
 
   return (
-    <View style={styles.root}>
-      <Header />
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.root}>
+        <Header
+          coordsSource={coordsSource}
+          onUpdateLocation={onUpdateLocation}
+        />
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        <TabButton label="Live" active={tab === "Live"} onPress={() => setTab("Live")} />
-        <TabButton label="Nearby" active={tab === "Nearby"} onPress={() => setTab("Nearby")} />
-        <TabButton label="Compare" active={tab === "Compare"} onPress={() => setTab("Compare")} />
-        <TabButton label="Watchlist" active={tab === "Watchlist"} onPress={() => setTab("Watchlist")} />
-      </View>
-
-      {/* Search / Filter + Refresh */}
-      <View style={styles.controls}>
-        <View style={styles.searchBox}>
-          <Text style={styles.searchLabel}>Crop</Text>
-          <TextInput
-            value={searchCrop}
-            onChangeText={setSearchCrop}
-            placeholder="e.g. Tomato, Onion…"
-            placeholderTextColor="#888"
-            style={styles.searchInput}
+        {/* Tabs */}
+        <View style={styles.tabs}>
+          <TabButton
+            icon={<IndianRupee size={24} color="#1f8f4a" strokeWidth={2} />}
+            label="Today"
+            active={tab === "Live"}
+            onPress={() => setTab("Live")}
+          />
+          <TabButton
+            icon={<MapPin size={24} color="#2563eb" />}
+            label="Mandis near me"
+            active={tab === "Nearby"}
+            onPress={() => setTab("Nearby")}
+          />
+          <TabButton
+            icon={<BarChart2 size={24} color="#7c3aed" />}
+            label="Compare prices"
+            active={tab === "Compare"}
+            onPress={() => setTab("Compare")}
+          />
+          <TabButton
+            icon={<Wheat size={24} color="#b7791f" />}
+            label="My crops"
+            active={tab === "Watchlist"}
+            onPress={() => setTab("Watchlist")}
           />
         </View>
 
-        <Pressable onPress={onRefresh} style={styles.refreshBtn}>
-          <Text style={styles.refreshText}>Refresh</Text>
-        </Pressable>
+        {/* Search + Refresh */}
+        {(tab === "Live" || tab === "Compare") && (
+          <View style={styles.controls}>
+            <View style={styles.searchBox}>
+              <Text style={styles.searchLabel}>Crop name</Text>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Type crop name (e.g., Wheat)"
+                placeholderTextColor="#7a8a99"
+                value={searchCrop}
+                onChangeText={setSearchCrop}
+              />
+              {!!lastUpdatedAt && (
+                <Text style={styles.lastRefreshed}>
+                  Last refreshed: {formatTime(lastUpdatedAt)}
+                </Text>
+              )}
+            </View>
+
+            <Pressable
+              style={[styles.refreshBtn, refreshing && { opacity: 0.7 }]}
+              onPress={onRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw size={20} color="#ffffff" />
+              <Text style={styles.refreshText}>Refresh</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Content */}
+        {tab === "Live" && (
+          <LiveFeed
+            feed={feed}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            onStarCrop={(crop) => toggleWatchCrop(crop, watch, setWatch)}
+            isCropStarred={(crop) => watch.some((w) => w.crop === crop)}
+          />
+        )}
+
+        {tab === "Nearby" && (
+          <NearbyMandis
+            coords={activeCoords}
+            permission={permission}
+            nearestMandis={nearbyMandis}
+          />
+        )}
+
+        {tab === "Compare" && (
+          <CompareTable
+            crop={compareCrop}
+            rows={compareRows}
+            onStarCrop={(c) => toggleWatchCrop(c, watch, setWatch)}
+            isCropStarred={(c) => watch.some((w) => w.crop === c)}
+          />
+        )}
+
+        {tab === "Watchlist" && (
+          <Watchlist
+            watch={watch}
+            onRemove={(crop) => toggleWatchCrop(crop, watch, setWatch)}
+            latestFeed={feed}
+          />
+        )}
       </View>
-
-      <Text style={styles.meta}>
-        {lastUpdatedAt ? `Updated: ${formatTime(lastUpdatedAt)}` : "Updating…"}
-        {"  •  "}
-        Location: {permission === "granted" ? "On" : permission === "denied" ? "Off" : "Unknown"}
-      </Text>
-
-      {/* Content */}
-      {tab === "Live" && (
-        <LiveFeed
-          feed={feed}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          onStarCrop={(crop) => toggleWatchCrop(crop, watch, setWatch)}
-          isCropStarred={(crop) => watch.some((w) => w.crop === crop)}
-        />
-      )}
-
-      {tab === "Nearby" && (
-        <NearbyMandis
-          coords={coords}
-          permission={permission}
-          requestPermission={requestPermissionAndGet}
-          nearestMandis={nearestMandis}
-        />
-      )}
-
-      {tab === "Compare" && (
-        <CompareTable
-          crop={compareCrop}
-          rows={compareRows}
-          onStarCrop={(c) => toggleWatchCrop(c, watch, setWatch)}
-          isCropStarred={(c) => watch.some((w) => w.crop === c)}
-        />
-      )}
-
-      {tab === "Watchlist" && (
-        <Watchlist
-          watch={watch}
-          onRemove={(crop) => toggleWatchCrop(crop, watch, setWatch)}
-          latestFeed={feed}
-        />
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
 
-/** -----------------------------
- * Components
- * ----------------------------- */
-function Header() {
+/** UI Components */
+function Header({
+  coordsSource,
+  onUpdateLocation,
+}: {
+  coordsSource: "backend" | "gps" | "none";
+  onUpdateLocation: () => void;
+}) {
   return (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>Marketplace</Text>
-      <Text style={styles.headerSub}>Live mandi prices • Nearby mandis • Compare • Watchlist</Text>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
+        <Text style={styles.headerTitle}>Marketplace</Text>
+      </View>
+
+      <Text style={styles.headerSub}>
+        Today’s mandi prices, nearby markets & comparisons
+      </Text>
     </View>
   );
 }
 
-function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function TabButton({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
-    <Pressable onPress={onPress} style={[styles.tabBtn, active && styles.tabBtnActive]}>
-      <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
+    <Pressable
+      style={[styles.tabBtn, active && styles.tabBtnActive]}
+      onPress={onPress}
+    >
+      <View style={styles.tabIcon}>{icon}</View>
+      <Text style={[styles.tabText, active && styles.tabTextActive]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -476,39 +461,113 @@ function LiveFeed({
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
+  // Trend per crop+mandi (uses 2 most recent in current list)
+  const trendMap = useMemo(() => {
+    const map = new Map<string, { latest: number; prev?: number }>();
+    const seen = new Map<string, number>();
+    for (const it of feed) {
+      const k = `${it.crop}__${it.mandiName}`;
+      const c = seen.get(k) ?? 0;
+      if (c === 0) map.set(k, { latest: it.pricePerQuintal });
+      else if (c === 1) {
+        const cur = map.get(k);
+        if (cur && cur.prev == null) cur.prev = it.pricePerQuintal;
+      }
+      seen.set(k, c + 1);
+    }
+    return map;
+  }, [feed]);
+
   return (
     <FlatList
       data={feed}
       keyExtractor={(it) => it.key}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      contentContainerStyle={{ paddingBottom: 28 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#2d6a4f"
+        />
+      }
+      contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}
       ListEmptyComponent={
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No price data</Text>
-          <Text style={styles.emptySub}>Pull to refresh.</Text>
+          <Text style={styles.emptyTitle}>📭 No prices available</Text>
+          <Text style={styles.emptySub}>
+            Pull down to refresh or check again later
+          </Text>
         </View>
       }
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.cardTitle}>{item.crop}</Text>
-            <Pressable onPress={() => onStarCrop(item.crop)} style={styles.starBtn}>
-              <Text style={[styles.starText, isCropStarred(item.crop) && styles.starOn]}>
-                {isCropStarred(item.crop) ? "★" : "☆"}
-              </Text>
-            </Pressable>
+      renderItem={({ item }) => {
+        const k = `${item.crop}__${item.mandiName}`;
+        const t = trendMap.get(k);
+        const prev = t?.prev;
+        const diff = prev != null ? item.pricePerQuintal - prev : null;
+
+        const rising = diff != null && diff > 0;
+        const falling = diff != null && diff < 0;
+
+        return (
+          <View style={styles.priceCard}>
+            <View style={styles.priceCardHeader}>
+              <View style={styles.cropInfo}>
+                <View>
+                  <Text style={styles.cropName}>{item.crop}</Text>
+                  <Text style={styles.mandiName}>{item.mandiName}</Text>
+
+                  {diff != null && diff !== 0 && (
+                    <View style={styles.trendRow}>
+                      {rising ? <TrendingUp size={16} color="#1f8f4a" /> : null}
+                      {falling ? (
+                        <TrendingDown size={16} color="#c2410c" />
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.trendText,
+                          rising && { color: "#1f8f4a" },
+                          falling && { color: "#c2410c" },
+                        ]}
+                      >
+                        {rising
+                          ? `₹${Math.abs(diff).toFixed(0)} higher than last update`
+                          : `₹${Math.abs(diff).toFixed(0)} lower than last update`}
+                      </Text>
+                    </View>
+                  )}
+
+                  {diff === 0 && prev != null && (
+                    <Text style={styles.trendText}>
+                      No change since last update
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <Pressable onPress={() => onStarCrop(item.crop)} hitSlop={10}>
+                <StarIcon
+                  size={22}
+                  color={isCropStarred(item.crop) ? "#FFC107" : "#cbd5e1"}
+                  fill={isCropStarred(item.crop) ? "#FFC107" : "none"}
+                />
+              </Pressable>
+            </View>
+
+            <View style={styles.priceRow}>
+              <View>
+                <Text style={styles.priceLabel}>Price (per quintal)</Text>
+                <Text style={styles.priceAmount}>{item.displayPrice}</Text>
+              </View>
+
+              <View style={styles.timeBox}>
+                <Text style={styles.timeLabel}>Updated</Text>
+                <Text style={styles.timeText}>
+                  {formatTime(item.updatedAt)}
+                </Text>
+              </View>
+            </View>
           </View>
-
-          <Text style={styles.cardSub}>{item.mandiName}</Text>
-
-          <View style={styles.rowBetween}>
-            <Text style={styles.price}>{item.displayPrice}</Text>
-            <Text style={styles.time}>⏱ {formatTime(item.updatedAt)}</Text>
-          </View>
-
-          <Text style={styles.badge}>Quality: {item.quality}</Text>
-        </View>
-      )}
+        );
+      }}
     />
   );
 }
@@ -516,87 +575,114 @@ function LiveFeed({
 function NearbyMandis({
   coords,
   permission,
-  requestPermission,
   nearestMandis,
 }: {
-  coords: { lat: number; lng: number };
+  coords: { lat: number; lng: number } | null;
   permission: "granted" | "denied" | "unknown";
-  requestPermission: () => Promise<void>;
-  nearestMandis: Array<Mandi & { distKm: number }>;
+  nearestMandis: NearbyMandi[];
 }) {
+  const hasCoords = !!coords;
+
+  const region = useMemo(() => {
+    if (!coords) return null;
+    return {
+      latitude: Number(coords.lat),
+      longitude: Number(coords.lng),
+      latitudeDelta: 0.08,
+      longitudeDelta: 0.08,
+    };
+  }, [coords?.lat, coords?.lng]);
+
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your location</Text>
-        <Text style={styles.sectionSub}>
-          Lat: {coords.lat.toFixed(4)} • Lng: {coords.lng.toFixed(4)}
-        </Text>
+        <Text style={styles.sectionTitle}>Nearest Mandis (within 50 km)</Text>
 
-        <Pressable onPress={requestPermission} style={styles.primaryBtn}>
-          <Text style={styles.primaryBtnText}>
-            {permission === "granted" ? "Update Location" : "Enable Location"}
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nearest 5 Mandis</Text>
-
-        {nearestMandis.map((m) => (
-          <View key={m.id} style={styles.listRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.listTitle}>{m.name}</Text>
-              <Text style={styles.listSub}>
-                {(m.district ?? "") + (m.state ? `, ${m.state}` : "")}
-              </Text>
-            </View>
-            <Text style={styles.km}>{m.distKm.toFixed(2)} km</Text>
+        {!hasCoords && (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyBoxText}>
+              {permission === "denied"
+                ? "Location permission denied. Enable it to see nearby mandis."
+                : "Location not available yet. Try updating location."}
+            </Text>
           </View>
-        ))}
+        )}
+
+        {hasCoords && nearestMandis.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyBoxText}>No mandis found nearby</Text>
+            <Text style={styles.smallTip}>
+              Tip: try refreshing or updating location
+            </Text>
+          </View>
+        ) : (
+          hasCoords &&
+          nearestMandis.map((m, idx) => (
+            <View key={idx} style={styles.mandiCard}>
+              <View style={styles.mandiInfo}>
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <MapPin size={18} color="#2d6a4f" />
+                    <Text style={styles.mandiCardTitle}>{m.name}</Text>
+                  </View>
+                  <Text style={styles.mandiDistance}>
+                    {m.distKm.toFixed(1)} km away
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Map</Text>
-        {MapView ? (
+      {MapView && hasCoords && region && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Map View</Text>
           <View style={styles.mapWrap}>
             <MapView
-              style={StyleSheet.absoluteFill}
-              initialRegion={{
-                latitude: coords.lat,
-                longitude: coords.lng,
-                latitudeDelta: 0.08,
-                longitudeDelta: 0.08,
-              }}
+              style={{ flex: 1 }}
+              provider={PROVIDER_GOOGLE}
+              region={region}
             >
               {Marker && (
                 <Marker
-                  coordinate={{ latitude: coords.lat, longitude: coords.lng }}
+                  coordinate={{
+                    latitude: Number(coords!.lat),
+                    longitude: Number(coords!.lng),
+                  }}
                   title="You"
-                  description="Current location"
+                  pinColor="#2d6a4f"
                 />
               )}
 
               {Marker &&
-                nearestMandis.map((m) => (
-                  <Marker
-                    key={m.id}
-                    coordinate={{ latitude: m.lat, longitude: m.lng }}
-                    title={m.name}
-                    description={`${m.distKm.toFixed(2)} km away`}
-                  />
-                ))}
+                nearestMandis
+                  .filter(
+                    (m) =>
+                      Number.isFinite((m as any).lat) &&
+                      Number.isFinite((m as any).lng),
+                  )
+                  .map((m, idx) => (
+                    <Marker
+                      key={idx}
+                      coordinate={{
+                        latitude: Number((m as any).lat),
+                        longitude: Number((m as any).lng),
+                      }}
+                      title={m.name}
+                      pinColor="#d62828"
+                    />
+                  ))}
             </MapView>
           </View>
-        ) : (
-          <View style={styles.mapFallback}>
-            <Text style={styles.mapFallbackTitle}>Map not installed</Text>
-            <Text style={styles.mapFallbackSub}>
-              Install <Text style={{ fontWeight: "700" }}>react-native-maps</Text> to show the map,
-              otherwise this fallback UI is fine for now.
-            </Text>
-          </View>
-        )}
-      </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -608,50 +694,84 @@ function CompareTable({
   isCropStarred,
 }: {
   crop: Crop;
-  rows: Array<CleanPriceRow & { isBest: boolean }>;
+  rows: CompareRow[];
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
+    <ScrollView contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}>
       <View style={styles.section}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Compare prices: {crop}</Text>
-          <Pressable onPress={() => onStarCrop(crop)} style={styles.starBtn}>
-            <Text style={[styles.starText, isCropStarred(crop) && styles.starOn]}>
-              {isCropStarred(crop) ? "★" : "☆"}
-            </Text>
+        <View style={styles.compareHeader}>
+          <View style={styles.compareHeaderLeft}>
+            <View>
+              <Text style={styles.sectionTitle}>{crop} Prices</Text>
+              <Text style={styles.compareSub}>Highest to Lowest</Text>
+            </View>
+          </View>
+
+          <Pressable onPress={() => onStarCrop(crop)} hitSlop={10}>
+            <StarIcon
+              size={24}
+              color={isCropStarred(crop) ? "#FFC107" : "#cbd5e1"}
+              fill={isCropStarred(crop) ? "#FFC107" : "none"}
+            />
           </Pressable>
         </View>
-
-        <Text style={styles.sectionSub}>
-          Sorted highest → lowest (best highlighted).
-        </Text>
-
-        <View style={styles.tableHeader}>
-          <Text style={[styles.th, { flex: 2 }]}>Mandi</Text>
-          <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Price</Text>
-        </View>
-
-        {rows.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No rows for {crop}</Text>
-            <Text style={styles.emptySub}>Try Refresh or change crop.</Text>
-          </View>
-        ) : (
-          rows.map((r) => (
-            <View key={`${r.mandiId}-${r.crop}`} style={[styles.tableRow, r.isBest && styles.bestRow]}>
-              <View style={{ flex: 2 }}>
-                <Text style={[styles.tdTitle, r.isBest && styles.bestText]} numberOfLines={2}>
-                  {r.mandiName}
-                </Text>
-                <Text style={styles.tdSub}>Updated: {formatTime(r.updatedAt)}</Text>
-              </View>
-              <Text style={[styles.tdPrice, r.isBest && styles.bestText]}>{r.displayPrice}</Text>
-            </View>
-          ))
-        )}
       </View>
+
+      {rows.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>No data for {crop}</Text>
+          <Text style={styles.emptySub}>Try a different crop or refresh</Text>
+        </View>
+      ) : (
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.th, { flex: 2 }]}>Mandi</Text>
+            <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>
+              Price
+            </Text>
+            <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>
+              Updated
+            </Text>
+            <Text style={[styles.th, { width: 44, textAlign: "center" }]}>
+              Best
+            </Text>
+          </View>
+
+          {rows.map((r, idx) => {
+            const isBest = !!r.isBestPrice;
+            const updated =
+              (r as any).updatedAt ||
+              (r as any).date ||
+              new Date().toISOString();
+
+            return (
+              <View key={idx} style={[styles.tr, isBest && styles.trBest]}>
+                <Text style={[styles.td, { flex: 2 }]} numberOfLines={1}>
+                  {(r as any).locationName || (r as any).mandi || "Unknown"}
+                </Text>
+
+                <Text style={[styles.td, { flex: 1, textAlign: "right" }]}>
+                  ₹{Number((r as any).pricePerQuintal || 0).toFixed(0)}
+                </Text>
+
+                <Text style={[styles.td, { flex: 1, textAlign: "right" }]}>
+                  {formatTime(updated)}
+                </Text>
+
+                <View style={{ width: 44, alignItems: "center" }}>
+                  {isBest ? (
+                    <Text style={{ fontSize: 16 }}>🏆</Text>
+                  ) : (
+                    <Text style={{ color: "#cbd5e1" }}>—</Text>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -666,11 +786,10 @@ function Watchlist({
   latestFeed: LiveFeedItem[];
 }) {
   const latestAvg = useMemo(() => {
-    // compute avg price/kg per crop from latestFeed
     const map = new Map<Crop, { sum: number; count: number }>();
     for (const it of latestFeed) {
       const v = map.get(it.crop) ?? { sum: 0, count: 0 };
-      v.sum += it.pricePerKg;
+      v.sum += it.pricePerQuintal;
       v.count += 1;
       map.set(it.crop, v);
     }
@@ -680,324 +799,390 @@ function Watchlist({
   }, [latestFeed]);
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
+    <ScrollView contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Watchlist</Text>
-        <Text style={styles.sectionSub}>
-          Follow crops to track prices and trigger notifications (backend later).
+        <Text style={styles.sectionTitle}>My Watched Crops</Text>
+        <Text style={styles.watchSubtitle}>
+          Track your favorite crops for price updates
         </Text>
-
-        {watch.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No watched crops</Text>
-            <Text style={styles.emptySub}>Star a crop from Live or Compare.</Text>
-          </View>
-        ) : (
-          watch.map((w) => {
-            const avg = latestAvg.get(w.crop);
-            return (
-              <View key={w.crop} style={styles.watchRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.watchTitle}>{w.crop}</Text>
-                  <Text style={styles.watchSub}>
-                    Avg now: {avg ? `₹ ${avg.toFixed(2)} / kg` : "—"}
-                  </Text>
-                </View>
-
-                <Pressable onPress={() => onRemove(w.crop)} style={styles.removeBtn}>
-                  <Text style={styles.removeBtnText}>Remove</Text>
-                </Pressable>
-              </View>
-            );
-          })
-        )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Backend trigger (later)</Text>
-        <Text style={styles.sectionSub}>
-          When connected to backend: store watched crops, compare new prices vs old, and send push/SMS when change crosses a threshold.
-        </Text>
-        <View style={styles.tipBox}>
-          <Text style={styles.tipText}>
-            Tip: Keep a “lastNotifiedPrice” per crop per user to avoid spam.
+      {watch.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>No crops in watchlist</Text>
+          <Text style={styles.emptySub}>
+            Star a crop from "Today" or "Compare prices"
           </Text>
         </View>
-      </View>
+      ) : (
+        watch.map((w, idx) => {
+          const avg = latestAvg.get(w.crop);
+          return (
+            <View key={idx} style={styles.watchCard}>
+              <View style={styles.watchCardHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.watchCropName}>{w.crop}</Text>
+                  <Text style={styles.watchAvgPrice}>
+                    Average: {avg ? `₹${avg.toFixed(0)} / quintal` : "—"}
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.removeBtn}
+                  onPress={() => onRemove(w.crop)}
+                >
+                  <Trash2 size={22} color="#ff3b30" />
+                </Pressable>
+              </View>
+            </View>
+          );
+        })
+      )}
     </ScrollView>
   );
 }
 
-/** -----------------------------
- * Watchlist helpers + “trigger demo”
- * ----------------------------- */
-function toggleWatchCrop(crop: Crop, watch: WatchItem[], setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>) {
-  const exists = watch.some((w) => w.crop === crop);
-  if (exists) {
-    setWatch(watch.filter((w) => w.crop !== crop));
-  } else {
-    setWatch([...watch, { crop }]);
-  }
-}
-
-function maybeTriggerWatchAlerts(
-  cleaned: CleanPriceRow[],
+/** Watchlist helpers */
+function toggleWatchCrop(
+  crop: Crop,
   watch: WatchItem[],
   setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>,
-  reason: "auto" | "manual"
 ) {
-  // Demo logic:
-  // compute avg per watched crop, compare with stored lastAvgPricePerKg, if changed by >= 10% => show alert
+  const exists = watch.some((w) => w.crop === crop);
+  setWatch(
+    exists ? watch.filter((w) => w.crop !== crop) : [...watch, { crop }],
+  );
+}
+
+function maybeTriggerWatchAlertsQuintal(
+  feed: LiveFeedItem[],
+  watch: WatchItem[],
+  setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>,
+  reason: "auto" | "manual",
+) {
   const watched = new Set(watch.map((w) => w.crop));
   const agg = new Map<Crop, { sum: number; count: number }>();
 
-  for (const r of cleaned) {
+  for (const r of feed) {
     if (!watched.has(r.crop)) continue;
     const v = agg.get(r.crop) ?? { sum: 0, count: 0 };
-    v.sum += r.pricePerKg;
+    v.sum += r.pricePerQuintal;
     v.count += 1;
     agg.set(r.crop, v);
   }
 
-  const updates: WatchItem[] = watch.map((w) => {
+  const updates = watch.map((w) => {
     const v = agg.get(w.crop);
     if (!v) return w;
 
     const avg = v.sum / Math.max(1, v.count);
-    const prev = w.lastAvgPricePerKg;
+    const prev = w.lastAvgPricePerQuintal;
+    const updated = { ...w, lastAvgPricePerQuintal: avg };
 
-    // store the new avg
-    const updated: WatchItem = { ...w, lastAvgPricePerKg: avg };
-
-    if (prev && prev > 0) {
+    if (prev && prev > 0 && reason === "manual") {
       const pct = Math.abs(avg - prev) / prev;
-      if (pct >= 0.1 && reason === "manual") {
-        // Only pop alert on manual refresh (so auto refresh doesn't annoy user)
+      if (pct >= 0.1) {
         Alert.alert(
-          "Watchlist Alert",
-          `${w.crop} price changed by ${(pct * 100).toFixed(0)}% (avg now ₹ ${avg.toFixed(2)} / kg)`
+          "Price Alert",
+          `${w.crop} price changed ${(pct * 100).toFixed(0)}% (avg ₹${avg.toFixed(0)} / quintal)`,
         );
       }
     }
     return updated;
   });
 
-  // Update stored “last avg” values
   setWatch(updates);
 }
 
-/** -----------------------------
- * Small helpers
- * ----------------------------- */
 function titleCase(s: string) {
-  // Make input like "tomato" -> "Tomato"
-  // Keep safe for unknown crop names.
   if (!s) return s;
   const t = s.toLowerCase();
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-/** -----------------------------
- * Styles
- * ----------------------------- */
+/** Styles */
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0b0f14" },
+  safe: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 10) : 0,
+  },
+  root: { flex: 1, backgroundColor: "#f8f9fa" },
 
-  header: { paddingTop: 14, paddingHorizontal: 16, paddingBottom: 10 },
-  headerTitle: { color: "#fff", fontSize: 22, fontWeight: "800" },
-  headerSub: { color: "#a7b0bb", marginTop: 4, fontSize: 12 },
+  header: {
+    paddingTop: 10,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  headerTitle: { color: "#2d6a4f", fontSize: 28, fontWeight: "900" },
+  headerSub: { color: "#6c757d", marginTop: 6, fontSize: 14 },
+  headerHint: {
+    color: "#94a3b8",
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "600",
+  },
 
+  locationPill: {
+    backgroundColor: "#f1f5f9",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  locationPillText: { color: "#475569", fontSize: 12, fontWeight: "700" },
+
+  tabIcon: { marginBottom: 6 },
   tabs: {
     flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingBottom: 10,
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
   tabBtn: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    backgroundColor: "#121a22",
-    borderWidth: 1,
-    borderColor: "#1e2a35",
+    borderRadius: 14,
+    paddingVertical: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
     alignItems: "center",
   },
-  tabBtnActive: { backgroundColor: "#1a2632", borderColor: "#2b3f52" },
-  tabText: { color: "#a7b0bb", fontWeight: "700", fontSize: 12 },
-  tabTextActive: { color: "#ffffff" },
+  tabBtnActive: { backgroundColor: "#d8f3dc", borderColor: "#2d6a4f" },
+  tabText: {
+    color: "#6c757d",
+    fontWeight: "800",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  tabTextActive: { color: "#2d6a4f" },
 
   controls: {
     flexDirection: "row",
     gap: 10,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-    alignItems: "flex-end",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
   searchBox: {
     flex: 1,
-    backgroundColor: "#121a22",
+    backgroundColor: "#f8f9fa",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#1e2a35",
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
+    borderColor: "#e5e7eb",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  searchLabel: { color: "#8fa0b2", fontSize: 11, marginBottom: 6, fontWeight: "700" },
-  searchInput: { color: "#fff", fontSize: 14, paddingVertical: Platform.OS === "android" ? 0 : 4 },
+  searchLabel: {
+    color: "#6c757d",
+    fontSize: 11,
+    marginBottom: 4,
+    fontWeight: "800",
+  },
+  searchInput: {
+    color: "#212529",
+    fontSize: 16,
+    paddingVertical: Platform.OS === "android" ? 0 : 4,
+  },
+  lastRefreshed: {
+    marginTop: 6,
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: "600",
+  },
 
   refreshBtn: {
-    backgroundColor: "#1f6feb",
+    backgroundColor: "#2d6a4f",
     borderRadius: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 14,
-  },
-  refreshText: { color: "#fff", fontWeight: "800" },
-
-  meta: { color: "#a7b0bb", fontSize: 12, paddingHorizontal: 12, paddingBottom: 8 },
-
-  card: {
-    backgroundColor: "#101823",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1e2a35",
-    padding: 14,
-    marginHorizontal: 12,
-    marginTop: 10,
-  },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  cardTitle: { color: "#fff", fontSize: 16, fontWeight: "900" },
-  cardSub: { color: "#9fb0c3", marginTop: 4, fontSize: 12 },
-  price: { color: "#d7f7c2", marginTop: 10, fontSize: 16, fontWeight: "900" },
-  time: { color: "#a7b0bb", marginTop: 10, fontSize: 12 },
-  badge: {
-    marginTop: 10,
-    alignSelf: "flex-start",
-    backgroundColor: "#0b0f14",
-    borderWidth: 1,
-    borderColor: "#223140",
-    color: "#b7c2ce",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    overflow: "hidden",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  starBtn: { paddingHorizontal: 6, paddingVertical: 4 },
-  starText: { fontSize: 20, color: "#a7b0bb" },
-  starOn: { color: "#ffd166" },
-
-  empty: { padding: 24, alignItems: "center" },
-  emptyTitle: { color: "#fff", fontWeight: "900", fontSize: 16 },
-  emptySub: { color: "#a7b0bb", marginTop: 6, textAlign: "center" },
-
-  section: {
-    marginHorizontal: 12,
-    marginTop: 10,
-    backgroundColor: "#101823",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#1e2a35",
-    padding: 14,
-  },
-  sectionTitle: { color: "#fff", fontSize: 16, fontWeight: "900" },
-  sectionSub: { color: "#a7b0bb", marginTop: 6, fontSize: 12, lineHeight: 16 },
-
-  primaryBtn: {
-    marginTop: 12,
-    backgroundColor: "#1f6feb",
-    borderRadius: 14,
-    paddingVertical: 12,
+    justifyContent: "center",
     alignItems: "center",
+    gap: 6,
   },
-  primaryBtnText: { color: "#fff", fontWeight: "900" },
+  refreshText: { color: "#ffffff", fontWeight: "800", fontSize: 12 },
 
-  listRow: {
+  // Live Feed
+  priceCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#eef2f7",
+    padding: 16,
+    marginHorizontal: 14,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  priceCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cropInfo: { flexDirection: "row", alignItems: "center", gap: 12 },
+  cropName: { color: "#212529", fontSize: 20, fontWeight: "900" },
+  mandiName: { color: "#6c757d", marginTop: 2, fontSize: 14 },
+
+  trendRow: {
+    marginTop: 6,
     flexDirection: "row",
     alignItems: "center",
+    gap: 6,
+  },
+  trendText: { color: "#64748b", fontSize: 12, fontWeight: "700" },
+
+  priceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#eef2f7",
+  },
+  priceLabel: { color: "#6c757d", fontSize: 12, marginBottom: 4 },
+  priceAmount: { color: "#2d6a4f", fontSize: 28, fontWeight: "900" },
+  timeBox: { alignItems: "flex-end" },
+  timeLabel: { color: "#6c757d", fontSize: 11, marginBottom: 2 },
+  timeText: { color: "#495057", fontSize: 14, fontWeight: "600" },
+
+  // Empty
+  empty: { padding: 32, alignItems: "center" },
+  emptyTitle: { color: "#495057", fontWeight: "900", fontSize: 18 },
+  emptySub: {
+    color: "#6c757d",
+    marginTop: 8,
+    textAlign: "center",
+    fontSize: 14,
+  },
+
+  // Sections
+  section: {
+    marginHorizontal: 14,
+    marginTop: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionTitle: { color: "#212529", fontSize: 20, fontWeight: "900" },
+
+  emptyBox: {
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  emptyBoxText: { color: "#6c757d", fontSize: 14, textAlign: "center" },
+  smallTip: { marginTop: 8, color: "#2d6a4f", fontWeight: "800", fontSize: 12 },
+
+  // Mandis
+  mandiCard: {
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#1e2a35",
+    borderTopColor: "#e9ecef",
   },
-  listTitle: { color: "#fff", fontWeight: "800" },
-  listSub: { color: "#a7b0bb", marginTop: 2, fontSize: 12 },
-  km: { color: "#d7f7c2", fontWeight: "900" },
+  mandiInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  mandiCardTitle: { color: "#212529", fontWeight: "800", fontSize: 16 },
+  mandiDistance: {
+    color: "#2d6a4f",
+    fontWeight: "900",
+    fontSize: 14,
+    marginTop: 4,
+  },
 
+  // Map
   mapWrap: {
     marginTop: 12,
     height: 240,
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#223140",
+    borderColor: "#dee2e6",
   },
-  mapFallback: {
+
+  // Compare
+  compareHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  compareHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  compareSub: { color: "#6c757d", fontSize: 12, marginTop: 2 },
+
+  table: {
+    marginHorizontal: 14,
     marginTop: 12,
-    padding: 14,
+    backgroundColor: "#ffffff",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#223140",
-    backgroundColor: "#0b0f14",
+    borderColor: "#e9ecef",
+    overflow: "hidden",
   },
-  mapFallbackTitle: { color: "#fff", fontWeight: "900" },
-  mapFallbackSub: { color: "#a7b0bb", marginTop: 6, fontSize: 12, lineHeight: 16 },
-
   tableHeader: {
-    marginTop: 12,
-    flexDirection: "row",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#1e2a35",
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e2a35",
-  },
-  th: { color: "#8fa0b2", fontWeight: "900", fontSize: 12 },
-  tableRow: {
     flexDirection: "row",
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e2a35",
-    alignItems: "center",
-  },
-  bestRow: {
-    backgroundColor: "#0b0f14",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-  },
-  bestText: { color: "#ffd166" },
-
-  tdTitle: { color: "#fff", fontWeight: "900" },
-  tdSub: { color: "#a7b0bb", marginTop: 2, fontSize: 12 },
-  tdPrice: { flex: 1, textAlign: "right", color: "#d7f7c2", fontWeight: "900" },
-
-  watchRow: {
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#1e2a35",
-  },
-  watchTitle: { color: "#fff", fontWeight: "900", fontSize: 14 },
-  watchSub: { color: "#a7b0bb", marginTop: 2, fontSize: 12 },
-
-  removeBtn: {
-    backgroundColor: "#2a3846",
-    borderRadius: 12,
-    paddingVertical: 10,
     paddingHorizontal: 12,
+    backgroundColor: "#f8f9fa",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
-  removeBtnText: { color: "#fff", fontWeight: "900" },
+  th: { color: "#6c757d", fontWeight: "900", fontSize: 12 },
+  tr: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+    alignItems: "center",
+  },
+  trBest: {
+    backgroundColor: "#fff3cd",
+    borderLeftWidth: 4,
+    borderLeftColor: "#ffc107",
+  },
+  td: { color: "#212529", fontSize: 14, fontWeight: "700" },
 
-  tipBox: {
-    marginTop: 10,
-    borderRadius: 14,
-    padding: 12,
-    backgroundColor: "#0b0f14",
+  // Watchlist
+  watchSubtitle: { color: "#6c757d", marginTop: 6, fontSize: 12 },
+  watchCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#223140",
+    borderColor: "#e9ecef",
+    padding: 16,
+    marginHorizontal: 14,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  tipText: { color: "#a7b0bb", fontSize: 12, lineHeight: 16 },
+  watchCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  watchCropName: { color: "#212529", fontWeight: "900", fontSize: 18 },
+  watchAvgPrice: { color: "#6c757d", marginTop: 4, fontSize: 14 },
+  removeBtn: { paddingHorizontal: 8, paddingVertical: 4 },
 });
