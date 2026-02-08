@@ -20,7 +20,6 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -141,7 +140,7 @@ export default function MarketplaceScreen() {
         sort: "latest",
       });
 
-      const items: LiveFeedItem[] = (rows || []).map((p: any, idx: number) => {
+      const items: LiveFeedItem[] = (res || []).map((p: any, idx: number) => {
         const price = Number(p.pricePerQuintal || 0);
         const updatedAt = p.updatedAt || p.date || new Date().toISOString();
         return {
