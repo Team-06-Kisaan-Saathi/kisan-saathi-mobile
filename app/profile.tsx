@@ -24,7 +24,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getProfile, updateLocation } from "../services/userServices";
 
-const API = "http://10.104.34.251:5001/api";
+const API = "http://10.12.252.131:5001/api";
 
 type NearbyRow = {
   _id?: string;

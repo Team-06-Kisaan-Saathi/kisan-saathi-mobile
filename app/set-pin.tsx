@@ -21,7 +21,7 @@ type SignupCompleteResponse = {
   user?: { role?: string };
 };
 
-const HOST = "10.104.34.251";
+const HOST = "10.12.252.131";
 const AUTH_API = `http://${HOST}:5001/api/auth`;
 
 export default function SetPinScreen() {

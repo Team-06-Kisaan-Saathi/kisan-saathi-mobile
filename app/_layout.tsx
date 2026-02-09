@@ -3,22 +3,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 
-import VoiceNavButton from "../components/VoiceNavBtn";
+// import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
-import { AccessibilityProvider } from "../context/AccessibilityContext";
 import "../i18n/i18n";
-
-type Props = {
-  visible: boolean;
-  onClose: () => void;
-  language?: string;
-  setLanguage?: (lang: string) => void;
-};
-
-
-// TODO: replace with your actual persist function (AsyncStorage, etc.)
-async function persistLanguage(_lang: string) {}
+import { setLanguage as persistLanguage } from "../i18n/i18n";
 
 export default function RootLayout() {
   const { i18n } = useTranslation();

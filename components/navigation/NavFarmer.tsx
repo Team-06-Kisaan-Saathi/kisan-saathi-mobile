@@ -40,7 +40,7 @@ export default function NavFarmer() {
       }
 
       if (role === "buyer") {
-        console.log("Buyer profile not implemented yet");
+        console.log("ℹBuyer profile not implemented yet");
         return;
       }
 
@@ -85,25 +85,23 @@ export default function NavFarmer() {
           onPress={() => router.push("/market-insights" as any)}
         />
 
-        {/* Notifications / Alerts */}
+        {/* Notifications */}
         <NavItem
           icon="notifications-outline"
           activeIcon="notifications"
           label={t("nav_farmer.notifications")}
-          active={isActive("/alerts")}
-          onPress={() => router.push("/alerts" as any)}
+          active={isActive("/notifications")}
+          onPress={() => router.push("/notifications" as any)}
         />
 
-        {/* Profile - goes to farmer.tsx */}
+        {/* Profile */}
         <NavItem
           icon="person-outline"
           activeIcon="person"
           label={t("nav_farmer.profile")}
-          active={isActive("/farmer")}
-          onPress={() => {
-            console.log("📍 Profile clicked, navigating to /farmer");
-            router.navigate("/farmer" as any);
-          }}
+          // highlight if modal open OR if you're on farmer page (optional)
+          active={profileOpen || isActive("/farmer")}
+          onPress={() => router.push("/farmer" as any)}
         />
       </View>
 
@@ -220,20 +218,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
-    borderRadius: 20,
-    elevation: 20,
+    elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     position: "absolute",
-    bottom: 15,
-    left: 10,
-    right: 10,
+    bottom: 0,
+    left: 0,
+    right: 0,
     height: 70,
     justifyContent: "space-around",
     alignItems: "center",
-    zIndex: 99999,
   },
   navItem: {
     alignItems: "center",
