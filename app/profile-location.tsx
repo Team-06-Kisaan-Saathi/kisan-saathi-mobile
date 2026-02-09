@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { registerUser } from "../services/userServices";
 
-const API = "http://10.12.252.131:5001/api";
+const API = "http://10.104.34.251:5001/api";
 
 type Place = {
   id: string;
@@ -70,12 +70,12 @@ export default function ProfileLocation() {
         // ✅ include fields your /mandi API actually returns
         const name = String(
           x?.locationName ??
-          x?.mandi ?? // e.g., "Azadpur Mandi"
-          x?.name ??
-          x?.mandiName ??
-          x?.market ??
-          x?.place ??
-          "Unknown",
+            x?.mandi ?? // e.g., "Azadpur Mandi"
+            x?.name ??
+            x?.mandiName ??
+            x?.market ??
+            x?.place ??
+            "Unknown",
         ).trim();
 
         // ✅ support more coordinate shapes
@@ -110,9 +110,8 @@ export default function ProfileLocation() {
   const loadPlaces = async () => {
     try {
       setMsg("");
-      console.log("📡 Fetching places (mandis) from backend...");
-      const res = await fetch(`${API}/mandi`);
-      console.log("📡 /mandi status:", res.status);
+      console.log("📡 Fetching places from backend...");
+      const res = await fetch(`${API}/locations`);
 
       if (!res.ok) {
         setMsg("Could not load places.");
@@ -120,7 +119,7 @@ export default function ProfileLocation() {
       }
 
       const json = await res.json();
-      console.log("📦 /mandi response:", json);
+      console.log("📦 /;ocation response:", json);
 
       const mapped = normalizePlaces(json);
 
@@ -163,12 +162,26 @@ export default function ProfileLocation() {
 
       console.log("✅ Registration successful", res);
 
-      if (res.token) {
+      // ✅ Save session + role + cached profile
+      if (res?.token) {
         await AsyncStorage.setItem("token", res.token);
+      }
+      if (res?.user) {
+        await AsyncStorage.setItem(
+          "role",
+          String(res.user.role || "")
+            .trim()
+            .toLowerCase(),
+        );
+        await AsyncStorage.setItem("profile", JSON.stringify(res.user));
       }
 
       // Next step
-      router.replace(role.toLowerCase() === 'farmer' ? "/farmer-dashboard" : "/buyer-dashboard");
+      router.replace(
+        role.toLowerCase() === "farmer"
+          ? "/farmer-dashboard"
+          : "/buyer-dashboard",
+      );
     } catch (e: any) {
       console.log("Registration error:", e?.message || e);
       setMsg(e?.message || "Registration failed. Try again.");
@@ -203,14 +216,14 @@ export default function ProfileLocation() {
 
       const address = geo?.[0]
         ? [
-          geo[0].name,
-          geo[0].district,
-          geo[0].city,
-          geo[0].region,
-          geo[0].country,
-        ]
-          .filter(Boolean)
-          .join(", ")
+            geo[0].name,
+            geo[0].district,
+            geo[0].city,
+            geo[0].region,
+            geo[0].country,
+          ]
+            .filter(Boolean)
+            .join(", ")
         : "Current Location";
 
       await saveLatLng(lat, lng, address);

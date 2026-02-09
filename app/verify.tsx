@@ -19,7 +19,7 @@ type VerifyOtpResponse = {
   message?: string;
 };
 
-const HOST = "10.12.252.131";
+const HOST = "10.104.34.251";
 const API = `http://${HOST}:5001/api/auth`;
 
 export default function VerifyScreen() {

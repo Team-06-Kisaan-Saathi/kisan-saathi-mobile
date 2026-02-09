@@ -21,7 +21,7 @@ export default function NavBuyer() {
                 showsHorizontalScrollIndicator={false}
                 style={styles.navLeft}
                 contentContainerStyle={styles.navLeftContent}
-            >
+            >zz
                 <TouchableOpacity
                     style={styles.navItem}
                     onPress={() => router.push("/buyer-dashboard")}

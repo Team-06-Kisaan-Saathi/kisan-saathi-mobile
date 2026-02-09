@@ -15,9 +15,10 @@ import {
 } from "react-native";
 
 // TIP: Keep HOST in one place. If you change Wi-Fi / backend machine, this must change too.
-const HOST = "10.12.252.131";
-const API_BASE = `http://${HOST}:5001/api`; // base
-const AUTH_API = `${API_BASE}/auth`; // your auth base
+// services/api.ts  (or constants/api.ts)
+export const HOST = "10.104.34.251";
+export const API_BASE = `http://${HOST}:5001/api`;
+export const AUTH_API = `${API_BASE}/auth`;
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -28,6 +29,7 @@ export default function LoginScreen() {
   const [msg, setMsg] = useState<string>("");
 
   const url = useMemo(() => `${AUTH_API}/login`, []);
+  console.log("LOGIN URL =>", url);
 
   const handleLogin = async (): Promise<void> => {
     setMsg("");

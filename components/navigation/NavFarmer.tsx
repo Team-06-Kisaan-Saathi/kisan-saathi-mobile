@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +9,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 export default function NavFarmer() {
@@ -20,6 +21,49 @@ export default function NavFarmer() {
   // Active state helper
   const isActive = (route: string) => pathname === route;
 
+  // Profile click: Farmer -> /farmer, Buyer -> do nothing (for now), Missing role -> open modal
+  const handleProfilePress = async () => {
+    try {
+      const roleRaw = await AsyncStorage.getItem("role");
+      const role = (roleRaw || "").trim().toLowerCase();
+
+      console.log(
+        "Profile pressed. roleRaw =",
+        roleRaw,
+        " roleNormalized =",
+        role,
+      );
+
+      if (role === "farmer") {
+        router.push("/farmer" as any);
+        return;
+      }
+
+      if (role === "buyer") {
+        console.log("ℹBuyer profile not implemented yet");
+        return;
+      }
+
+      // If role missing/unknown, open the menu
+      setProfileOpen(true);
+    } catch (e) {
+      console.log("❌ error reading role", e);
+      setProfileOpen(true);
+    }
+  };
+
+  // ✅ Logout: clear token/role (optional but recommended)
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.multiRemove(["token", "role"]);
+    } catch (e) {
+      // ignore
+    } finally {
+      setProfileOpen(false);
+      router.replace("/login" as any);
+    }
+  };
+
   return (
     <>
       <View style={styles.bottomNav}>
@@ -29,7 +73,7 @@ export default function NavFarmer() {
           activeIcon="home"
           label={t("nav_farmer.dashboard")}
           active={isActive("/farmer-dashboard")}
-          onPress={() => router.push("/farmer-dashboard")}
+          onPress={() => router.push("/farmer-dashboard" as any)}
         />
 
         {/* AI Price Prediction */}
@@ -38,7 +82,7 @@ export default function NavFarmer() {
           activeIcon="analytics"
           label={t("nav_farmer.ai_insights")}
           active={isActive("/market-insights")}
-          onPress={() => router.push("/market-insights")}
+          onPress={() => router.push("/market-insights" as any)}
         />
 
         {/* Notifications */}
@@ -47,7 +91,7 @@ export default function NavFarmer() {
           activeIcon="notifications"
           label={t("nav_farmer.notifications")}
           active={isActive("/notifications")}
-          onPress={() => router.push("/notifications" as any)} // Placeholder route
+          onPress={() => router.push("/notifications" as any)}
         />
 
         {/* Profile */}
@@ -55,12 +99,13 @@ export default function NavFarmer() {
           icon="person-outline"
           activeIcon="person"
           label={t("nav_farmer.profile")}
-          active={profileOpen}
-          onPress={() => setProfileOpen(true)}
+          // highlight if modal open OR if you're on farmer page (optional)
+          active={profileOpen || isActive("/farmer")}
+          onPress={() => router.push("/farmer" as any)}
         />
       </View>
 
-      {/* Profile Modal */}
+      {/* Profile Modal (fallback menu if role missing / for extra actions) */}
       <Modal
         visible={profileOpen}
         transparent
@@ -98,10 +143,7 @@ export default function NavFarmer() {
               icon="log-out-outline"
               label={t("nav_farmer.logout")}
               danger
-              onPress={() => {
-                setProfileOpen(false);
-                router.replace("/login");
-              }}
+              onPress={handleLogout}
             />
           </View>
         </Pressable>
@@ -205,6 +247,7 @@ const styles = StyleSheet.create({
     color: "#2e7d32",
     fontWeight: "700",
   },
+
   // Profile Modal
   modalOverlay: {
     flex: 1,

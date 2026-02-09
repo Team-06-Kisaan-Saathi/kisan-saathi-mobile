@@ -17,9 +17,10 @@ import {
 } from "react-native";
 
 // ✅ TIP: Keep HOST in one place
-const HOST = "10.12.252.131";
-const API_BASE = `http://${HOST}:5001/api`;
-const AUTH_API = `${API_BASE}/auth`;
+// services/api.ts  (or constants/api.ts)
+export const HOST = "10.104.34.251";
+export const API_BASE = `http://${HOST}:5001/api`;
+export const AUTH_API = `${API_BASE}/auth`;
 
 type Role = "farmer" | "buyer";
 
