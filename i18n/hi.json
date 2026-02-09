@@ -10,7 +10,11 @@
     "continue": "जारी रखें",
     "already_account": "पहले से खाता है?",
     "login": "लॉगिन",
-    "dashboard_title": "किसान डैशबोर्ड"
+    "dashboard_title": "किसान डैशबोर्ड",
+    "name_label": "पूरा नाम",
+    "name_placeholder": "अपना पूरा नाम दर्ज करें",
+    "phone_label": "मोबाइल नंबर",
+    "signin_subtitle": "खाता बनाने के लिए अपना विवरण दर्ज करें"
   },
   "prefs": {
     "title": "अपनी पसंद चुनें",
@@ -100,11 +104,37 @@
     "trusted_farmers_sub": "सत्यापित किसान प्रोफाइल से खरीदें"
   },
   "listing": {
-    "select_category": "कैटेगरी चुनें",
+    "add_crop_listings": "फसल सूची जोड़ें",
+    "select_category": "श्रेणी चुनें",
     "select_crop": "फसल चुनें",
-    "quantity": "मात्रा (kg)",
-    "price": "कीमत (₹/kg)",
-    "add": "जोड़ें",
-    "add_crop_listings": "फसल लिस्टिंग जोड़ें"
+    "quantity": "मात्रा (किलो में)",
+    "price": "कीमत (प्रति किलो)",
+    "save": "सहेजें"
+  },
+  "alerts": {
+    "error": "त्रुटि",
+    "success": "सफलता",
+    "fill_all_fields": "कृपया सभी फ़ील्ड भरें",
+    "crop_saved": "फसल सूची सफलतापूर्वक सहेजी गई!",
+    "crop_save_failed": "फसल सूची सहेजने में विफल। कृपया पुनः प्रयास करें।"
+  },
+  "my_listings": {
+    "title": "मेरी लिस्टिंग",
+    "empty_state": "अभी कोई लिस्टिंग नहीं है। अपनी पहली फसल जोड़ें!",
+    "category": "श्रेणी",
+    "crop": "फसल",
+    "quantity": "मात्रा",
+    "price": "कीमत",
+    "action": "क्रिया",
+    "remove": "हटाएं",
+    "add_more": "और फसल जोड़ें",
+    "confirm_remove_title": "लिस्टिंग हटाएं",
+    "confirm_remove_msg": "क्या आप इस लिस्टिंग को हटाना चाहते हैं?",
+    "remove_success": "लिस्टिंग सफलतापूर्वक हटाई गई",
+    "remove_failed": "लिस्टिंग हटाने में विफल"
   }
+
+
+
+
 }

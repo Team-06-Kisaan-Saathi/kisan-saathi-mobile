@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Animated, PanResponder } from "react-native";
 
-import { useRouter, type Href } from "expo-router";
+import { usePathname, useRouter, type Href } from "expo-router";
 import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
@@ -22,17 +22,35 @@ const MODELS: Record<Lang, string> = {
 
 const LANG_LABEL: Record<Lang, string> = { en: "EN", hi: "HI", te: "TE" };
 
+// Pages where navigation should be disabled
+const RESTRICTED_ROUTES = ["/login", "/signin", "/verify", "/set-pin", "/profile-setup", "/profile-location"];
+
 const GRAMMAR: Record<Lang, string[]> = {
-  en: ["login", "sign in", "sign up", "market", "marketplace", "home", "back"],
-  hi: ["लॉगिन", "मार्केट", "होम", "वापस"],
-  te: ["లాగిన్", "మార్కెట్", "హోమ్", "వెనక్కి"],
+  en: [
+    "home", "back", "market", "marketplace", "farmer", "farmer dashboard", "buyer", "buyer dashboard",
+    "profile", "mandi", "mandi prices", "live auctions", "auctions", "my listings", "listings",
+    "my bids", "bids", "browse", "browse crops", "add crop", "alerts", "notifications",
+    "ai insights", "insights", "market insights", "messages", "chat", "edit profile", "settings"
+  ],
+  hi: [
+    "होम", "वापस", "मार्केट", "किसान", "किसान डैशबोर्ड", "खरीदार", "खरीदार डैशबोर्ड",
+    "प्रोफाइल", "मंडी", "मंडी भाव", "लाइव नीलामी", "नीलामी", "मेरी लिस्टिंग", "लिस्टिंग",
+    "मेरी बोलियां", "बोली", "फसल ब्राउज़", "फसल जोड़ें", "अलर्ट", "सूचनाएं",
+    "एआई इनसाइट्स", "बाजार इनसाइट्स", "संदेश", "चैट", "प्रोफाइल संपादित", "सेटिंग्स"
+  ],
+  te: [
+    "హోమ్", "వెనక్కి", "మార్కెట్", "రైతు", "రైతు డాష్‌బోర్డ్", "కొనుగోలుదారు", "కొనుగోలుదారు డాష్‌బోర్డ్",
+    "ప్రొఫైల్", "మండి", "మండి ధరలు", "లైవ్ వేలం", "వేలం", "నా జాబితాలు", "జాబితాలు",
+    "నా బిడ్లు", "బిడ్", "పంటలు చూడండి", "పంట జోడించు", "అలర్ట్స్", "నోటిఫికేషన్స్",
+    "AI అంతర్దృష్టులు", "మార్కెట్ అంతర్దృష్టులు", "సందేశాలు", "చాట్", "ప్రొఫైల్ సవరించు", "సెట్టింగ్స్"
+  ],
 };
 
 function speak(text: string) {
   try {
     Speech.stop();
     Speech.speak(text, { rate: 0.95, pitch: 1.0 });
-  } catch {}
+  } catch { }
 }
 
 function normalizeText(e: any): string {
@@ -43,6 +61,10 @@ function normalizeText(e: any): string {
 
 export default function VoiceNavBtn() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Don't render on restricted routes (auth/onboarding pages)
+  const isRestricted = RESTRICTED_ROUTES.some(route => pathname === route || pathname.startsWith(route));
 
   const [lang, setLang] = useState<Lang>("en");
   const [ready, setReady] = useState(false);
@@ -57,7 +79,7 @@ export default function VoiceNavBtn() {
   const stop = async (reason = "manual") => {
     try {
       await (Vosk as any).stop?.();
-    } catch {}
+    } catch { }
     setListening(false);
     log("🛑 STOP:", reason);
   };
@@ -65,7 +87,7 @@ export default function VoiceNavBtn() {
   const unload = async () => {
     try {
       await (Vosk as any).unload?.();
-    } catch {}
+    } catch { }
     loadedLangRef.current = null;
     log("🧹 UNLOAD");
   };
@@ -101,29 +123,14 @@ export default function VoiceNavBtn() {
 
     log("✅ HEARD:", text);
 
-    // LOGIN
+    // BACK - check first for quick navigation
     if (
-      text.includes("login") ||
-      text.includes("sign in") ||
-      text.includes("signin") ||
-      text.includes("sign up") ||
-      text.includes("लॉगिन") ||
-      text.includes("లాగిన్")
+      text.includes("back") ||
+      text.includes("वापस") ||
+      text.includes("వెనక్కి")
     ) {
-      speak("Opening login");
-      await routeTo("/login");
-      return;
-    }
-
-    // MARKETPLACE
-    if (
-      text.includes("market") ||
-      text.includes("marketplace") ||
-      text.includes("मार्केट") ||
-      text.includes("మార్కెట్")
-    ) {
-      speak("Opening marketplace");
-      await routeTo("/marketplace");
+      speak("Going back");
+      await goBack();
       return;
     }
 
@@ -138,14 +145,205 @@ export default function VoiceNavBtn() {
       return;
     }
 
-    // BACK
+    // FARMER DASHBOARD
     if (
-      text.includes("back") ||
-      text.includes("वापस") ||
-      text.includes("వెనక్కి")
+      text.includes("farmer dashboard") ||
+      text.includes("farmer") ||
+      text.includes("किसान डैशबोर्ड") ||
+      text.includes("किसान") ||
+      text.includes("రైతు డాష్‌బోర్డ్") ||
+      text.includes("రైతు")
     ) {
-      speak("Going back");
-      await goBack();
+      speak("Opening farmer dashboard");
+      await routeTo("/farmer-dashboard");
+      return;
+    }
+
+    // BUYER DASHBOARD
+    if (
+      text.includes("buyer dashboard") ||
+      text.includes("buyer") ||
+      text.includes("खरीदार डैशबोर्ड") ||
+      text.includes("खरीदार") ||
+      text.includes("కొనుగోలుదారు డాష్‌బోర్డ్") ||
+      text.includes("కొనుగోలుదారు")
+    ) {
+      speak("Opening buyer dashboard");
+      await routeTo("/buyer-dashboard");
+      return;
+    }
+
+    // PROFILE
+    if (
+      text.includes("profile") ||
+      text.includes("प्रोफाइल") ||
+      text.includes("ప్రొఫైల్")
+    ) {
+      // Check for edit profile specifically
+      if (
+        text.includes("edit") ||
+        text.includes("संपादित") ||
+        text.includes("సవరించు")
+      ) {
+        speak("Opening edit profile");
+        await routeTo("/farmer");
+        return;
+      }
+      speak("Opening profile");
+      await routeTo("/profile");
+      return;
+    }
+
+    // MANDI PRICES
+    if (
+      text.includes("mandi") ||
+      text.includes("mandi prices") ||
+      text.includes("मंडी") ||
+      text.includes("मंडी भाव") ||
+      text.includes("మండి") ||
+      text.includes("మండి ధరలు")
+    ) {
+      speak("Opening mandi prices");
+      await routeTo("/mandi-prices");
+      return;
+    }
+
+    // MARKETPLACE / MARKET (check after mandi to avoid conflicts)
+    if (
+      text.includes("marketplace") ||
+      text.includes("market") ||
+      text.includes("मार्केट") ||
+      text.includes("మార్కెట్")
+    ) {
+      // Check for market insights specifically
+      if (
+        text.includes("insight") ||
+        text.includes("इनसाइट्स") ||
+        text.includes("अंतर्दृष्टि") ||
+        text.includes("అంతర్దృష్టులు")
+      ) {
+        speak("Opening market insights");
+        await routeTo("/market-insights");
+        return;
+      }
+      speak("Opening marketplace");
+      await routeTo("/marketplace");
+      return;
+    }
+
+    // LIVE AUCTIONS
+    if (
+      text.includes("live auction") ||
+      text.includes("auction") ||
+      text.includes("लाइव नीलामी") ||
+      text.includes("नीलामी") ||
+      text.includes("లైవ్ వేలం") ||
+      text.includes("వేలం")
+    ) {
+      speak("Opening live auctions");
+      await routeTo("/live-auctions");
+      return;
+    }
+
+    // MY LISTINGS
+    if (
+      text.includes("my listing") ||
+      text.includes("listing") ||
+      text.includes("मेरी लिस्टिंग") ||
+      text.includes("लिस्टिंग") ||
+      text.includes("నా జాబితాలు") ||
+      text.includes("జాబితాలు")
+    ) {
+      speak("Opening my listings");
+      await routeTo("/my-listings");
+      return;
+    }
+
+    // MY BIDS
+    if (
+      text.includes("my bid") ||
+      text.includes("bid") ||
+      text.includes("मेरी बोलियां") ||
+      text.includes("बोली") ||
+      text.includes("నా బిడ్లు") ||
+      text.includes("బిడ్")
+    ) {
+      speak("Opening my bids");
+      await routeTo("/my-bids");
+      return;
+    }
+
+    // BROWSE CROPS
+    if (
+      text.includes("browse crop") ||
+      text.includes("browse") ||
+      text.includes("फसल ब्राउज़") ||
+      text.includes("पంటలు చూడండి")
+    ) {
+      speak("Opening browse crops");
+      await routeTo("/browse-crops");
+      return;
+    }
+
+    // ADD CROP
+    if (
+      text.includes("add crop") ||
+      text.includes("फसल जोड़ें") ||
+      text.includes("పంట జోడించు")
+    ) {
+      speak("Opening add crop");
+      await routeTo("/add-crop");
+      return;
+    }
+
+    // ALERTS / NOTIFICATIONS
+    if (
+      text.includes("alert") ||
+      text.includes("notification") ||
+      text.includes("अलर्ट") ||
+      text.includes("सूचनाएं") ||
+      text.includes("అలర్ట్స్") ||
+      text.includes("నోటిఫికేషన్స్")
+    ) {
+      speak("Opening alerts");
+      await routeTo("/alerts");
+      return;
+    }
+
+    // AI INSIGHTS
+    if (
+      text.includes("ai insight") ||
+      text.includes("insight") ||
+      text.includes("एआई इनसाइट्स") ||
+      text.includes("AI అంతర్దృష్టులు")
+    ) {
+      speak("Opening AI insights");
+      await routeTo("/ai-insights");
+      return;
+    }
+
+    // MESSAGES / CHAT
+    if (
+      text.includes("message") ||
+      text.includes("chat") ||
+      text.includes("संदेश") ||
+      text.includes("चैट") ||
+      text.includes("సందేశాలు") ||
+      text.includes("చాట్")
+    ) {
+      speak("Opening messages");
+      await routeTo("/messages");
+      return;
+    }
+
+    // EDIT PROFILE (standalone check)
+    if (
+      text.includes("edit profile") ||
+      text.includes("प्रोफाइल संपादित") ||
+      text.includes("ప్రొఫైల్ సవరించు")
+    ) {
+      speak("Opening edit profile");
+      await routeTo("/edit-profile");
       return;
     }
 
@@ -232,7 +430,7 @@ export default function VoiceNavBtn() {
       unload();
       try {
         Speech.stop();
-      } catch {}
+      } catch { }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -257,7 +455,7 @@ export default function VoiceNavBtn() {
   };
 
   const toggleListening = async () => {
-    // ✅ prevent start before init/model load
+    // prevent start before init/model load
     if (!ready) {
       Alert.alert("Voice", "Model is not ready yet.");
       return;
@@ -316,15 +514,18 @@ export default function VoiceNavBtn() {
       },
     }),
   ).current;
+
+  // Don't show voice button on auth/onboarding pages
+  if (isRestricted) {
+    return null;
+  }
+
   return (
     <Animated.View
       {...panResponder.panHandlers}
       style={{
-        position: "absolute",
-        bottom: 100,
-        right: 24,
-        zIndex: 999999,
-        elevation: 999999,
+        zIndex: 9999,
+        elevation: 9999,
         transform: pan.getTranslateTransform(),
       }}
     >

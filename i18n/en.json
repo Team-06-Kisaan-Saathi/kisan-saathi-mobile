@@ -10,7 +10,11 @@
     "continue": "Continue",
     "already_account": "Already have an account?",
     "login": "Login",
-    "dashboard_title": "Farmer Dashboard"
+    "dashboard_title": "Farmer Dashboard",
+    "name_label": "Full Name",
+    "name_placeholder": "Enter your full name",
+    "phone_label": "Mobile Number",
+    "signin_subtitle": "Enter your details to create an account"
   },
   "prefs": {
     "title": "Select Your Preferences",
@@ -98,11 +102,35 @@
     "trusted_farmers_sub": "Buy from verified farmer profiles"
   },
   "listing": {
-    "select_category": "Select Category",
-    "select_crop": "Select Crop",
-    "quantity": "Quantity (kg)",
-    "price": "Price (₹/kg)",
-    "add": "Add",
-    "add_crop_listings": "Add Crop Listings"
+    "add_crop_listings": "Add Crop Listing",
+    "select_category": "Select category",
+    "select_crop": "Select crop",
+    "quantity": "Quantity (in kg)",
+    "price": "Price (per kg)",
+    "save": "Save"
+  },
+  "alerts": {
+    "error": "Error",
+    "success": "Success",
+    "fill_all_fields": "Please fill all fields",
+    "crop_saved": "Crop listing saved successfully!",
+    "crop_save_failed": "Failed to save crop listing. Please try again."
+  },
+  "my_listings": {
+    "title": "My Listings",
+    "empty_state": "No listings yet. Add your first crop listing!",
+    "category": "Category",
+    "crop": "Crop",
+    "quantity": "Quantity",
+    "price": "Price",
+    "action": "Action",
+    "remove": "Remove",
+    "add_more": "Add More Crops",
+    "confirm_remove_title": "Remove Listing",
+    "confirm_remove_msg": "Are you sure you want to remove this listing?",
+    "remove_success": "Listing removed successfully",
+    "remove_failed": "Failed to remove listing"
   }
+
 }
+

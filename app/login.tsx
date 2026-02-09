@@ -20,8 +20,11 @@ export const HOST = "10.104.34.251";
 export const API_BASE = `http://${HOST}:5001/api`;
 export const AUTH_API = `${API_BASE}/auth`;
 
+import { useAccessibility } from "../context/AccessibilityContext";
+
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const { fontScale } = useAccessibility();
 
   const [phone, setPhone] = useState<string>("");
   const [pin, setPin] = useState<string>("");
@@ -129,16 +132,20 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
 
-            <Text style={styles.appName}>
+            <Text style={[styles.appName, { fontSize: 32 * fontScale }]}>
               <Text style={styles.green}>KISSAAN</Text>{" "}
               <Text style={styles.blue}>SAATHI</Text>
             </Text>
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.welcomeMsg}>{t("auth.welcome")}</Text>
+            <Text style={[styles.welcomeMsg, { fontSize: 20 * fontScale }]}>
+              {t("auth.welcome")}
+            </Text>
 
-            <Text style={styles.label}>{t("auth.enter_phone")}</Text>
+            <Text style={[styles.label, { fontSize: 14 * fontScale }]}>
+              {t("auth.enter_phone")}
+            </Text>
 
             <View style={styles.phoneInput}>
               <Text style={styles.countryCode}>+91</Text>
