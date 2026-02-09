@@ -1,5 +1,5 @@
 // src/screens/MarketplaceScreen.tsx
-import NavFarmer from "../components/navigation/NavFarmer";
+import { Stack } from "expo-router";
 import {
   BarChart2,
   IndianRupee,
@@ -26,7 +26,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Stack } from "expo-router";
+import NavFarmer from "../components/navigation/NavFarmer";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -173,28 +173,43 @@ export default function MarketplaceScreen() {
       return;
     }
 
-    console.log("📡 loadNearby -> calling nearby with:", {
-      lat: activeCoords.lat,
-      lng: activeCoords.lng,
-      distKm: 50,
-      limit: 5,
-    });
+const { lat, lng } = activeCoords;
 
-    try {
-      const rows = await fetchNearbyMandis({
-        lat: activeCoords.lat,
-        lng: activeCoords.lng,
-        distKm: 50,
-        limit: 5,
-      });
+console.log(`📡 loadNearby (Source: ${coordsSource}) -> calling nearby with:`, {
+  lat,
+  lng,
+  distKm: 50,
+  limit: 5,
+});
 
-      console.log("✅ nearby rows count:", rows.length);
-      console.log("✅ nearby rows sample:", rows[0]);
+try {
+  const rows = await fetchNearbyMandis({
+    lat,
+    lng,
+    distKm: 50,
+    limit: 5,
+  });
+
+  // continue with rows handling…
+
+
+      console.log(`✅ nearby (50km): ${rows.length} found`);
+
+      // 2) If 0 found, try expanding to 150km automatically
+      if (rows.length === 0) {
+        console.log("📡 loadNearby -> 0 found at 50km, trying 150km...");
+        rows = await fetchNearbyMandis({
+          lat,
+          lng,
+          distKm: 150,
+          limit: 10,
+        });
+        console.log(`✅ nearby (150km): ${rows.length} found`);
+      }
 
       setNearbyMandis(rows);
     } catch (e: any) {
-      console.log("❌ loadNearby error:", e?.message, e);
-      Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
+      console.log("❌ loadNearby error:", e?.message);
       setNearbyMandis([]);
     }
   };
@@ -342,8 +357,13 @@ export default function MarketplaceScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadNearby(), loadPrices("manual")]);
-    setRefreshing(false);
+    try {
+      // Refresh location from backend first
+      await refreshBackendLocation();
+      await Promise.all([loadNearby(), loadPrices("manual")]);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // ✅ FIXED: Update location reliably + save to backend + re-fetch backend to confirm
