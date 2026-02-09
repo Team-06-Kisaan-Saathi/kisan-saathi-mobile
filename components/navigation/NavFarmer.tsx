@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-//nav farmer bar component
+
 export default function NavFarmer() {
   const { t } = useTranslation();
   const router = useRouter();
