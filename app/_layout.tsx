@@ -13,8 +13,6 @@ export default function RootLayout() {
   const { i18n } = useTranslation();
 
   const [open, setOpen] = useState(false);
-  const [fontScale, setFontScale] = useState(1);
-  const [highContrast, setHighContrast] = useState(false);
   const [language, setLang] = useState(i18n.language || "en");
 
   const setLanguage = async (lang: string) => {
@@ -23,46 +21,38 @@ export default function RootLayout() {
   };
 
   return (
-    <View style={styles.root}>
-      {/* Screens */}
-      <Stack
-        initialRouteName="login"
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="login" />
-        <Stack.Screen name="verify" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="marketplace" />
-      </Stack>
+    <AccessibilityProvider>
+      <View style={styles.root}>
+        <Stack initialRouteName="login" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="verify" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="marketplace" />
+          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        </Stack>
 
-      {/* ✅ Floating overlay ABOVE everything */}
-      <View pointerEvents="box-none" style={styles.overlay}>
-        <AccessibilityFab onPress={() => setOpen(true)} />
-        {/* <VoiceNavButton /> */} {/* Disabled - requires native module build */}
+        {/* Floating overlay */}
+        <View pointerEvents="box-none" style={styles.overlay}>
+          <AccessibilityFab onPress={() => setOpen(true)} />
+          <VoiceNavButton />
+        </View>
+
+        <AccessibilitySheet
+          visible={open}
+          onClose={() => setOpen(false)}
+          language={language}
+          setLanguage={setLanguage}
+        />
       </View>
-
-      {/* Sheet */}
-      <AccessibilitySheet
-        visible={open}
-        onClose={() => setOpen(false)}
-        fontScale={fontScale}
-        setFontScale={setFontScale}
-        highContrast={highContrast}
-        setHighContrast={setHighContrast}
-        language={language}
-        setLanguage={setLanguage}
-      />
-    </View>
+    </AccessibilityProvider>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 999999,
-    elevation: 999999,
+    position: "absolute",
+    right: 16,
+    bottom: 24,
   },
 });

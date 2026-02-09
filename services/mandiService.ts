@@ -128,20 +128,27 @@ export async function fetchNearbyMandis(params: {
       [];
 
     return rawRows.map((r: any, idx: number) => {
+      // Extract coordinates - handle multiple backend formats
       const coords =
-        r?.coordinates ?? r?.locationCoordinates ?? r?.coords ?? [];
-      const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng);
-      const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat);
+        r?.coordinates ?? r?.locationCoordinates ?? r?.location?.coordinates ?? r?.coords ?? [];
+      const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng ?? r?.longitude ?? 0);
+      const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat ?? r?.latitude ?? 0);
 
-      const meters = Number(r?.distance ?? r?.distMeters ?? r?.meters ?? 0);
-      const km = meters ? meters / 1000 : Number(r?.distKm ?? 0);
+      // Extract distance - backend returns distanceKm directly or distance in meters
+      const distKm = r?.distanceKm ?? (r?.distance ? r.distance / 1000 : 0);
+
+      // Extract name - backend returns mandiName field
+      const mandiName = r?.mandiName ?? r?.name ?? r?.locationName ?? r?.mandi ?? r?._id ?? "Unknown Mandi";
+
+      // Extract id - backend returns mandiId
+      const id = r?.mandiId ?? r?._id ?? r?.id ?? String(idx);
 
       return {
-        id: String(r?._id ?? r?.id ?? idx),
-        name: String(r?.locationName ?? r?.name ?? r?.mandi ?? "Unknown"),
+        id: String(id),
+        name: String(mandiName),
         lat,
         lng,
-        distKm: km,
+        distKm: Number(distKm) || 0,
       };
     });
   } catch (e: any) {
@@ -172,20 +179,27 @@ export async function fetchNearbyMandis(params: {
       [];
 
     return rawRows2.map((r: any, idx: number) => {
+      // Extract coordinates - handle multiple backend formats
       const coords =
-        r?.coordinates ?? r?.locationCoordinates ?? r?.coords ?? [];
-      const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng);
-      const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat);
+        r?.coordinates ?? r?.locationCoordinates ?? r?.location?.coordinates ?? r?.coords ?? [];
+      const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng ?? r?.longitude ?? 0);
+      const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat ?? r?.latitude ?? 0);
 
-      const meters = Number(r?.distance ?? r?.distMeters ?? r?.meters ?? 0);
-      const km = meters ? meters / 1000 : Number(r?.distKm ?? 0);
+      // Extract distance - backend returns distanceKm directly or distance in meters
+      const distKm = r?.distanceKm ?? (r?.distance ? r.distance / 1000 : 0);
+
+      // Extract name - backend returns mandiName field
+      const mandiName = r?.mandiName ?? r?.name ?? r?.locationName ?? r?.mandi ?? r?._id ?? "Unknown Mandi";
+
+      // Extract id - backend returns mandiId
+      const id = r?.mandiId ?? r?._id ?? r?.id ?? String(idx);
 
       return {
-        id: String(r?._id ?? r?.id ?? idx),
-        name: String(r?.locationName ?? r?.name ?? r?.mandi ?? "Unknown"),
+        id: String(id),
+        name: String(mandiName),
         lat,
         lng,
-        distKm: km,
+        distKm: Number(distKm) || 0,
       };
     });
   }
