@@ -9,24 +9,13 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import NavFarmer from "../components/navigation/NavFarmer";
 
 type CropData = {
   [key: string]: string[];
-};
-
-export type CropListing = {
-  id: string;
-  category: string;
-  crop: string;
-  quantity: string;
-  price: string;
-  createdAt: string;
 };
 
 const cropData: CropData = {
@@ -90,62 +79,22 @@ export default function AddCrop() {
     setCrop("");
   };
 
-  const handleSubmit = async (): Promise<void> => {
+  const handleSubmit = (): void => {
     if (!category || !crop || !quantity || !price) {
-      if (Platform.OS === 'web') {
-        alert(t("alerts.fill_all_fields"));
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.fill_all_fields"));
-      }
+      alert("Please fill all fields");
       return;
     }
 
-    try {
-      // Create new listing with unique ID
-      const newListing: CropListing = {
-        id: Date.now().toString(),
-        category,
-        crop,
-        quantity,
-        price,
-        createdAt: new Date().toISOString(),
-      };
+    console.log({ category, crop, quantity, price });
 
-      // Get existing listings
-      const existingListings = await AsyncStorage.getItem("cropListings");
-      const listings: CropListing[] = existingListings
-        ? JSON.parse(existingListings)
-        : [];
+    // Reset form
+    setCategory("");
+    setCrop("");
+    setQuantity("");
+    setPrice("");
 
-      // Add new listing
-      listings.push(newListing);
-
-      // Save to AsyncStorage
-      await AsyncStorage.setItem("cropListings", JSON.stringify(listings));
-
-      // Reset form
-      setCategory("");
-      setCrop("");
-      setQuantity("");
-      setPrice("");
-
-      // Show success message
-      if (Platform.OS === 'web') {
-        alert(t("alerts.crop_saved"));
-      } else {
-        Alert.alert(t("alerts.success"), t("alerts.crop_saved"));
-      }
-
-      // Navigate to my-listings page
-      router.push("/my-listings");
-    } catch (error) {
-      console.error("Error saving crop listing:", error);
-      if (Platform.OS === 'web') {
-        alert(t("alerts.crop_save_failed"));
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.crop_save_failed"));
-      }
-    }
+    // Navigate back to dashboard
+    router.back();
   };
 
   return (
@@ -226,7 +175,7 @@ export default function AddCrop() {
                   pressed && styles.submitButtonPressed,
                 ]}
               >
-                <Text style={styles.submitButtonText}>{t("listing.save")}</Text>
+                <Text style={styles.submitButtonText}>{t("listing.add")}</Text>
               </Pressable>
             </View>
           </View>

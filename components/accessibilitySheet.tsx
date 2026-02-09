@@ -1,40 +1,44 @@
 import React from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { useAccessibility } from "../context/AccessibilityContext";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  Switch,
+} from "react-native";
+
 type Props = {
   visible: boolean;
   onClose: () => void;
 
-  language: string;
+  fontScale: number; // 1, 1.1, 1.2 etc
+  setFontScale: (v: number) => void;
+
+  highContrast: boolean;
+  setHighContrast: (v: boolean) => void;
+
+  // If you want language switching, pass handlers
+  language: string; // "en" | "hi" | ...
   setLanguage: (lang: string) => void;
 };
 
 export default function AccessibilitySheet({
   visible,
   onClose,
+  fontScale,
+  setFontScale,
+  highContrast,
+  setHighContrast,
   language,
   setLanguage,
 }: Props) {
-  const { fontScale, setFontScale } = useAccessibility();
-
-  const increaseScale = () => {
-    if (fontScale < 1.5) setFontScale(Number((fontScale + 0.1).toFixed(1)));
-  };
-
-  const decreaseScale = () => {
-    if (fontScale > 1) setFontScale(Number((fontScale - 0.1).toFixed(1)));
-  };
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
 
       <View style={styles.sheet} accessibilityRole="summary">
+
         <Text style={styles.title}>Accessibility</Text>
 
         {/* Text size */}
@@ -45,21 +49,25 @@ export default function AccessibilitySheet({
               <Pressable
                 key={v}
                 onPress={() => setFontScale(v)}
-                style={[styles.pill, fontScale === v && styles.pillActive]}
+                style={[
+                  styles.pill,
+                  fontScale === v && styles.pillActive,
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel={`Set text size to ${v}`}
               >
-                <Text
-                  style={[
-                    styles.pillText,
-                    fontScale === v && styles.pillTextActive,
-                  ]}
-                >
+                <Text style={[styles.pillText, fontScale === v && styles.pillTextActive]}>
                   {v === 1 ? "A" : v === 1.1 ? "A+" : "A++"}
                 </Text>
               </Pressable>
             ))}
           </View>
+        </View>
+
+        {/* Contrast */}
+        <View style={styles.row}>
+          <Text style={styles.label}>High contrast</Text>
+          <Switch value={highContrast} onValueChange={setHighContrast} />
         </View>
 
         {/* Language */}
@@ -76,14 +84,12 @@ export default function AccessibilitySheet({
               <Pressable
                 key={x.k}
                 onPress={() => setLanguage(x.k)}
-                style={[styles.pill, language === x.k && styles.pillActive]}
+                style={[
+                  styles.pill,
+                  language === x.k && styles.pillActive,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.pillText,
-                    language === x.k && styles.pillTextActive,
-                  ]}
-                >
+                <Text style={[styles.pillText, language === x.k && styles.pillTextActive]}>
                   {x.t}
                 </Text>
               </Pressable>
