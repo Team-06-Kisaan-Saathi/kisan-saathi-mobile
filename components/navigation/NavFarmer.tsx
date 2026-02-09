@@ -1,97 +1,209 @@
-import React, { useState } from "react";
-import NotificationBell from "../notifications/NotificationBell";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, } from "react-native";
-import { router } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { usePathname, useRouter } from "expo-router";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function NavFarmer() {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Active state helper
+  const isActive = (route: string) => pathname === route;
+
+  // Profile click: Farmer -> /farmer, Buyer -> do nothing (for now), Missing role -> open modal
+  const handleProfilePress = async () => {
+    try {
+      const roleRaw = await AsyncStorage.getItem("role");
+      const role = (roleRaw || "").trim().toLowerCase();
+
+      console.log(
+        "Profile pressed. roleRaw =",
+        roleRaw,
+        " roleNormalized =",
+        role,
+      );
+
+      if (role === "farmer") {
+        router.push("/farmer" as any);
+        return;
+      }
+
+      if (role === "buyer") {
+        console.log("ℹBuyer profile not implemented yet");
+        return;
+      }
+
+      // If role missing/unknown, open the menu
+      setProfileOpen(true);
+    } catch (e) {
+      console.log("❌ error reading role", e);
+      setProfileOpen(true);
+    }
+  };
+
+  // ✅ Logout: clear token/role (optional but recommended)
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.multiRemove(["token", "role"]);
+    } catch (e) {
+      // ignore
+    } finally {
+      setProfileOpen(false);
+      router.replace("/login" as any);
+    }
+  };
 
   return (
-    <View style={[styles.navFarmer, { paddingTop: insets.top + 12 }]}>
-      {/* LEFT: Scrollable Navigation */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.navLeftContent}
+    <>
+      <View style={styles.bottomNav}>
+        {/* Dashboard (Home) */}
+        <NavItem
+          icon="home-outline"
+          activeIcon="home"
+          label={t("nav_farmer.dashboard")}
+          active={isActive("/farmer-dashboard")}
+          onPress={() => router.push("/farmer-dashboard" as any)}
+        />
+
+        {/* AI Price Prediction */}
+        <NavItem
+          icon="analytics-outline"
+          activeIcon="analytics"
+          label={t("nav_farmer.ai_insights")}
+          active={isActive("/market-insights")}
+          onPress={() => router.push("/market-insights" as any)}
+        />
+
+        {/* Notifications */}
+        <NavItem
+          icon="notifications-outline"
+          activeIcon="notifications"
+          label={t("nav_farmer.notifications")}
+          active={isActive("/notifications")}
+          onPress={() => router.push("/notifications" as any)}
+        />
+
+        {/* Profile */}
+        <NavItem
+          icon="person-outline"
+          activeIcon="person"
+          label={t("nav_farmer.profile")}
+          // highlight if modal open OR if you're on farmer page (optional)
+          active={profileOpen || isActive("/farmer")}
+          onPress={() => router.push("/farmer" as any)}
+        />
+      </View>
+
+      {/* Profile Modal (fallback menu if role missing / for extra actions) */}
+      <Modal
+        visible={profileOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setProfileOpen(false)}
       >
-        <NavItem label={t("nav_farmer.dashboard")} onPress={() => router.push("/farmer-dashboard")} />
-        <NavItem label={t("nav_farmer.my_listings")} onPress={() => router.push("/my-listings")} />
-        <NavItem label={t("nav_farmer.add_crop")} onPress={() => router.push("/add-crop")} />
-        <NavItem label={t("nav_farmer.mandi_prices")} onPress={() => router.push("/mandi-prices")} />
-        <NavItem label={t("nav_farmer.ai_insights")} onPress={() => router.push("/ai-insights")} />
-        <NavItem label={t("nav_farmer.live_auctions")} onPress={() => router.push("/live-auctions")} />
-      </ScrollView>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setProfileOpen(false)}
+        >
+          <View style={styles.profileMenu}>
+            <Text style={styles.menuTitle}>{t("nav_farmer.profile")}</Text>
 
-      {/* RIGHT: Notification + Profile */}
-      <View style={styles.navRight}>
-        <NotificationBell />
-
-        <TouchableOpacity onPress={() => setOpen(!open)} activeOpacity={0.7}>
-          <Ionicons name="person-circle-outline" size={34} color="#bbf7d0" />
-        </TouchableOpacity>
-
-        {open && (
-          <View style={styles.profileDropdown}>
-            <DropdownItem
+            <MenuItem
+              icon="person-circle-outline"
               label={t("nav_farmer.edit_profile")}
               onPress={() => {
-                setOpen(false);
-                router.push("/edit-profile");
+                setProfileOpen(false);
+                router.push("/profile" as any);
               }}
             />
 
-            <DropdownItem
+            <MenuItem
+              icon="settings-outline"
               label={t("nav_farmer.edit_preferences")}
               onPress={() => {
-                setOpen(false);
-                router.push("/farmer-preferences");
+                setProfileOpen(false);
+                router.push("/farmer-preferences" as any);
               }}
             />
 
-            <View style={styles.dropdownDivider} />
+            <View style={styles.divider} />
 
-            <DropdownItem
+            <MenuItem
+              icon="log-out-outline"
               label={t("nav_farmer.logout")}
               danger
-              onPress={() => {
-                setOpen(false);
-                router.replace("/login");
-              }}
+              onPress={handleLogout}
             />
           </View>
-        )}
-      </View>
-    </View>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
-/* 🔹 Reusable Nav Item */
-function NavItem({ label, onPress }: { label: string; onPress: () => void }) {
+function NavItem({
+  icon,
+  activeIcon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: any;
+  activeIcon: any;
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
-    <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.navText}>{label}</Text>
+    <TouchableOpacity
+      style={styles.navItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <Ionicons
+        name={active ? activeIcon : icon}
+        size={26}
+        color={active ? "#2e7d32" : "#64748b"}
+      />
+      <Text style={[styles.navLabel, active && styles.navLabelActive]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
 
-/* 🔹 Reusable Dropdown Item */
-function DropdownItem({
+function MenuItem({
+  icon,
   label,
   onPress,
-  danger = false,
+  danger,
 }: {
+  icon: any;
   label: string;
   onPress: () => void;
   danger?: boolean;
 }) {
   return (
-    <TouchableOpacity style={styles.dropdownButton} onPress={onPress}>
-      <Text style={[styles.dropdownText, danger && styles.logoutText]}>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <Ionicons
+        name={icon}
+        size={22}
+        color={danger ? "#dc2626" : "#475569"}
+        style={{ marginRight: 12 }}
+      />
+      <Text style={[styles.menuText, danger && styles.textDanger]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -99,72 +211,80 @@ function DropdownItem({
 }
 
 const styles = StyleSheet.create({
-  navFarmer: {
+  bottomNav: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1a4b84",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: "#81c784",
-    elevation: 10,
-    zIndex: 1000,
-  },
-
-  navLeftContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-    paddingRight: 12,
-  },
-
-  navItem: {
-    paddingVertical: 8,
-  },
-
-  navText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#fdf5e6",
-  },
-
-  navRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 8,
-    position: "relative",
-  },
-
-  profileDropdown: {
+    backgroundColor: "#ffffff",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     position: "absolute",
-    top: 48,
+    bottom: 0,
+    left: 0,
     right: 0,
-    width: 220,
-    backgroundColor: "#fdfbf7",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    elevation: 12,
-    zIndex: 2000,
+    height: 70,
+    justifyContent: "space-around",
+    alignItems: "center",
   },
-
-  dropdownButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+  navItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    minWidth: 64,
   },
-
-  dropdownText: {
-    fontSize: 14,
+  navLabel: {
+    fontSize: 10,
+    marginTop: 4,
+    color: "#64748b",
     fontWeight: "600",
-    color: "#1a365d",
+  },
+  navLabelActive: {
+    color: "#2e7d32",
+    fontWeight: "700",
   },
 
-  dropdownDivider: {
+  // Profile Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  profileMenu: {
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+  },
+  menuText: {
+    fontSize: 16,
+    color: "#1e293b",
+    fontWeight: "500",
+  },
+  textDanger: {
+    color: "#dc2626",
+  },
+  divider: {
     height: 1,
     backgroundColor: "#cbd5e0",
-  },
-
-  logoutText: {
-    color: "#c53030",
+    marginVertical: 8,
   },
 });
