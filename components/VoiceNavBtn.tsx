@@ -524,9 +524,6 @@ export default function VoiceNavBtn() {
     <Animated.View
       {...panResponder.panHandlers}
       style={{
-        position: "absolute",
-        bottom: 180,
-        right: 24,
         zIndex: 9999,
         elevation: 9999,
         transform: pan.getTranslateTransform(),

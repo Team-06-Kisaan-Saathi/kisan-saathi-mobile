@@ -58,9 +58,6 @@ export default function AccessibilityFab({ onPress }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    right: 16, // default position stays same
-    top: 52,
     zIndex: 999,
   },
   fab: {
