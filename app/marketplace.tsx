@@ -45,10 +45,10 @@ let PROVIDER_GOOGLE: any = null;
 
 try {
   // TODO: Uncomment before committing to git (for native builds)
-  // const maps = require("react-native-maps");
-  // MapView = maps.default;
-  // Marker = maps.Marker;
-  // PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
+  const maps = require("react-native-maps");
+  MapView = maps.default;
+  Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
 } catch (e) {
   // react-native-maps not installed (optional)
 }
