@@ -1,107 +1,140 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Stack, useRouter } from "expo-router";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, } from "react-native";
 import { useTranslation } from "react-i18next";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Stack, useRouter } from "expo-router";
 import NavFarmer from "../components/navigation/NavFarmer";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function FarmerDashboard() {
   const { t } = useTranslation();
   const router = useRouter();
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    // Get user name from AsyncStorage
+    AsyncStorage.getItem("userName").then((name) => {
+      if (name) setUserName(name);
+    });
+  }, []);
 
   return (
-    <View style={styles.container}>
+    <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{t("farmer.welcome_msg")}</Text>
-          <Text style={styles.subtitle}>{t("farmer.welcome_sub")}</Text>
-        </View>
+      <View style={styles.container}>
+        <NavFarmer />
 
-        {/* 2-Column Grid */}
-        <View style={styles.grid}>
-          {/* Marketplace */}
-          <Tile
-            icon="basket-outline"
-            color="#2e7d32" // Green
-            title={t("farmer.marketplace") || "Marketplace"}
-            onPress={() => router.push("/marketplace")}
-          />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>
+              {t("farmer.welcome_user", {
+                name: userName || t("farmer.default_user"),
+              })}
+            </Text>
+            <Text style={styles.subtitle}>{t("farmer.tagline")}</Text>
+          </View>
 
-          {/* Live Auctions */}
-          <Tile
-            icon="hammer-outline"
-            color="#d32f2f" // Red
-            title={t("farmer.live_auctions") || "Live Auctions"}
-            onPress={() => router.push("/live-auctions")}
-          />
+          {/* Grid */}
+          <View style={styles.grid}>
+            {/* Marketplace */}
+            <DashboardTile
+              iconBg="#c8e6c9"
+              iconColor="#2e7d32"
+              icon="storefront"
+              title={t("farmer.marketplace")}
+              onPress={() => router.push("/marketplace")}
+            />
 
-          {/* My Inventory */}
-          <Tile
-            icon="list-outline"
-            color="#1565c0" // Blue
-            title={t("farmer.my_listings") || "My Inventory"}
-            onPress={() => router.push("/my-listings")}
-          />
+            {/* Live Auctions */}
+            <DashboardTile
+              iconBg="#ffcdd2"
+              iconColor="#c62828"
+              icon="hammer"
+              title={t("farmer.live_auctions")}
+              onPress={() => router.push("/live-auctions")}
+            />
 
-          {/* Add Crop */}
-          <Tile
-            icon="add-circle-outline"
-            color="#f97316" // Orange
-            title={t("farmer.add_crop") || "Add Crop"}
-            onPress={() => router.push("/add-crop")}
-          />
+            {/* My Listings */}
+            <DashboardTile
+              iconBg="#bbdefb"
+              iconColor="#1565c0"
+              icon="list"
+              title={t("farmer.my_listings")}
+              onPress={() => router.push("/my-listings")}
+            />
 
-          {/* Messages */}
-          <Tile
-            icon="chatbubbles-outline"
-            color="#7b1fa2" // Purple
-            title={t("farmer.messages") || "Messages"}
-            onPress={() => router.push("/messages" as any)} // Placeholder
-          />
+            {/* Add Crop */}
+            <DashboardTile
+              iconBg="#ffe0b2"
+              iconColor="#e65100"
+              icon="add-circle"
+              title={t("farmer.add_crop")}
+              onPress={() => router.push("/add-crop")}
+            />
 
-          {/* Expiry Alerts */}
-          <Tile
-            icon="alarm-outline"
-            color="#c62828" // Dark Red
-            title={t("farmer.alerts") || "Expiry Alerts"}
-            onPress={() => router.push("/notifications" as any)} // Using notifications for alerts
-          />
-        </View>
-      </ScrollView>
+            {/* Messages */}
+            <DashboardTile
+              iconBg="#e1bee7"
+              iconColor="#6a1b9a"
+              icon="chatbubbles"
+              title={t("farmer.messages")}
+              onPress={() => router.push("/messages")}
+            />
 
-      {/* Fixed Bottom Layout handles Nav */}
-      <NavFarmer />
-    </View>
+            {/* Alerts */}
+            <DashboardTile
+              iconBg="#ffccbc"
+              iconColor="#d84315"
+              icon="notifications"
+              title={t("farmer.alerts")}
+              onPress={() => router.push("/alerts")}
+            />
+          </View>
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
-function Tile({
+function DashboardTile({
+  iconBg,
+  iconColor,
   icon,
-  color,
   title,
   onPress,
 }: {
+  iconBg: string;
+  iconColor: string;
   icon: any;
-  color: string;
   title: string;
   onPress: () => void;
 }) {
+  // Debug: log the colors
+  console.log(`Tile: ${title}, iconBg: ${iconBg}, iconColor: ${iconColor}`);
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
       onPress={onPress}
+      style={({ pressed }) => [
+        styles.tile,
+        { backgroundColor: iconBg + "40" }, // 25% opacity pastel background for tile
+        pressed && styles.tilePressed,
+      ]}
     >
-      <View style={[styles.iconBox, { backgroundColor: color + "20" }]}>
-        <Ionicons name={icon} size={32} color={color} />
+      <View
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          justifyContent: "center",
+          alignItems: "center",
+          marginBottom: 12,
+          backgroundColor: iconBg,
+        }}
+      >
+        <Ionicons name={icon} size={36} color={iconColor} />
       </View>
       <Text style={styles.tileTitle}>{title}</Text>
     </Pressable>
@@ -111,64 +144,66 @@ function Tile({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f5f5f5",
   },
+
   scrollContent: {
     padding: 20,
-    paddingBottom: 90, // Space for bottom nav
+    paddingBottom: 40,
   },
+
   header: {
+    alignItems: "flex-start",
     marginBottom: 24,
-    marginTop: 12,
   },
+
   title: {
     fontSize: 24,
-    fontWeight: "800",
-    color: "#1e293b",
+    fontWeight: "700",
+    color: "#1a4b84",
+    marginBottom: 4,
   },
+
   subtitle: {
     fontSize: 14,
-    color: "#64748b",
-    marginTop: 4,
+    color: "#6b7280",
   },
+
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
     justifyContent: "space-between",
+    gap: 16,
   },
+
   tile: {
-    width: "47%", // ~Half width minus gap
+    width: "47%",
+    aspectRatio: 1,
     backgroundColor: "#ffffff",
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 20,
-    alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 4,
-    aspectRatio: 1, // Square tiles
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
+    alignItems: "center",
   },
+
   tilePressed: {
+    transform: [{ scale: 0.97 }],
     opacity: 0.9,
-    transform: [{ scale: 0.98 }],
   },
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
+
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
   },
+
   tileTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#334155",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
     textAlign: "center",
   },
 });

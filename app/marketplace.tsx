@@ -1,4 +1,5 @@
 // src/screens/MarketplaceScreen.tsx
+import NavFarmer from "../components/navigation/NavFarmer";
 import {
   BarChart2,
   IndianRupee,
@@ -25,6 +26,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Stack } from "expo-router";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -384,6 +386,8 @@ export default function MarketplaceScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <NavFarmer />
       <View style={styles.root}>
         <Header
           coordsSource={coordsSource}
