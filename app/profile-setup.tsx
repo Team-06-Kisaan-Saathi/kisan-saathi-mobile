@@ -1,7 +1,14 @@
 // app/profile-setup.tsx
-import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
+import React, { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const LANGS = [
   { label: "English", value: "en" },
@@ -12,8 +19,16 @@ const LANGS = [
 ];
 
 export default function ProfileSetup() {
-  const params = useLocalSearchParams<{ phone?: string }>();
+  const params = useLocalSearchParams<{
+    phone?: string;
+    name?: string;
+    role?: string;
+    pin?: string;
+  }>();
   const phone = String(params.phone ?? "");
+  const name = String(params.name ?? "");
+  const role = String(params.role ?? "");
+  const pin = String(params.pin ?? "");
 
   const [lang, setLang] = useState<string>("en");
   const [loading, setLoading] = useState(false);
@@ -21,12 +36,11 @@ export default function ProfileSetup() {
   const canContinue = useMemo(() => !!lang && !loading, [lang, loading]);
 
   const next = async () => {
-    setLoading(true);
-    try {
-      router.replace({ pathname: "/profile-location", params: { phone, lang } });
-    } finally {
-      setLoading(false);
-    }
+    // Pass data to next screen
+    router.replace({
+      pathname: "/profile-location",
+      params: { phone, name, role, pin, lang },
+    });
   };
 
   return (
@@ -35,7 +49,9 @@ export default function ProfileSetup() {
         <View style={s.header}>
           <Text style={s.step}>Step 1 of 2</Text>
           <Text style={s.title}>Select your language</Text>
-          <Text style={s.header}>Choose the language you want to use in the app</Text>
+          <Text style={s.header}>
+            Choose the language you want to use in the app
+          </Text>
         </View>
 
         <View style={s.options}>

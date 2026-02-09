@@ -1,6 +1,7 @@
 // src/services/mandiService.ts
 import { API_BASE } from "./api";
 import { apiFetch } from "./http";
+import { getToken } from "./token";
 
 export type Crop = "Tomato" | "Onion" | "Potato" | "Wheat" | "Rice" | "Maize";
 
@@ -50,6 +51,12 @@ function normalizeArray<T>(res: any): T[] {
   return [];
 }
 
+/** Attach auth token if available (fixes HTTP 401 on protected routes) */
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 /**
  * GET /api/mandi?crop=Tomato&sort=latest
  * Backend commonly returns: { success, count, data: [...] }
@@ -61,43 +68,148 @@ export async function fetchMandiPrices(params: {
   const qs = toQuery(params as any);
   const url = `${API_BASE}/mandi${qs ? `?${qs}` : ""}`;
 
-  const res = await apiFetch<ApiEnvelope<MandiPriceDoc[]>>(url);
+  const res = await apiFetch<ApiEnvelope<MandiPriceDoc[]>>(url, {
+    headers: {
+      ...(await authHeaders()),
+    },
+  });
+
   return normalizeArray<MandiPriceDoc>(res);
 }
 
 /**
  * GET /api/mandi/nearby?lat=..&lng=..&distKm=50&limit=5
- * Backend commonly returns: { success, count, data: [...] }
- * Each item may contain coordinates: [lng, lat]
+ *
+ * Your backend response looks like:
+ * {
+ *   success: true,
+ *   count: 3,
+ *   data: [
+ *     {
+ *       _id: "Azadpur Mandi",
+ *       locationName: "Azadpur, Delhi",
+ *       coordinates: [77.12345, 28.6789],  // [lng, lat]
+ *       distance: 11054.66                 // meters
+ *     }
+ *   ]
+ * }
+ *
+ * This function converts it into:
+ * { id, name, lat, lng, distKm }
  */
 export async function fetchNearbyMandis(params: {
   lat: number;
   lng: number;
-  distKm?: number;
-  limit?: number;
-}) {
+  distKm: number;
+  limit: number;
+}): Promise<NearbyMandi[]> {
   const qs = toQuery(params as any);
+
+  // Your comment says backend is GET, so use GET first:
   const url = `${API_BASE}/mandi/nearby${qs ? `?${qs}` : ""}`;
 
-  const res = await apiFetch<ApiEnvelope<any[]>>(url);
-  const rows = normalizeArray<any>(res);
+  // NOTE: If your backend actually expects POST, I give POST fallback below.
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...(await authHeaders()),
+      },
+    });
 
-  // Map backend shape -> frontend-friendly shape
-  const out: NearbyMandi[] = rows
-    .map((m: any) => {
-      const coordsArr = Array.isArray(m.coordinates) ? m.coordinates : null; // [lng, lat]
-      const lat = Number(m.lat ?? (coordsArr ? coordsArr[1] : undefined));
-      const lng = Number(m.lng ?? (coordsArr ? coordsArr[0] : undefined));
+    const json: any = await readJsonSafe(res);
+
+    const rawRows =
+      (Array.isArray(json?.data) && json.data) ||
+      (Array.isArray(json?.mandis) && json.mandis) ||
+      (Array.isArray(json?.results) && json.results) ||
+      (Array.isArray(json) && json) ||
+      [];
+
+    return rawRows.map((r: any, idx: number) => {
+      const coords =
+        r?.coordinates ?? r?.locationCoordinates ?? r?.coords ?? [];
+      const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng);
+      const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat);
+
+      const meters = Number(r?.distance ?? r?.distMeters ?? r?.meters ?? 0);
+      const km = meters ? meters / 1000 : Number(r?.distKm ?? 0);
 
       return {
-        id: String(m.mandiId ?? m._id ?? m.id ?? m.mandi ?? ""),
-        name: String(m.mandiName ?? m.locationName ?? m.name ?? "Unknown"),
+        id: String(r?._id ?? r?.id ?? idx),
+        name: String(r?.locationName ?? r?.name ?? r?.mandi ?? "Unknown"),
         lat,
         lng,
-        distKm: Number(m.distanceKm ?? m.distKm ?? 0),
+        distKm: km,
       };
-    })
-    .filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
+    });
+  } catch (e: any) {
+    // Optional POST fallback if your backend is actually POST:
+    console.log(
+      "⚠️ GET /mandi/nearby failed, trying POST fallback...",
+      e?.message,
+    );
 
-  return out;
+    const postUrl = `${API_BASE}/mandi/nearby`;
+    const res2 = await fetch(postUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(await authHeaders()),
+      },
+      body: JSON.stringify(params),
+    });
+
+    const json2: any = await readJsonSafe(res2);
+
+    const rawRows2 =
+      (Array.isArray(json2?.data) && json2.data) ||
+      (Array.isArray(json2?.mandis) && json2.mandis) ||
+      (Array.isArray(json2?.results) && json2.results) ||
+      (Array.isArray(json2) && json2) ||
+      [];
+
+    return rawRows2.map((r: any, idx: number) => {
+      const coords =
+        r?.coordinates ?? r?.locationCoordinates ?? r?.coords ?? [];
+      const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng);
+      const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat);
+
+      const meters = Number(r?.distance ?? r?.distMeters ?? r?.meters ?? 0);
+      const km = meters ? meters / 1000 : Number(r?.distKm ?? 0);
+
+      return {
+        id: String(r?._id ?? r?.id ?? idx),
+        name: String(r?.locationName ?? r?.name ?? r?.mandi ?? "Unknown"),
+        lat,
+        lng,
+        distKm: km,
+      };
+    });
+  }
+}
+
+async function readJsonSafe(res: Response) {
+  const text = await res.text();
+
+  // Helpful logs (keep these while debugging)
+  console.log("🌐 HTTP", res.status, res.url);
+  console.log("🌐 RAW(first 300):", text.slice(0, 300));
+
+  if (text.trim().startsWith("<")) {
+    // HTML response => wrong endpoint/method or server error page
+    throw new Error(
+      `API returned HTML (status ${res.status}). Check URL/method. Starts: ${text.slice(0, 40)}`,
+    );
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      `API did not return valid JSON (status ${res.status}). Starts: ${text.slice(0, 40)}`,
+    );
+  }
 }

@@ -1,4 +1,5 @@
 // src/screens/MarketplaceScreen.tsx
+import NavFarmer from "../components/navigation/NavFarmer";
 import {
   BarChart2,
   IndianRupee,
@@ -25,6 +26,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Stack } from "expo-router";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -34,7 +36,7 @@ import {
   NearbyMandi,
 } from "../services/mandiService";
 import { getToken } from "../services/token";
-import { getMyLocation, updateMyLocation } from "../services/userServices";
+import { getMyLocation, updateLocation } from "../services/userServices";
 
 // Map (optional dependency)
 let MapView: any = null;
@@ -42,16 +44,16 @@ let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
 
 try {
-  // TODO: Uncomment before committing to git
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
 } catch (e) {
   // react-native-maps not installed (optional)
 }
 
 type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
+type CoordsSource = "backend" | "gps" | "none";
 
 type WatchItem = { crop: Crop; lastAvgPricePerQuintal?: number };
 
@@ -82,6 +84,47 @@ const ALL_CROPS: Crop[] = [
   "Maize",
 ];
 
+// Robust backend location parser (handles different backend shapes)
+function normalizeCoords(loc: any): { lat: number; lng: number } | null {
+  if (!loc) return null;
+
+  // common: {lat, lng}
+  const lat1 = loc.lat ?? loc.latitude;
+  const lng1 = loc.lng ?? loc.longitude;
+  if (lat1 != null && lng1 != null)
+    return { lat: Number(lat1), lng: Number(lng1) };
+
+  // common: {locationCoordinates: {lat,lng}} or {locationCoordinates: {latitude,longitude}}
+  const lc = loc.locationCoordinates;
+  // plain array: { locationCoordinates: [lng, lat] }
+  if (Array.isArray(lc) && lc.length >= 2) {
+    const [lng, lat] = lc;
+    if (lat != null && lng != null)
+      return { lat: Number(lat), lng: Number(lng) };
+  }
+
+  const lat2 = lc?.lat ?? lc?.latitude;
+  const lng2 = lc?.lng ?? lc?.longitude;
+  if (lat2 != null && lng2 != null)
+    return { lat: Number(lat2), lng: Number(lng2) };
+
+  // geojson: {locationCoordinates: {coordinates: [lng, lat]}} OR {coordinates:[lng,lat]}
+  const coordsA = lc?.coordinates ?? loc.coordinates;
+  if (Array.isArray(coordsA) && coordsA.length >= 2) {
+    const [lng, lat] = coordsA;
+    if (lat != null && lng != null)
+      return { lat: Number(lat), lng: Number(lng) };
+  }
+
+  return null;
+}
+
+function titleCase(s: string) {
+  if (!s) return s;
+  const t = s.toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export default function MarketplaceScreen() {
   const {
     coords: gpsCoords,
@@ -93,9 +136,15 @@ export default function MarketplaceScreen() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [coordsSource, setCoordsSource] = useState<"backend" | "gps" | "none">(
-    "none",
-  );
+  const [coordsSource, setCoordsSource] = useState<CoordsSource>("none");
+
+  // ✅ Always keep the latest gps coords in a ref (no “stale state” problem)
+  const gpsRef = useRef<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (gpsCoords) gpsRef.current = gpsCoords;
+  }, [gpsCoords?.lat, gpsCoords?.lng]);
+
+  // ✅ activeCoords uses backend first, then gps
   const activeCoords = backendCoords ?? gpsCoords ?? null;
 
   const [tab, setTab] = useState<TabKey>("Live");
@@ -119,7 +168,18 @@ export default function MarketplaceScreen() {
 
   // ----------------------- Loaders -----------------------
   const loadNearby = async () => {
-    if (!activeCoords) return;
+    if (!activeCoords) {
+      console.log("❌ loadNearby: activeCoords is null");
+      return;
+    }
+
+    console.log("📡 loadNearby -> calling nearby with:", {
+      lat: activeCoords.lat,
+      lng: activeCoords.lng,
+      distKm: 50,
+      limit: 5,
+    });
+
     try {
       const rows = await fetchNearbyMandis({
         lat: activeCoords.lat,
@@ -127,8 +187,13 @@ export default function MarketplaceScreen() {
         distKm: 50,
         limit: 5,
       });
+
+      console.log("✅ nearby rows count:", rows.length);
+      console.log("✅ nearby rows sample:", rows[0]);
+
       setNearbyMandis(rows);
     } catch (e: any) {
+      console.log("❌ loadNearby error:", e?.message, e);
       Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
       setNearbyMandis([]);
     }
@@ -200,30 +265,50 @@ export default function MarketplaceScreen() {
     }
   };
 
+  // ----------------------- Backend fetch helpers -----------------------
+  const refreshBackendLocation = async () => {
+    const token = await getToken();
+    if (!token) return null;
+
+    const loc = await getMyLocation(token);
+    const parsed = normalizeCoords(loc);
+
+    if (parsed) {
+      setBackendCoords(parsed);
+      setCoordsSource("backend");
+      return parsed;
+    }
+    return null;
+  };
+
+  // ✅ wait for gps coords reliably (fixes the “gpsCoords still null after await” issue)
+  const waitForGps = async (timeoutMs = 6000) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const c = gpsRef.current;
+      if (c?.lat != null && c?.lng != null) return c;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return null;
+  };
+
   // ----------------------- Init -----------------------
   useEffect(() => {
     (async () => {
-      let foundBackend = false;
-
       try {
-        const token = await getToken();
-        if (token) {
-          const loc = await getMyLocation(token);
-          if (loc?.lat != null && loc?.lng != null) {
-            foundBackend = true;
-            setBackendCoords({ lat: Number(loc.lat), lng: Number(loc.lng) });
-            setCoordsSource("backend");
+        // 1) try backend first
+        const b = await refreshBackendLocation();
+
+        // 2) if backend not available, get gps
+        if (!b) {
+          if (permission !== "granted") {
+            await requestAndGetLocation();
           }
+          const g = gpsCoords ?? (await waitForGps());
+          if (g) setCoordsSource("gps");
         }
       } catch {
         // ignore
-      }
-
-      if (!foundBackend) {
-        if (permission !== "granted") {
-          await requestAndGetLocation();
-        }
-        if (gpsCoords) setCoordsSource("gps");
       }
 
       await loadPrices("manual");
@@ -261,27 +346,33 @@ export default function MarketplaceScreen() {
     setRefreshing(false);
   };
 
+  // ✅ FIXED: Update location reliably + save to backend + re-fetch backend to confirm
   const onUpdateLocation = async () => {
     try {
       await requestAndGetLocation();
-      if (!gpsCoords) {
+
+      const g = gpsCoords ?? (await waitForGps());
+      if (!g) {
         Alert.alert("Location", "Could not fetch GPS location. Try again.");
         return;
       }
 
-      // Immediate UI update
-      setBackendCoords({ lat: gpsCoords.lat, lng: gpsCoords.lng });
+      // Immediate UI update (works even if backend save fails)
+      setBackendCoords({ lat: g.lat, lng: g.lng });
       setCoordsSource("gps");
 
       // Save to backend if possible
       try {
         const token = await getToken();
         if (token) {
-          await updateMyLocation(token, {
-            lat: gpsCoords.lat,
-            lng: gpsCoords.lng,
-          });
-          setCoordsSource("backend");
+          await updateLocation(token, { lat: g.lat, lng: g.lng });
+          // ✅ re-fetch to ensure backend is actually returning what you saved
+          const confirmed = await refreshBackendLocation();
+          if (!confirmed) {
+            // backend didn't return coords in expected shape
+            // still fine, GPS is shown
+            setCoordsSource("gps");
+          }
         }
       } catch {
         // ignore; GPS still works
@@ -295,6 +386,8 @@ export default function MarketplaceScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <NavFarmer />
       <View style={styles.root}>
         <Header
           coordsSource={coordsSource}
@@ -404,7 +497,7 @@ function Header({
   coordsSource,
   onUpdateLocation,
 }: {
-  coordsSource: "backend" | "gps" | "none";
+  coordsSource: CoordsSource;
   onUpdateLocation: () => void;
 }) {
   return (
@@ -417,10 +510,17 @@ function Header({
         }}
       >
         <Text style={styles.headerTitle}>Marketplace</Text>
+
+        <Pressable style={styles.locationPill} onPress={onUpdateLocation}>
+          <Text style={styles.locationPillText}>Update location</Text>
+        </Pressable>
       </View>
 
       <Text style={styles.headerSub}>
         Today’s mandi prices, nearby markets & comparisons
+      </Text>
+      <Text style={styles.headerHint}>
+        Location source: {coordsSource.toUpperCase()}
       </Text>
     </View>
   );
@@ -885,7 +985,9 @@ function maybeTriggerWatchAlertsQuintal(
       if (pct >= 0.1) {
         Alert.alert(
           "Price Alert",
-          `${w.crop} price changed ${(pct * 100).toFixed(0)}% (avg ₹${avg.toFixed(0)} / quintal)`,
+          `${w.crop} price changed ${(pct * 100).toFixed(0)}% (avg ₹${avg.toFixed(
+            0,
+          )} / quintal)`,
         );
       }
     }
@@ -893,12 +995,6 @@ function maybeTriggerWatchAlertsQuintal(
   });
 
   setWatch(updates);
-}
-
-function titleCase(s: string) {
-  if (!s) return s;
-  const t = s.toLowerCase();
-  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 /** Styles */
@@ -922,9 +1018,9 @@ const styles = StyleSheet.create({
   headerSub: { color: "#6c757d", marginTop: 6, fontSize: 14 },
   headerHint: {
     color: "#94a3b8",
-    marginTop: 4,
+    marginTop: 6,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   locationPill: {
