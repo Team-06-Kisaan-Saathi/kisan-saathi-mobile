@@ -6,12 +6,23 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "digitalmarketplace",
-    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAVXLK60fTLjxMWpvNFEtKX6xDt5QooJWo"
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,7 +30,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.digitalmarketplace.dev"
     },
     "web": {
       "output": "static",
@@ -38,11 +50,37 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "react-native-vosk",
+        {
+          "models": [
+            "assets/vosk-model-small-en-in-0.4",
+            "assets/vosk-model-small-hi-0.22",
+            "assets/vosk-model-small-te-0.42"
+          ],
+          "iOSMicrophonePermission": "Allow microphone for voice navigation"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "25.1.8937393"
+          }
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "71d1a27d-9242-4bbe-b1e2-424e149ead5a"
+      }
+    },
+    "owner": "unni2005"
   }
 }
