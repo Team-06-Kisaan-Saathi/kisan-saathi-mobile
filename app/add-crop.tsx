@@ -12,9 +12,9 @@ import {
   Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NavFarmer from "../components/navigation/NavFarmer";
-import CustomDropdown from "../components/CustomDropdown";
 
 type CropData = {
   [key: string]: string[];
@@ -100,28 +100,6 @@ export default function AddCrop() {
       return;
     }
 
-    // Validate quantity is a positive number
-    const quantityNum = parseFloat(quantity);
-    if (isNaN(quantityNum) || quantityNum <= 0) {
-      if (Platform.OS === 'web') {
-        alert(t("alerts.invalid_quantity") || "Please enter a valid positive quantity");
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.invalid_quantity") || "Please enter a valid positive quantity");
-      }
-      return;
-    }
-
-    // Validate price is a positive number
-    const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) {
-      if (Platform.OS === 'web') {
-        alert(t("alerts.invalid_price") || "Please enter a valid positive price");
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.invalid_price") || "Please enter a valid positive price");
-      }
-      return;
-    }
-
     try {
       // Create new listing with unique ID
       const newListing: CropListing = {
@@ -186,56 +164,59 @@ export default function AddCrop() {
             <Text style={styles.title}>{t("listing.add_crop_listings")}</Text>
 
             <View style={styles.form}>
-              {/* Category Dropdown */}
-              <CustomDropdown
-                selectedValue={category}
-                onValueChange={handleCategoryChange}
-                items={[
-                  { label: t("listing.select_category"), value: "" },
-                  ...Object.keys(cropData).map((cat) => ({
-                    label: cat,
-                    value: cat,
-                  })),
-                ]}
-                placeholder={t("listing.select_category")}
-              />
+              {/* Category Picker */}
+              <View style={styles.inputGroup}>
+                <Picker
+                  selectedValue={category}
+                  onValueChange={handleCategoryChange}
+                  style={styles.picker}
+                >
+                  <Picker.Item label={t("listing.select_category")} value="" />
+                  {Object.keys(cropData).map((cat) => (
+                    <Picker.Item key={cat} label={cat} value={cat} />
+                  ))}
+                </Picker>
+              </View>
 
-              {/* Crop Dropdown */}
-              <CustomDropdown
-                selectedValue={crop}
-                onValueChange={(value) => setCrop(value)}
-                enabled={!!category}
-                items={[
-                  { label: t("listing.select_crop"), value: "" },
-                  ...(category
-                    ? cropData[category].map((c) => ({
-                      label: c,
-                      value: c,
-                    }))
-                    : []),
-                ]}
-                placeholder={t("listing.select_crop")}
-              />
+              {/* Crop Picker */}
+              <View style={[styles.inputGroup, !category && styles.disabled]}>
+                <Picker
+                  selectedValue={crop}
+                  onValueChange={(value) => setCrop(value)}
+                  enabled={!!category}
+                  style={styles.picker}
+                >
+                  <Picker.Item label={t("listing.select_crop")} value="" />
+                  {category &&
+                    cropData[category].map((c) => (
+                      <Picker.Item key={c} label={c} value={c} />
+                    ))}
+                </Picker>
+              </View>
 
               {/* Quantity Input */}
-              <TextInput
-                style={styles.input}
-                placeholder={t("listing.quantity")}
-                placeholderTextColor="#94a3b8"
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="numeric"
-              />
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("listing.quantity")}
+                  placeholderTextColor="#94a3b8"
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  keyboardType="numeric"
+                />
+              </View>
 
               {/* Price Input */}
-              <TextInput
-                style={styles.input}
-                placeholder={t("listing.price")}
-                placeholderTextColor="#94a3b8"
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="numeric"
-              />
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("listing.price")}
+                  placeholderTextColor="#94a3b8"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                />
+              </View>
 
               {/* Submit Button */}
               <Pressable
@@ -293,6 +274,28 @@ const styles = StyleSheet.create({
 
   form: {
     gap: 16,
+  },
+
+  inputGroup: {
+    width: "100%",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    backgroundColor: "white",
+    overflow: "hidden",
+  },
+
+  disabled: {
+    backgroundColor: "#f8fafc",
+    opacity: 0.6,
+  },
+
+  picker: {
+    width: "100%",
+    height: 50,
+    color: "#1a4b84",
+    backgroundColor: "transparent",
+    borderWidth: 0,
   },
 
   input: {

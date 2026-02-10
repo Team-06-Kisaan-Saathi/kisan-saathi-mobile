@@ -114,9 +114,7 @@
     "success": "Success",
     "fill_all_fields": "Please fill all fields",
     "crop_saved": "Crop listing saved successfully!",
-    "crop_save_failed": "Failed to save crop listing. Please try again.",
-    "invalid_quantity": "Please enter a valid positive quantity",
-    "invalid_price": "Please enter a valid positive price"
+    "crop_save_failed": "Failed to save crop listing. Please try again."
   },
   "my_listings": {
     "title": "My Listings",
@@ -133,4 +131,6 @@
     "remove_success": "Listing removed successfully",
     "remove_failed": "Failed to remove listing"
   }
+
 }
+

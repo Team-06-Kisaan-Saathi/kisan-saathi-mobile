@@ -42,7 +42,7 @@ export default function FarmerDashboard() {
             <DashboardTile
               iconBg="#c8e6c9"
               iconColor="#2e7d32"
-              icon="storefront-outline"
+              icon="storefront"
               title={t("farmer.marketplace")}
               onPress={() => router.push("/marketplace")}
             />
@@ -51,7 +51,7 @@ export default function FarmerDashboard() {
             <DashboardTile
               iconBg="#ffcdd2"
               iconColor="#c62828"
-              icon="hammer-outline"
+              icon="hammer"
               title={t("farmer.live_auctions")}
               onPress={() => router.push("/live-auctions")}
             />
@@ -60,7 +60,7 @@ export default function FarmerDashboard() {
             <DashboardTile
               iconBg="#bbdefb"
               iconColor="#1565c0"
-              icon="list-outline"
+              icon="list"
               title={t("farmer.my_listings")}
               onPress={() => router.push("/my-listings")}
             />
