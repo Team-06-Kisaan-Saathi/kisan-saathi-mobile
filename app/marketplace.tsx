@@ -49,7 +49,7 @@ try {
   Marker = maps.Marker;
   PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
 } catch (e) {
-  // react-native-maps not installed (optional)
+  //react-native-maps not installed (optional)
 }
 
 type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
