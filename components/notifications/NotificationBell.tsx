@@ -8,15 +8,44 @@ import {
 } from "react-native";
 import { Bell } from "lucide-react-native";
 
+/**
+ * NotificationBell Component
+ *
+ * Description:
+ * Displays a bell icon with unread notification badge.
+ * Opens a dropdown-style modal showing notification list.
+ *
+ * Used In:
+ * - Farmer navigation bar (e.g., NavFarmer component)
+ *
+ * Responsibilities:
+ * - Show unread notification count
+ * - Mark notifications as read when opened
+ * - Toggle notification modal visibility
+ *
+ * Inputs:
+ * - None (currently uses local state; can be extended to accept props/API data)
+ *
+ * Outputs:
+ * - Renders bell icon with badge
+ * - Triggers UI state changes (modal visibility & read status)
+ */
+
+
 export default function NotificationBell() {
+  // Controls visibility of notification modal
   const [visible, setVisible] = useState(false);
+
+  // Local notification state (mock data — replace with API integration later)
   const [notifications, setNotifications] = useState([
     { id: 1, text: "New bid on your Tomato listing", read: false },
     { id: 2, text: "Mandi price updated for Onion", read: false },
   ]);
 
+  // Derived state: calculate number of unread notifications
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // Opens modal and marks all notifications as read
   const openNotifications = () => {
     setVisible(true);
     setNotifications(notifications.map(n => ({ ...n, read: true })));
@@ -24,7 +53,7 @@ export default function NotificationBell() {
 
   return (
     <>
-      {/* Bell Icon */}
+      {/* Bell icon with unread badge indicator */}
       <TouchableOpacity onPress={openNotifications} style={styles.bellWrapper}>
         <Bell size={26} color="#ffffff" />
         {unreadCount > 0 && (
@@ -34,8 +63,9 @@ export default function NotificationBell() {
         )}
       </TouchableOpacity>
 
-      {/* Notification Modal */}
+      {/* Notification dropdown Modal */}
       <Modal transparent visible={visible} animationType="fade">
+        {/* Close modal when tapping outside notification box */}
         <TouchableOpacity
           style={styles.overlay}
           onPress={() => setVisible(false)}
