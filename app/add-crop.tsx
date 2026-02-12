@@ -14,6 +14,39 @@ import { Stack, useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
 import NavFarmer from "../components/navigation/NavFarmer";
 
+
+/**
+ * AddCrop Page
+ *
+ * Description:
+ * Form screen that allows Farmer users to create a new crop listing.
+ *
+ * Loaded When:
+ * - User selects "Add Crop" from FarmerDashboard
+ * - Navigates to /add-crop route
+ *
+ * Responsibilities:
+ * - Manage form state (category, crop, quantity, price)
+ * - Dynamically filter crops based on selected category
+ * - Validate required fields before submission
+ * - Reset form after submission
+ * - Navigate back to previous screen
+ *
+ * Dependencies:
+ * - NavFarmer component
+ * - expo-router navigation
+ * - i18n translation keys
+ *
+ * Inputs:
+ * - None (currently local state driven; future backend integration required)
+ *
+ * Outputs:
+ * - Renders crop listing form UI
+ * - Logs form data (placeholder for API submission)
+ * - Navigates back on successful submit
+ */
+
+
 type CropData = {
   [key: string]: string[];
 };
@@ -79,6 +112,7 @@ export default function AddCrop() {
     setCrop("");
   };
 
+  // Validates form fields and processes crop listing submission
   const handleSubmit = (): void => {
     if (!category || !crop || !quantity || !price) {
       alert("Please fill all fields");
@@ -93,7 +127,7 @@ export default function AddCrop() {
     setQuantity("");
     setPrice("");
 
-    // Navigate back to dashboard
+    //Navigate back to previous screen after successful submission
     router.back();
   };
 
