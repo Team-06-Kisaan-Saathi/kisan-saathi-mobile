@@ -6,13 +6,46 @@ import NavFarmer from "../components/navigation/NavFarmer";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
+/**
+ * FarmerDashboard Page
+ *
+ * Description:
+ * Main landing dashboard for Farmer role.
+ * Displays personalized welcome message and quick-access action tiles.
+ *
+ * Loaded When:
+ * - User selects "Farmer" role
+ * - Navigates to /farmer-dashboard route
+ *
+ * Responsibilities:
+ * - Fetch and display stored user name
+ * - Render navigation bar (NavFarmer)
+ * - Provide quick navigation to farmer-specific features
+ *
+ * Dependencies:
+ * - AsyncStorage (userName)
+ * - NavFarmer component
+ * - expo-router navigation
+ *
+ * Inputs:
+ * - Relies on persisted user state and i18n context
+ *
+ * Outputs:
+ * - Renders dashboard UI
+ * - Triggers route navigation via router.push()
+ */
+
+
 export default function FarmerDashboard() {
   const { t } = useTranslation();
   const router = useRouter();
+  // Stores farmer name retrieved from local storage
   const [userName, setUserName] = useState<string>("");
 
+  // Retrieve persisted user name from AsyncStorage on mount
   useEffect(() => {
-    // Get user name from AsyncStorage
+    // Fetch stored userName (if available)
     AsyncStorage.getItem("userName").then((name) => {
       if (name) setUserName(name);
     });
@@ -25,6 +58,7 @@ export default function FarmerDashboard() {
       <View style={styles.container}>
         <NavFarmer />
 
+        {/* Scrollable dashboard content */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Header */}
           <View style={styles.header}>
@@ -36,7 +70,7 @@ export default function FarmerDashboard() {
             <Text style={styles.subtitle}>{t("farmer.tagline")}</Text>
           </View>
 
-          {/* Grid */}
+          {/* Responsive grid of quick-access action tiles */}
           <View style={styles.grid}>
             {/* Marketplace */}
             <DashboardTile
@@ -97,6 +131,21 @@ export default function FarmerDashboard() {
     </>
   );
 }
+
+/**
+ * DashboardTile Component
+ *
+ * Description:
+ * Reusable tile used in FarmerDashboard grid.
+ * Displays icon and title with navigation behavior.
+ *
+ * Props:
+ * - iconBg: background color for icon container
+ * - iconColor: color of icon
+ * - icon: Ionicons name
+ * - title: tile label
+ * - onPress: navigation handler
+ */
 
 function DashboardTile({
   iconBg,
