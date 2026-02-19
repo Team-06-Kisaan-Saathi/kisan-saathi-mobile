@@ -78,7 +78,7 @@ export default function VoiceNavBtn() {
 
   const stop = async (reason = "manual") => {
     try {
-      await (Vosk as any).stop?.();
+      await Vosk?.stop?.();
     } catch { }
     setListening(false);
     log("🛑 STOP:", reason);
@@ -86,7 +86,7 @@ export default function VoiceNavBtn() {
 
   const unload = async () => {
     try {
-      await (Vosk as any).unload?.();
+      await Vosk?.unload?.();
     } catch { }
     loadedLangRef.current = null;
     log("🧹 UNLOAD");
@@ -101,7 +101,7 @@ export default function VoiceNavBtn() {
     const key = MODELS[target];
     log("📦 Loading model:", key);
 
-    await (Vosk as any).loadModel(key);
+    await Vosk?.loadModel?.(key);
 
     loadedLangRef.current = target;
     log("✅ Model loaded:", key);
@@ -476,10 +476,10 @@ export default function VoiceNavBtn() {
 
       // Most compatible start: no args first
       try {
-        await (Vosk as any).start?.();
+        await Vosk?.start?.();
       } catch {
         // fallback with options
-        await (Vosk as any).start?.({ grammar: GRAMMAR[lang], timeout: 8000 });
+        await Vosk?.start?.({ grammar: GRAMMAR[lang], timeout: 8000 });
       }
     } catch (e) {
       log("❌ start failed:", e);
