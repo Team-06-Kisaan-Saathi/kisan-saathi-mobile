@@ -3,9 +3,36 @@ import { View, Text, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import NavFarmer from "../components/navigation/NavFarmer";
 
+/**
+ * FarmerPreferences Page
+ *
+ * Description:
+ * Preferences screen for Farmer users.
+ * Allows management of crop preferences and notification settings.
+ *
+ * Loaded When:
+ * - User navigates to /farmer-preferences route
+ *
+ * Responsibilities:
+ * - Render farmer navigation bar
+ * - Display preferences configuration section (placeholder for future implementation)
+ *
+ * Dependencies:
+ * - NavFarmer component
+ * - expo-router Stack configuration
+ *
+ * Inputs:
+ * - Static UI placeholder
+ *
+ * Outputs:
+ * - Renders preferences screen UI
+ */
+
+
 export default function FarmerPreferences() {
     return (
         <>
+            {/* Hide default header (custom navigation handled via NavFarmer) */}
             <Stack.Screen options={{ headerShown: false }} />
             <View style={styles.container}>
                 <NavFarmer />

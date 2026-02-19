@@ -9,24 +9,46 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
 import NavFarmer from "../components/navigation/NavFarmer";
-import CustomDropdown from "../components/CustomDropdown";
+
+
+/**
+ * AddCrop Page
+ *
+ * Description:
+ * Form screen that allows Farmer users to create a new crop listing.
+ *
+ * Loaded When:
+ * - User selects "Add Crop" from FarmerDashboard
+ * - Navigates to /add-crop route
+ *
+ * Responsibilities:
+ * - Manage form state (category, crop, quantity, price)
+ * - Dynamically filter crops based on selected category
+ * - Validate required fields before submission
+ * - Reset form after submission
+ * - Navigate back to previous screen
+ *
+ * Dependencies:
+ * - NavFarmer component
+ * - expo-router navigation
+ * - i18n translation keys
+ *
+ * Inputs:
+ * - None (currently local state driven; future backend integration required)
+ *
+ * Outputs:
+ * - Renders crop listing form UI
+ * - Logs form data (placeholder for API submission)
+ * - Navigates back on successful submit
+ */
+
 
 type CropData = {
   [key: string]: string[];
-};
-
-export type CropListing = {
-  id: string;
-  category: string;
-  crop: string;
-  quantity: string;
-  price: string;
-  createdAt: string;
 };
 
 const cropData: CropData = {
@@ -90,84 +112,23 @@ export default function AddCrop() {
     setCrop("");
   };
 
-  const handleSubmit = async (): Promise<void> => {
+  // Validates form fields and processes crop listing submission
+  const handleSubmit = (): void => {
     if (!category || !crop || !quantity || !price) {
-      if (Platform.OS === 'web') {
-        alert(t("alerts.fill_all_fields"));
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.fill_all_fields"));
-      }
+      alert("Please fill all fields");
       return;
     }
 
-    // Validate quantity is a positive number
-    const quantityNum = parseFloat(quantity);
-    if (isNaN(quantityNum) || quantityNum <= 0) {
-      if (Platform.OS === 'web') {
-        alert(t("alerts.invalid_quantity") || "Please enter a valid positive quantity");
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.invalid_quantity") || "Please enter a valid positive quantity");
-      }
-      return;
-    }
+    console.log({ category, crop, quantity, price });
 
-    // Validate price is a positive number
-    const priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) {
-      if (Platform.OS === 'web') {
-        alert(t("alerts.invalid_price") || "Please enter a valid positive price");
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.invalid_price") || "Please enter a valid positive price");
-      }
-      return;
-    }
+    // Reset form
+    setCategory("");
+    setCrop("");
+    setQuantity("");
+    setPrice("");
 
-    try {
-      // Create new listing with unique ID
-      const newListing: CropListing = {
-        id: Date.now().toString(),
-        category,
-        crop,
-        quantity,
-        price,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Get existing listings
-      const existingListings = await AsyncStorage.getItem("cropListings");
-      const listings: CropListing[] = existingListings
-        ? JSON.parse(existingListings)
-        : [];
-
-      // Add new listing
-      listings.push(newListing);
-
-      // Save to AsyncStorage
-      await AsyncStorage.setItem("cropListings", JSON.stringify(listings));
-
-      // Reset form
-      setCategory("");
-      setCrop("");
-      setQuantity("");
-      setPrice("");
-
-      // Show success message
-      if (Platform.OS === 'web') {
-        alert(t("alerts.crop_saved"));
-      } else {
-        Alert.alert(t("alerts.success"), t("alerts.crop_saved"));
-      }
-
-      // Navigate to my-listings page
-      router.push("/my-listings");
-    } catch (error) {
-      console.error("Error saving crop listing:", error);
-      if (Platform.OS === 'web') {
-        alert(t("alerts.crop_save_failed"));
-      } else {
-        Alert.alert(t("alerts.error"), t("alerts.crop_save_failed"));
-      }
-    }
+    //Navigate back to previous screen after successful submission
+    router.back();
   };
 
   return (
@@ -186,56 +147,59 @@ export default function AddCrop() {
             <Text style={styles.title}>{t("listing.add_crop_listings")}</Text>
 
             <View style={styles.form}>
-              {/* Category Dropdown */}
-              <CustomDropdown
-                selectedValue={category}
-                onValueChange={handleCategoryChange}
-                items={[
-                  { label: t("listing.select_category"), value: "" },
-                  ...Object.keys(cropData).map((cat) => ({
-                    label: cat,
-                    value: cat,
-                  })),
-                ]}
-                placeholder={t("listing.select_category")}
-              />
+              {/* Category Picker */}
+              <View style={styles.inputGroup}>
+                <Picker
+                  selectedValue={category}
+                  onValueChange={handleCategoryChange}
+                  style={styles.picker}
+                >
+                  <Picker.Item label={t("listing.select_category")} value="" />
+                  {Object.keys(cropData).map((cat) => (
+                    <Picker.Item key={cat} label={cat} value={cat} />
+                  ))}
+                </Picker>
+              </View>
 
-              {/* Crop Dropdown */}
-              <CustomDropdown
-                selectedValue={crop}
-                onValueChange={(value) => setCrop(value)}
-                enabled={!!category}
-                items={[
-                  { label: t("listing.select_crop"), value: "" },
-                  ...(category
-                    ? cropData[category].map((c) => ({
-                      label: c,
-                      value: c,
-                    }))
-                    : []),
-                ]}
-                placeholder={t("listing.select_crop")}
-              />
+              {/* Crop Picker */}
+              <View style={[styles.inputGroup, !category && styles.disabled]}>
+                <Picker
+                  selectedValue={crop}
+                  onValueChange={(value) => setCrop(value)}
+                  enabled={!!category}
+                  style={styles.picker}
+                >
+                  <Picker.Item label={t("listing.select_crop")} value="" />
+                  {category &&
+                    cropData[category].map((c) => (
+                      <Picker.Item key={c} label={c} value={c} />
+                    ))}
+                </Picker>
+              </View>
 
               {/* Quantity Input */}
-              <TextInput
-                style={styles.input}
-                placeholder={t("listing.quantity")}
-                placeholderTextColor="#94a3b8"
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="numeric"
-              />
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("listing.quantity")}
+                  placeholderTextColor="#94a3b8"
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  keyboardType="numeric"
+                />
+              </View>
 
               {/* Price Input */}
-              <TextInput
-                style={styles.input}
-                placeholder={t("listing.price")}
-                placeholderTextColor="#94a3b8"
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="numeric"
-              />
+              <View style={styles.inputGroup}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t("listing.price")}
+                  placeholderTextColor="#94a3b8"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                />
+              </View>
 
               {/* Submit Button */}
               <Pressable
@@ -245,7 +209,7 @@ export default function AddCrop() {
                   pressed && styles.submitButtonPressed,
                 ]}
               >
-                <Text style={styles.submitButtonText}>{t("listing.save")}</Text>
+                <Text style={styles.submitButtonText}>{t("listing.add")}</Text>
               </Pressable>
             </View>
           </View>
@@ -293,6 +257,28 @@ const styles = StyleSheet.create({
 
   form: {
     gap: 16,
+  },
+
+  inputGroup: {
+    width: "100%",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    backgroundColor: "white",
+    overflow: "hidden",
+  },
+
+  disabled: {
+    backgroundColor: "#f8fafc",
+    opacity: 0.6,
+  },
+
+  picker: {
+    width: "100%",
+    height: 50,
+    color: "#1a4b84",
+    backgroundColor: "transparent",
+    borderWidth: 0,
   },
 
   input: {
