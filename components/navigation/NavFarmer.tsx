@@ -12,19 +12,47 @@ import {
   View,
 } from "react-native";
 
+/**
+ * NavFarmer Component
+ *
+ * Description:
+ * Fixed navigation bar for Farmer users.
+ * Provides route-based navigation and profile modal actions.
+ *
+ * Used In:
+ * - Farmer Dashboard page (farmer-dashboard.tsx)
+ *
+ * Responsibilities:
+ * - Highlight active route
+ * - Handle role-based profile navigation
+ * - Provide logout functionality
+ * - Display fallback profile action modal
+ *
+ * Inputs:
+ * - None (relies on router, pathname, AsyncStorage, and i18n context)
+ *
+ * Outputs:
+ * - Renders top navigation UI
+ * Note:
+ * Assumes user role is stored in AsyncStorage under key "role".
+ */
+
+
+//  navigation component for Farmer role with role-based profile handling
 export default function NavFarmer() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Active state helper
+  // Utility to determine active route for dynamic icon and label styling
   const isActive = (route: string) => pathname === route;
 
   // Profile click: Farmer -> /farmer, Buyer -> do nothing (for now), Missing role -> open modal
   const handleProfilePress = async () => {
     try {
       const roleRaw = await AsyncStorage.getItem("role");
+      // Normalize role value to avoid case and whitespace inconsistencies
       const role = (roleRaw || "").trim().toLowerCase();
 
       console.log(
@@ -34,11 +62,13 @@ export default function NavFarmer() {
         role,
       );
 
+      // Redirect farmer users to farmer profile screen
       if (role === "farmer") {
         router.push("/farmer" as any);
         return;
       }
 
+      // Buyer profile navigation placeholder (not implemented yet)
       if (role === "buyer") {
         console.log("ℹBuyer profile not implemented yet");
         return;
@@ -52,14 +82,16 @@ export default function NavFarmer() {
     }
   };
 
-  // ✅ Logout: clear token/role (optional but recommended)
+// Clears authentication data and safely redirects to login screen
   const handleLogout = async () => {
     try {
+      // Remove stored authentication credentials
       await AsyncStorage.multiRemove(["token", "role"]);
     } catch (e) {
       // ignore
     } finally {
       setProfileOpen(false);
+      // Replace navigation stack to prevent back navigation after logout
       router.replace("/login" as any);
     }
   };

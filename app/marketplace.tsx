@@ -1,5 +1,5 @@
 // src/screens/MarketplaceScreen.tsx
-import { Stack } from "expo-router";
+import NavFarmer from "../components/navigation/NavFarmer";
 import {
   BarChart2,
   IndianRupee,
@@ -26,7 +26,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import NavFarmer from "../components/navigation/NavFarmer";
+import { Stack } from "expo-router";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -47,7 +47,7 @@ try {
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
 } catch (e) {
   // react-native-maps not installed (optional)
 }
@@ -173,43 +173,28 @@ export default function MarketplaceScreen() {
       return;
     }
 
-    const { lat, lng } = activeCoords;
-
-    console.log(`📡 loadNearby (Source: ${coordsSource}) -> calling nearby with:`, {
-      lat,
-      lng,
+    console.log("📡 loadNearby -> calling nearby with:", {
+      lat: activeCoords.lat,
+      lng: activeCoords.lng,
       distKm: 50,
       limit: 5,
     });
 
     try {
-      let rows = await fetchNearbyMandis({
-        lat,
-        lng,
+      const rows = await fetchNearbyMandis({
+        lat: activeCoords.lat,
+        lng: activeCoords.lng,
         distKm: 50,
         limit: 5,
       });
 
-      // continue with rows handling…
-
-
-      console.log(`✅ nearby (50km): ${rows.length} found`);
-
-      // 2) If 0 found, try expanding to 150km automatically
-      if (rows.length === 0) {
-        console.log("📡 loadNearby -> 0 found at 50km, trying 150km...");
-        rows = await fetchNearbyMandis({
-          lat,
-          lng,
-          distKm: 150,
-          limit: 10,
-        });
-        console.log(`✅ nearby (150km): ${rows.length} found`);
-      }
+      console.log("✅ nearby rows count:", rows.length);
+      console.log("✅ nearby rows sample:", rows[0]);
 
       setNearbyMandis(rows);
     } catch (e: any) {
-      console.log("❌ loadNearby error:", e?.message);
+      console.log("❌ loadNearby error:", e?.message, e);
+      Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
       setNearbyMandis([]);
     }
   };
@@ -357,13 +342,8 @@ export default function MarketplaceScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    try {
-      // Refresh location from backend first
-      await refreshBackendLocation();
-      await Promise.all([loadNearby(), loadPrices("manual")]);
-    } finally {
-      setRefreshing(false);
-    }
+    await Promise.all([loadNearby(), loadPrices("manual")]);
+    setRefreshing(false);
   };
 
   // ✅ FIXED: Update location reliably + save to backend + re-fetch backend to confirm

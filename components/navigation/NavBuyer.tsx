@@ -10,18 +10,46 @@ import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 
+
+/**
+ * NavBuyer Component
+ *
+ * Description:
+ * Top navigation bar for Buyer users.
+ * Provides horizontal route navigation and profile dropdown actions.
+ *
+ * Used In:
+ * - buyer-dashboard.tsx
+ *
+ * Responsibilities:
+ * - Navigate between buyer-related routes
+ * - Toggle profile dropdown menu
+ * - Handle profile, preferences, and logout navigation
+ *
+ * Inputs:
+ * - None (relies on router and i18n context)
+ *
+ * Outputs:
+ * - Renders navigation UI
+ * - Triggers navigation side effects via expo-router
+ */
+
+
 export default function NavBuyer() {
     const { t } = useTranslation();
+    // Controls visibility of profile dropdown menu
     const [open, setOpen] = useState(false);
 
+    {/* Top navigation container for Buyer role */}
     return (
         <View style={styles.navBuyer}>
+            {/* Horizontally scrollable navigation links */}
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.navLeft}
                 contentContainerStyle={styles.navLeftContent}
-            >zz
+            >
                 <TouchableOpacity
                     style={styles.navItem}
                     onPress={() => router.push("/buyer-dashboard")}
@@ -63,11 +91,13 @@ export default function NavBuyer() {
                 </TouchableOpacity>
             </ScrollView>
 
+            {/* Profile icon and dropdown menu */}
             <View style={styles.navRight}>
                 <TouchableOpacity onPress={() => setOpen(!open)} activeOpacity={0.7}>
                     <Ionicons name="person-circle-outline" size={32} color="#bbf7d0" />
                 </TouchableOpacity>
 
+                {/* Conditional profile dropdown menu */}
                 {open && (
                     <View style={styles.profileDropdown}>
                         <TouchableOpacity
