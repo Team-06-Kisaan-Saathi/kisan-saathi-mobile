@@ -12,8 +12,40 @@ import {
 import NavBuyer from "../components/navigation/NavBuyer";
 // import VoiceNavBtn from "../components/VoiceNavBtn"; // Disabled - requires native module build
 
+/**
+ * BuyerDashboard Page
+ *
+ * Description:
+ * Main landing dashboard for Buyer role.
+ * Displays various auction and marketplace options for buyers.
+ *
+ * Loaded When:
+ * - User selects "Buyer" role
+ * - Navigates to /buyer-dashboard route
+ *
+ * Responsibilities:
+ * - Render navigation bar (NavBuyer)
+ * - Provide Logout functionality
+ * - Provide quick navigation to buyer-specific features (Marketplace, Auctions, Bids, etc.)
+ *
+ * Dependencies:
+ * - NavBuyer component
+ * - expo-router navigation
+ * - i18next for translations
+ *
+ * Inputs:
+ * - Relies on i18n context
+ *
+ * Outputs:
+ * - Renders buyer dashboard UI
+ * - Triggers route navigation via router.push() or router.replace()
+ */
+
+
 export default function BuyerDashboard() {
+  // Hook for i18n translations
   const { t } = useTranslation();
+  // Hook for navigation
   const router = useRouter();
 
   return (
@@ -21,9 +53,10 @@ export default function BuyerDashboard() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.container}>
-        {/* Bottom Navigation */}
+        {/* Navigation bar for Buyer role */}
         <NavBuyer />
 
+        {/* Global Logout button */}
         <Pressable
           onPress={() => {
             router.replace("/login");
@@ -35,8 +68,9 @@ export default function BuyerDashboard() {
           </Text>
         </Pressable>
 
+        {/* Scrollable content of the dashboard */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
+          {/* Header Section */}
           <View style={styles.header}>
             <View style={styles.headerIcon}>
               <Ionicons name="cart" size={28} color="#fff" />
@@ -52,7 +86,7 @@ export default function BuyerDashboard() {
             </Text>
           </View>
 
-          {/* Dashboard Grid */}
+          {/* Dashboard Feature Grid */}
           <View style={styles.grid}>
             {/* Marketplace */}
             <DashboardTile
@@ -124,6 +158,21 @@ export default function BuyerDashboard() {
 }
 
 /* ---------- Reusable Tile Component ---------- */
+
+/**
+ * DashboardTile Component
+ *
+ * Description:
+ * Reusable tile used in BuyerDashboard grid.
+ * Displays icon, title, and description with navigation behavior.
+ *
+ * Props:
+ * - bg: background color for the tile
+ * - icon: Ionicons name
+ * - title: tile label
+ * - sub: tile description
+ * - onPress: navigation handler
+ */
 
 function DashboardTile({
   bg,
