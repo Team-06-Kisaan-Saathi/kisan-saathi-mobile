@@ -173,24 +173,24 @@ export default function MarketplaceScreen() {
       return;
     }
 
-const { lat, lng } = activeCoords;
+    const { lat, lng } = activeCoords;
 
-console.log(`📡 loadNearby (Source: ${coordsSource}) -> calling nearby with:`, {
-  lat,
-  lng,
-  distKm: 50,
-  limit: 5,
-});
+    console.log(`📡 loadNearby (Source: ${coordsSource}) -> calling nearby with:`, {
+      lat,
+      lng,
+      distKm: 50,
+      limit: 5,
+    });
 
-try {
-  const rows = await fetchNearbyMandis({
-    lat,
-    lng,
-    distKm: 50,
-    limit: 5,
-  });
+    try {
+      let rows = await fetchNearbyMandis({
+        lat,
+        lng,
+        distKm: 50,
+        limit: 5,
+      });
 
-  // continue with rows handling…
+      // continue with rows handling…
 
 
       console.log(`✅ nearby (50km): ${rows.length} found`);
