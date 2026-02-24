@@ -1,5 +1,5 @@
 // src/screens/MarketplaceScreen.tsx
-import NavFarmer from "../components/navigation/NavFarmer";
+import { Stack } from "expo-router";
 import {
   BarChart2,
   IndianRupee,
@@ -26,7 +26,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Stack } from "expo-router";
+import NavFarmer from "../components/navigation/NavFarmer";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -183,19 +183,9 @@ export default function MarketplaceScreen() {
     });
 
     try {
-      let rows = await fetchNearbyMandis({
+      const rows = await fetchNearbyMandis({
         lat,
         lng,
-        distKm: 50,
-        limit: 5,
-      });
-
-      // continue with rows handling…
-
-    try {
-      const rows = await fetchNearbyMandis({
-        lat: activeCoords.lat,
-        lng: activeCoords.lng,
         distKm: 50,
         limit: 5,
       });
