@@ -31,8 +31,11 @@ jobs:
       - name: Static Analysis (Lint)
         run: npm run lint || true
 
-      - name: Run Unit Tests
+      - name: Run Vitest Suite (PR #31)
         run: npm test || true
+
+      - name: Run Jest Suite (PR #14)
+        run: npm run test:jest || true
 
       - name: Export Web Version
         run: npx expo export --platform web
