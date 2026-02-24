@@ -39,7 +39,7 @@ export default function VerifyScreen() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const inputs = useRef<Array<TextInput | null>>([]);
+  const inputs = useRef<(TextInput | null)[]>([]);
 
   const otp = useMemo(() => digits.join(""), [digits]);
   const canSubmit = otp.length === 6 && !digits.includes("");

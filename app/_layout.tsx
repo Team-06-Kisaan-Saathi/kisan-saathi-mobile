@@ -6,8 +6,8 @@ import { StyleSheet, View } from "react-native";
 // import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
-import "../i18n/i18n";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
+
 
 export default function RootLayout() {
   const { i18n } = useTranslation();

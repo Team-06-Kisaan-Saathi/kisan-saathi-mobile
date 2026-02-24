@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Pressable } from "react-native";
-
-import {
+import { Pressable ,
   ScrollView,
   StyleSheet,
   Text,
   View
 } from "react-native";
+
+
 import NavBuyer from "../components/navigation/NavBuyer";
 // import VoiceNavBtn from "../components/VoiceNavBtn"; // Disabled - requires native module build
 
