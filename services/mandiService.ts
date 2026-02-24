@@ -1,7 +1,5 @@
-// src/services/mandiService.ts
-import { API_BASE } from "./api";
+import { ENDPOINTS } from "./api";
 import { apiFetch } from "./http";
-import { getToken } from "./token";
 
 export type Crop = "Tomato" | "Onion" | "Potato" | "Wheat" | "Rice" | "Maize";
 
@@ -51,52 +49,22 @@ function normalizeArray<T>(res: any): T[] {
   return [];
 }
 
-/** Attach auth token if available (fixes HTTP 401 on protected routes) */
-async function authHeaders(): Promise<Record<string, string>> {
-  const token = await getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-/**
- * GET /api/mandi?crop=Tomato&sort=latest
- * Backend commonly returns: { success, count, data: [...] }
- */
 export async function fetchMandiPrices(params: {
   crop?: Crop;
   sort?: "latest" | "price_desc";
+  limit?: number;
+  location?: string;
 }) {
   const qs = toQuery(params as any);
-  const url = `${API_BASE}/mandi${qs ? `?${qs}` : ""}`;
+  const url = `${ENDPOINTS.MARKET.MANDI}${qs ? `?${qs}` : ""}`;
 
-  const res = await apiFetch<ApiEnvelope<MandiPriceDoc[]>>(url, {
-    headers: {
-      ...(await authHeaders()),
-    },
+  const res = await apiFetch<any>(url, {
+    method: "GET",
   });
 
   return normalizeArray<MandiPriceDoc>(res);
 }
 
-/**
- * GET /api/mandi/nearby?lat=..&lng=..&distKm=50&limit=5
- *
- * Your backend response looks like:
- * {
- *   success: true,
- *   count: 3,
- *   data: [
- *     {
- *       _id: "Azadpur Mandi",
- *       locationName: "Azadpur, Delhi",
- *       coordinates: [77.12345, 28.6789],  // [lng, lat]
- *       distance: 11054.66                 // meters
- *     }
- *   ]
- * }
- *
- * This function converts it into:
- * { id, name, lat, lng, distKm }
- */
 export async function fetchNearbyMandis(params: {
   lat: number;
   lng: number;
@@ -104,28 +72,14 @@ export async function fetchNearbyMandis(params: {
   limit: number;
 }): Promise<NearbyMandi[]> {
   const qs = toQuery(params as any);
+  const url = `${ENDPOINTS.MARKET.NEARBY}${qs ? `?${qs}` : ""}`;
 
-  // Your comment says backend is GET, so use GET first:
-  const url = `${API_BASE}/mandi/nearby${qs ? `?${qs}` : ""}`;
-
-  // NOTE: If your backend actually expects POST, I give POST fallback below.
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch<any>(url, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        ...(await authHeaders()),
-      },
     });
 
-    const json: any = await readJsonSafe(res);
-
-    const rawRows =
-      (Array.isArray(json?.data) && json.data) ||
-      (Array.isArray(json?.mandis) && json.mandis) ||
-      (Array.isArray(json?.results) && json.results) ||
-      (Array.isArray(json) && json) ||
-      [];
+    const rawRows = normalizeArray<any>(res);
 
     return rawRows.map((r: any, idx: number) => {
       const coords =
@@ -145,38 +99,19 @@ export async function fetchNearbyMandis(params: {
       };
     });
   } catch (e: any) {
-    // Optional POST fallback if your backend is actually POST:
-    console.log(
-      "⚠️ GET /mandi/nearby failed, trying POST fallback...",
-      e?.message,
-    );
-
-    const postUrl = `${API_BASE}/mandi/nearby`;
-    const res2 = await fetch(postUrl, {
+    // POST Fallback for local dev if GET is fussy
+    console.log("⚠️ GET /mandi/nearby failed, trying POST fallback...");
+    const res2 = await apiFetch<any>(ENDPOINTS.MARKET.NEARBY, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...(await authHeaders()),
-      },
       body: JSON.stringify(params),
     });
 
-    const json2: any = await readJsonSafe(res2);
-
-    const rawRows2 =
-      (Array.isArray(json2?.data) && json2.data) ||
-      (Array.isArray(json2?.mandis) && json2.mandis) ||
-      (Array.isArray(json2?.results) && json2.results) ||
-      (Array.isArray(json2) && json2) ||
-      [];
+    const rawRows2 = normalizeArray<any>(res2);
 
     return rawRows2.map((r: any, idx: number) => {
-      const coords =
-        r?.coordinates ?? r?.locationCoordinates ?? r?.coords ?? [];
+      const coords = r?.coordinates ?? r?.locationCoordinates ?? r?.coords ?? [];
       const lng = Array.isArray(coords) ? Number(coords[0]) : Number(r?.lng);
       const lat = Array.isArray(coords) ? Number(coords[1]) : Number(r?.lat);
-
       const meters = Number(r?.distance ?? r?.distMeters ?? r?.meters ?? 0);
       const km = meters ? meters / 1000 : Number(r?.distKm ?? 0);
 
@@ -188,28 +123,5 @@ export async function fetchNearbyMandis(params: {
         distKm: km,
       };
     });
-  }
-}
-
-async function readJsonSafe(res: Response) {
-  const text = await res.text();
-
-  // Helpful logs (keep these while debugging)
-  console.log("🌐 HTTP", res.status, res.url);
-  console.log("🌐 RAW(first 300):", text.slice(0, 300));
-
-  if (text.trim().startsWith("<")) {
-    // HTML response => wrong endpoint/method or server error page
-    throw new Error(
-      `API returned HTML (status ${res.status}). Check URL/method. Starts: ${text.slice(0, 40)}`,
-    );
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(
-      `API did not return valid JSON (status ${res.status}). Starts: ${text.slice(0, 40)}`,
-    );
   }
 }

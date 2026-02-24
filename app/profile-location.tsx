@@ -14,8 +14,8 @@ import {
   View,
 } from "react-native";
 import { registerUser } from "../services/userServices";
-
-const API = "http://10.104.34.251:5001/api";
+import { ENDPOINTS } from "../services/api";
+import { apiFetch } from "../services/http";
 
 type Place = {
   id: string;
@@ -70,12 +70,12 @@ export default function ProfileLocation() {
         // ✅ include fields your /mandi API actually returns
         const name = String(
           x?.locationName ??
-            x?.mandi ?? // e.g., "Azadpur Mandi"
-            x?.name ??
-            x?.mandiName ??
-            x?.market ??
-            x?.place ??
-            "Unknown",
+          x?.mandi ?? // e.g., "Azadpur Mandi"
+          x?.name ??
+          x?.mandiName ??
+          x?.market ??
+          x?.place ??
+          "Unknown",
         ).trim();
 
         // ✅ support more coordinate shapes
@@ -111,25 +111,18 @@ export default function ProfileLocation() {
     try {
       setMsg("");
       console.log("📡 Fetching places from backend...");
-      const res = await fetch(`${API}/locations`);
+      const json = await apiFetch<any>(ENDPOINTS.MARKET.LOCATIONS);
 
-      if (!res.ok) {
-        setMsg("Could not load places.");
-        return;
-      }
-
-      const json = await res.json();
-      console.log("📦 /;ocation response:", json);
-
+      console.log("📦 location response:", json);
       const mapped = normalizePlaces(json);
 
       if (mapped.length === 0) {
         setMsg("No places found from backend.");
       }
       setPlaces(mapped);
-    } catch (e) {
+    } catch (e: any) {
       console.log("Failed to load places", e);
-      setMsg("Network error while loading places.");
+      setMsg(e.message || "Network error while loading places.");
     }
   };
 
@@ -196,34 +189,40 @@ export default function ProfileLocation() {
     setLoading(true);
 
     try {
+      console.log("📍 Requesting GPS permissions...");
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setMsg("Location permission denied. Choose from list instead.");
         return;
       }
 
+      console.log("📍 Fetching current position (accuracy: balanced)...");
       const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
+        accuracy: Location.Accuracy.Balanced,
       });
 
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      console.log(`📍 Position acquired: ${lat}, ${lng}`);
 
+      console.log("📍 Reverse geocoding...");
       const geo = await Location.reverseGeocodeAsync({
         latitude: lat,
         longitude: lng,
       });
 
+      console.log("📍 Geocoding result:", geo?.[0]);
+
       const address = geo?.[0]
         ? [
-            geo[0].name,
-            geo[0].district,
-            geo[0].city,
-            geo[0].region,
-            geo[0].country,
-          ]
-            .filter(Boolean)
-            .join(", ")
+          geo[0].name,
+          geo[0].district,
+          geo[0].city,
+          geo[0].region,
+          geo[0].country,
+        ]
+          .filter(Boolean)
+          .join(", ")
         : "Current Location";
 
       await saveLatLng(lat, lng, address);

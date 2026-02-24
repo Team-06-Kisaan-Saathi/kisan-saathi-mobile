@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
+import { apiFetch } from "../services/http";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -13,12 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-// TIP: Keep HOST in one place. If you change Wi-Fi / backend machine, this must change too.
-// services/api.ts  (or constants/api.ts)
-export const HOST = "10.104.34.251";
-export const API_BASE = `http://${HOST}:5001/api`;
-export const AUTH_API = `${API_BASE}/auth`;
+import { ENDPOINTS } from "../services/api";
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -28,16 +23,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [msg, setMsg] = useState<string>("");
 
-  const url = useMemo(() => `${AUTH_API}/login`, []);
-  console.log("LOGIN URL =>", url);
-
   const handleLogin = async (): Promise<void> => {
     setMsg("");
-
     const trimmedPhone = phone.trim();
     const trimmedPin = pin.trim();
 
-    // ✅ validation
     if (!/^\d{10}$/.test(trimmedPhone)) {
       setMsg(t("auth.invalid_phone") || "Invalid phone number");
       return;
@@ -48,65 +38,43 @@ export default function LoginScreen() {
       return;
     }
 
-    const body = {
-      phone: trimmedPhone,
-      pin: trimmedPin,
-    };
-
     try {
       setLoading(true);
-
-      const res = await axios.post(url, body, {
-        headers: { "Content-Type": "application/json" },
-        timeout: 15000,
+      const res = await apiFetch<any>(ENDPOINTS.AUTH.LOGIN, {
+        method: "POST",
+        body: JSON.stringify({
+          phone: trimmedPhone,
+          pin: trimmedPin,
+        }),
       });
 
-      // ✅ success detection (backend-agnostic)
-      const ok =
-        res.data?.success === true ||
-        res.data?.status === "SUCCESS" ||
-        res.data?.status === "success";
+      const { success, token, user, message } = res;
 
-      if (!ok) {
-        setMsg(res.data?.message || t("auth.login_failed") || "Login failed");
+      if (!success) {
+        setMsg(message || "Login failed");
         return;
       }
 
-      // ✅ SAVE TOKEN (this fixes your mandi 401)
-      const token =
-        res.data?.token || res.data?.accessToken || res.data?.data?.token;
-
-      if (!token) {
-        setMsg("Login succeeded but token missing in response");
+      if (!token || !user) {
+        setMsg("Invalid server response format");
         return;
       }
 
+      // Consistent persistence
       await AsyncStorage.setItem("token", String(token));
+      await AsyncStorage.setItem("role", user.role);
+      await AsyncStorage.setItem("profile", JSON.stringify(user));
+      await AsyncStorage.setItem("userId", user._id || user.id);
+      if (user.name) await AsyncStorage.setItem("userName", user.name);
 
-      // ✅ user + role
-      const user = res.data?.user || res.data?.data?.user;
-
-      if (!user) {
-        setMsg("Login succeeded but user data missing in response");
-        return;
-      }
-
-      // ✅ routing
+      // Dashboard routing
       if (user.role === "farmer") {
         router.replace("/farmer-dashboard");
       } else {
         router.replace("/buyer-dashboard");
       }
     } catch (err: any) {
-      if (err?.response) {
-        console.log("❌ LOGIN status:", err?.response?.status);
-        console.log("❌ LOGIN data:", err?.response?.data);
-        setMsg(err.response.data?.message || "Invalid credentials");
-      } else if (err?.code === "ECONNABORTED") {
-        setMsg("Request timed out. Check Wi-Fi / backend IP.");
-      } else {
-        setMsg("Network error. Check backend is running and reachable.");
-      }
+      setMsg(err.message || "Connection failed. Check backend.");
     } finally {
       setLoading(false);
     }
@@ -233,7 +201,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 70,
     height: 70,
-    marginBottom: 64,
+    marginBottom: 12,
   },
 
   appName: {
@@ -253,7 +221,7 @@ const styles = StyleSheet.create({
   welcomeMsg: {
     color: "green",
     fontSize: 20,
-    marginBottom: 48,
+    marginBottom: 16,
     textAlign: "center",
   },
 
@@ -292,6 +260,7 @@ const styles = StyleSheet.create({
 
   button: {
     width: "100%",
+    marginTop: 20,
     paddingVertical: 14,
     borderRadius: 999,
     backgroundColor: "rgb(37,95,153)",

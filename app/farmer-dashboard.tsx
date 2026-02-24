@@ -1,258 +1,364 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, } from "react-native";
-import { useTranslation } from "react-i18next";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+  SafeAreaView,
+} from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getProfile } from "../services/userServices";
+import { fetchMandiPrices } from "../services/mandiService";
 
-
-/**
- * FarmerDashboard Page
- *
- * Description:
- * Main landing dashboard for Farmer role.
- * Displays personalized welcome message and quick-access action tiles.
- *
- * Loaded When:
- * - User selects "Farmer" role
- * - Navigates to /farmer-dashboard route
- *
- * Responsibilities:
- * - Fetch and display stored user name
- * - Render navigation bar (NavFarmer)
- * - Provide quick navigation to farmer-specific features
- *
- * Dependencies:
- * - AsyncStorage (userName)
- * - NavFarmer component
- * - expo-router navigation
- *
- * Inputs:
- * - Relies on persisted user state and i18n context
- *
- * Outputs:
- * - Renders dashboard UI
- * - Triggers route navigation via router.push()
- */
-
+const { width } = Dimensions.get("window");
 
 export default function FarmerDashboard() {
-  const { t } = useTranslation();
   const router = useRouter();
-  // Stores farmer name retrieved from local storage
-  const [userName, setUserName] = useState<string>("");
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [topPrice, setTopPrice] = useState<any>(null);
 
-  // Retrieve persisted user name from AsyncStorage on mount
+  const loadData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+      const res = await getProfile();
+      if (res?.success) {
+        setUser(res.user);
+      }
+
+      // Load top price for the main card
+      const prices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
+      if (prices && prices.length > 0) {
+        setTopPrice(prices[0]);
+      } else {
+        // Fallback for demo
+        setTopPrice({
+          crop: "Wheat",
+          mandi: "Azadpur Mandi",
+          pricePerQuintal: 2340,
+          trend: "+4.2% this week"
+        });
+      }
+    } catch (e) {
+      console.log("Dashboard load error:", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    // Fetch stored userName (if available)
-    AsyncStorage.getItem("userName").then((name) => {
-      if (name) setUserName(name);
-    });
+    loadData();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData();
   }, []);
 
   return (
-    <>
+    <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
+      <NavFarmer />
 
-      <View style={styles.container}>
-        <NavFarmer />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* Jai Kisan Header */}
+        <View style={styles.header}>
+          <Text style={styles.welcomeText}>Jai Kisan, {user?.name || "Farmer"} 🌾</Text>
+          <Text style={styles.subtext}>Today's prices & market update</Text>
+        </View>
 
-        {/* Scrollable dashboard content */}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>
-              {t("farmer.welcome_user", {
-                name: userName || t("farmer.default_user"),
-              })}
-            </Text>
-            <Text style={styles.subtitle}>{t("farmer.tagline")}</Text>
+        {/* TODAY'S TOP PRICE */}
+        <SectionHeader title="TODAY'S TOP PRICE" />
+        <View style={styles.topPriceCard}>
+          <View style={styles.priceHeader}>
+            <View>
+              <Text style={styles.cropName}>{topPrice?.crop || "Wheat"}</Text>
+              <View style={styles.mandiRow}>
+                <Ionicons name="location-sharp" size={14} color="#94A3B8" />
+                <Text style={styles.mandiName}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
+              </View>
+              <Text style={styles.unitText}>per quintal</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={styles.priceVal}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
+              <View style={styles.trendRow}>
+                <MaterialCommunityIcons name="trending-up" size={16} color="#22C55E" />
+                <Text style={styles.trendText}>+4.2% this week</Text>
+              </View>
+            </View>
           </View>
 
-          {/* Responsive grid of quick-access action tiles */}
-          <View style={styles.grid}>
-            {/* Marketplace */}
-            <DashboardTile
-              iconBg="#c8e6c9"
-              iconColor="#2e7d32"
-              icon="storefront"
-              title={t("farmer.marketplace")}
+          <View style={styles.priceActions}>
+            <TouchableOpacity
+              style={styles.seeAllBtn}
+              onPress={() => router.push("/mandi-prices")}
+            >
+              <Ionicons name="bar-chart" size={18} color="#FFF" style={{ marginRight: 8 }} />
+              <Text style={styles.seeAllText}>See All Prices</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sellNowBtn}
+              onPress={() => router.push("/not-available")}
+            >
+              <Text style={styles.sellNowText}>Sell Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* MARKET INFO */}
+        <SectionHeader title="MARKET INFO" />
+        <View style={styles.grid}>
+          <View style={styles.row}>
+            <MarketCard
+              title="Mandi Prices"
+              subtitle="Live rates near you"
+              icon="stats-chart"
+              color="#2563EB"
+              onPress={() => router.push("/mandi-prices")}
+            />
+            <MarketCard
+              title="AI Insights"
+              subtitle="Smart crop advice"
+              icon="bulb"
+              color="#EA580C"
+              onPress={() => router.push("/ai-insights")}
+            />
+          </View>
+          <View style={styles.row}>
+            <MarketCard
+              title="Weather"
+              subtitle="7-day forecast"
+              icon="cloudy-night"
+              color="#0EA5E9"
+              onPress={() => Alert.alert("Coming Soon", "Weather forecasting is being integrated.")}
+            />
+            <MarketCard
+              title="Govt Schemes"
+              subtitle="Subsidies & loans"
+              icon="ribbon"
+              color="#7C3AED"
+              onPress={() => router.push("/govt-schemes")}
+            />
+          </View>
+        </View>
+
+        {/* BUY & SELL */}
+        <SectionHeader title="BUY & SELL" />
+        <View style={styles.grid}>
+          <View style={styles.row}>
+            <BuySellCard
+              title="Marketplace"
+              subtitle="Buy inputs & tools"
+              icon="briefcase"
+              color="#16A34A"
               onPress={() => router.push("/marketplace")}
             />
-
-            {/* Live Auctions */}
-            <DashboardTile
-              iconBg="#ffcdd2"
-              iconColor="#c62828"
-              icon="hammer"
-              title={t("farmer.live_auctions")}
-              onPress={() => router.push("/live-auctions")}
-            />
-
-            {/* My Listings */}
-            <DashboardTile
-              iconBg="#bbdefb"
-              iconColor="#1565c0"
-              icon="list"
-              title={t("farmer.my_listings")}
-              onPress={() => router.push("/my-listings")}
-            />
-
-            {/* Add Crop */}
-            <DashboardTile
-              iconBg="#ffe0b2"
-              iconColor="#e65100"
-              icon="add-circle"
-              title={t("farmer.add_crop")}
-              onPress={() => router.push("/add-crop")}
-            />
-
-            {/* Messages */}
-            <DashboardTile
-              iconBg="#e1bee7"
-              iconColor="#6a1b9a"
-              icon="chatbubbles"
-              title={t("farmer.messages")}
-              onPress={() => router.push("/messages")}
-            />
-
-            {/* Alerts */}
-            <DashboardTile
-              iconBg="#ffccbc"
-              iconColor="#d84315"
-              icon="notifications"
-              title={t("farmer.alerts")}
-              onPress={() => router.push("/alerts")}
+            <BuySellCard
+              title="Live Auctions"
+              subtitle="Bid on crops"
+              icon="flash"
+              color="#DC2626"
+              onPress={() => router.push("/not-available")}
             />
           </View>
-        </ScrollView>
-      </View>
-    </>
+          <View style={styles.row}>
+            <BuySellCard
+              title="My Listings"
+              subtitle="Manage your crops"
+              icon="list"
+              color="#111827"
+              onPress={() => router.push("/not-available")}
+            />
+            <BuySellCard
+              title="Add Crop"
+              subtitle="List for sale"
+              icon="add-circle"
+              color="#10B981"
+              onPress={() => router.push("/not-available")}
+            />
+          </View>
+        </View>
+
+        {/* HELP & SUPPORT */}
+        <SectionHeader title="HELP & SUPPORT" />
+        <View style={styles.supportList}>
+          <SupportItem
+            title="Messages"
+            subtitle="Chat with buyers"
+            icon="chatbubble-ellipses"
+            color="#3B82F6"
+            onPress={() => router.push("/messages")}
+          />
+
+          <SupportItem
+            title="Call Support"
+            subtitle="Talk to an expert"
+            icon="call"
+            color="#F59E0B"
+            onPress={() => Alert.alert("Support", "Connecting to support line...")}
+          />
+          <SupportItem
+            title="Settings"
+            subtitle="Account & preferences"
+            icon="settings"
+            color="#64748B"
+            onPress={() => router.push("/farmer-preferences")}
+          />
+          <SupportItem
+            title="Help Center"
+            subtitle="FAQs & guides"
+            icon="help-circle"
+            color="#A855F7"
+            onPress={() => Alert.alert("Help Center", "Redirecting to help portal...")}
+          />
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-/**
- * DashboardTile Component
- *
- * Description:
- * Reusable tile used in FarmerDashboard grid.
- * Displays icon and title with navigation behavior.
- *
- * Props:
- * - iconBg: background color for icon container
- * - iconColor: color of icon
- * - icon: Ionicons name
- * - title: tile label
- * - onPress: navigation handler
- */
+function SectionHeader({ title }: { title: string }) {
+  return <Text style={styles.sectionTitle}>{title}</Text>;
+}
 
-function DashboardTile({
-  iconBg,
-  iconColor,
-  icon,
-  title,
-  onPress,
-}: {
-  iconBg: string;
-  iconColor: string;
-  icon: any;
-  title: string;
-  onPress: () => void;
-}) {
-  // Debug: log the colors
-  console.log(`Tile: ${title}, iconBg: ${iconBg}, iconColor: ${iconColor}`);
-
+function MarketCard({ title, subtitle, icon, color, onPress }: any) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.tile,
-        { backgroundColor: iconBg + "40" }, // 25% opacity pastel background for tile
-        pressed && styles.tilePressed,
-      ]}
-    >
-      <View
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: 36,
-          justifyContent: "center",
-          alignItems: "center",
-          marginBottom: 12,
-          backgroundColor: iconBg,
-        }}
-      >
-        <Ionicons name={icon} size={36} color={iconColor} />
+    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }]} onPress={onPress}>
+      <Ionicons name={icon} size={24} color="#FFF" />
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.cardSubtitle}>{subtitle}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function BuySellCard({ title, subtitle, icon, color, onPress }: any) {
+  return (
+    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }]} onPress={onPress}>
+      <Ionicons name={icon} size={24} color="#FFF" />
+      <View style={{ marginTop: 12 }}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardSubtitle}>{subtitle}</Text>
       </View>
-      <Text style={styles.tileTitle}>{title}</Text>
-    </Pressable>
+    </TouchableOpacity>
+  );
+}
+
+function SupportItem({ title, subtitle, icon, color, onPress }: any) {
+  return (
+    <TouchableOpacity style={styles.supportItem} onPress={onPress}>
+      <View style={[styles.supportIcon, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+      <View style={{ flex: 1, marginLeft: 16 }}>
+        <Text style={styles.supportTitle}>{title}</Text>
+        <Text style={styles.supportSubtitle}>{subtitle}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
+  safe: { flex: 1, backgroundColor: "#FFF" },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  scrollContent: { paddingBottom: 100 },
+
+  header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
+  welcomeText: { fontSize: 26, fontWeight: "900", color: "#0F172A" },
+  subtext: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
+
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#94A3B8",
+    letterSpacing: 1.5,
+    marginLeft: 20,
+    marginTop: 10,
+    marginBottom: 12
   },
 
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-
-  header: {
-    alignItems: "flex-start",
+  topPriceCard: {
+    backgroundColor: "#FFF",
+    marginHorizontal: 20,
+    borderRadius: 4, // More square as in image
+    borderTopWidth: 6,
+    borderTopColor: "#16A34A",
+    padding: 24,
     marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4
   },
+  priceHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  cropName: { fontSize: 28, fontWeight: "900", color: "#0F172A" },
+  mandiRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
+  mandiName: { fontSize: 15, color: "#64748B", marginLeft: 4, fontWeight: "600" },
+  unitText: { fontSize: 14, color: "#94A3B8", marginTop: 4, fontWeight: "500" },
+  priceVal: { fontSize: 32, fontWeight: "900", color: "#0F172A" },
+  trendRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+  trendText: { fontSize: 14, color: "#22C55E", fontWeight: "700", marginLeft: 4 },
 
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1a4b84",
-    marginBottom: 4,
-  },
-
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-
-  grid: {
+  priceActions: { flexDirection: "row", gap: 12, marginTop: 24 },
+  seeAllBtn: {
+    flex: 1.5,
+    backgroundColor: "#0F172A",
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 4
   },
+  seeAllText: { color: "#FFF", fontWeight: "800", fontSize: 15 },
+  sellNowBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 4
+  },
+  sellNowText: { color: "#0F172A", fontWeight: "800", fontSize: 15 },
 
-  tile: {
-    width: "47%",
-    aspectRatio: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+  grid: { paddingHorizontal: 20, gap: 12, marginBottom: 24 },
+  row: { flexDirection: "row", gap: 12 },
+
+  marketCard: { flex: 1, padding: 20, borderRadius: 0, justifyContent: "center", minHeight: 120 },
+  cardTitle: { color: "#FFF", fontSize: 18, fontWeight: "900", marginTop: 12 },
+  cardSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "600", marginTop: 2 },
+
+  buySellCard: { flex: 1, padding: 20, borderRadius: 0, minHeight: 120 },
+
+  supportList: { marginHorizontal: 20, backgroundColor: "#FFF", borderRadius: 12, overflow: "hidden", marginBottom: 40, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
+  supportItem: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 20,
-    justifyContent: "center",
-    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F8FAFC"
   },
-
-  tilePressed: {
-    transform: [{ scale: 0.97 }],
-    opacity: 0.9,
-  },
-
-  iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  tileTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1f2937",
-    textAlign: "center",
-  },
+  supportIcon: { width: 44, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  supportTitle: { fontSize: 16, fontWeight: "800", color: "#1E293B" },
+  supportSubtitle: { fontSize: 13, color: "#64748B", marginTop: 2, fontWeight: "500" },
 });

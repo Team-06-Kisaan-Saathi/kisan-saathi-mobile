@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -10,17 +11,17 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { ENDPOINTS } from "../services/api";
+import { apiFetch } from "../services/http";
 
 type VerifyOtpResponse = {
   success?: boolean;
   message?: string;
 };
-
-const HOST = "10.104.34.251";
-const API = `http://${HOST}:5001/api/auth`;
 
 export default function VerifyScreen() {
   const { t } = useTranslation();
@@ -30,52 +31,33 @@ export default function VerifyScreen() {
     name?: string;
     role?: string;
   }>();
-  const role = String(params.role ?? "Farmer");
 
   const phone = String(params.phone ?? "");
   const name = String(params.name ?? "");
+  const role = String(params.role ?? "farmer");
 
   const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const inputs = useRef<(TextInput | null)[]>([]);
-
+  const inputs = useRef<Array<TextInput | null>>([]);
   const otp = useMemo(() => digits.join(""), [digits]);
   const canSubmit = otp.length === 6 && !digits.includes("");
 
   useEffect(() => {
-    const id = setTimeout(() => inputs.current[0]?.focus(), 80);
+    const id = setTimeout(() => inputs.current[0]?.focus(), 150);
     return () => clearTimeout(id);
   }, []);
 
-  // small helper: safe JSON parse
-  const safeJson = (raw: string) => {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  };
-
   const setDigit = (index: number, value: string) => {
     const v = value.replace(/\D/g, "").slice(-1);
-
     setDigits((prev) => {
       const next = [...prev];
       next[index] = v;
       return next;
     });
-
-    // move focus forward
-    if (v && index < 5) {
-      inputs.current[index + 1]?.focus();
-    }
-
-    // auto-verify when last digit entered
-    if (v && index === 5) {
-      setTimeout(() => verify(), 80);
-    }
+    if (v && index < 5) inputs.current[index + 1]?.focus();
+    if (v && index === 5) setTimeout(() => verify(), 100);
   };
 
   const onKeyPress = (index: number, key: string) => {
@@ -86,7 +68,7 @@ export default function VerifyScreen() {
           next[index] = "";
         } else if (index > 0) {
           next[index - 1] = "";
-          setTimeout(() => inputs.current[index - 1]?.focus(), 0);
+          inputs.current[index - 1]?.focus();
         }
         return next;
       });
@@ -94,192 +76,91 @@ export default function VerifyScreen() {
   };
 
   const verify = async () => {
+    if (!canSubmit || loading) return;
     setMsg("");
-
-    if (!phone) {
-      setMsg("Missing phone number. Go back and try again.");
-      return;
-    }
-
-    if (!canSubmit) {
-      setMsg(t("auth.invalid_otp"));
-      return;
-    }
-
     try {
       setLoading(true);
-
-      const url = `${API}/verify-otp`;
-      const body = { phone: String(phone), otp: String(otp) };
-
-      // debug logs
-      console.log("➡️ VERIFY URL:", url);
-      console.log("➡️ VERIFY BODY:", JSON.stringify(body));
-
-      const res = await fetch(url, {
+      const res = await apiFetch<any>(ENDPOINTS.AUTH.VERIFY_OTP, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ phone, otp }),
       });
 
-      console.log("✅ VERIFY STATUS:", res.status);
-
-      const raw = await res.text();
-      console.log("✅ VERIFY RAW:", raw);
-
-      const parsed = safeJson(raw) as VerifyOtpResponse | null;
-
-      if (!parsed) {
-        setMsg("Server returned invalid JSON.");
-        return;
-      }
-
-      if (parsed.success) {
-        // ✅ Go to set-pin with everything needed for complete-signup
-        router.replace({
-          pathname: "/set-pin",
-          params: { phone, name, role },
-        });
+      if (res.success) {
+        // If the backend returns a token or user info here, store it.
+        // Usually verify-otp might return a token if it's the final step, 
+        // but here it goes to set-pin.
+        router.replace({ pathname: "/set-pin", params: { phone, name, role } });
       } else {
-        setMsg(parsed.message || t("auth.otp_verify_failed"));
+        setMsg(res.message || "Invalid verification code");
       }
     } catch (e: any) {
-      console.log("VERIFY ERROR:", e);
-      setMsg(e?.message || t("auth.otp_verify_failed"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resend = async () => {
-    setMsg("");
-    setDigits(["", "", "", "", "", ""]);
-    setTimeout(() => inputs.current[0]?.focus(), 80);
-
-    if (!phone) {
-      setMsg("Missing phone number. Go back and try again.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const url = `${API}/send-otp`;
-      const body = { phone: String(phone) };
-
-      console.log("➡️ RESEND URL:", url);
-      console.log("➡️ RESEND BODY:", JSON.stringify(body));
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      console.log("RESEND STATUS:", res.status);
-      const raw = await res.text();
-      console.log("RESEND RAW:", raw);
-
-      // optional: parse response, but message is fine
-      setMsg(t("auth.otp_resent"));
-    } catch (e: any) {
-      console.log("RESEND ERROR:", e);
-      setMsg(e?.message || t("auth.otp_send_failed"));
+      setMsg(e.message || "Connection error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <KeyboardAvoidingView
-        style={styles.root}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        {/* Centered content */}
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>{t("auth.verify_title")}</Text>
-            <Text style={styles.subtitle}>
-              {t("auth.sent_code")}{" "}
-              <Text style={styles.phoneText}>
-                {phone ? `+91 ${phone}` : ""}
-              </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.root}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.container}
+        >
+          <View style={styles.brandHeader}>
+            <Text style={styles.brandTitle}>
+              <Text style={styles.brandGreen}>KISSAAN</Text> SAATHI
             </Text>
+            <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
           </View>
 
-          {/* Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>{t("auth.enter_otp")}</Text>
+            <Text style={styles.cardHeader}>Verify Identity</Text>
+            <Text style={styles.instruction}>
+              We've sent a 6-digit code to{" "}
+              <Text style={styles.phoneHighlight}>+91 {phone}</Text>
+            </Text>
 
-            <View style={styles.otpRow}>
+            <View style={styles.otpContainer}>
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <TextInput
                   key={i}
-                  ref={(r) => {
-                    inputs.current[i] = r;
-                  }}
-                  style={[
-                    styles.otpBox,
-                    digits[i] ? styles.otpBoxFilled : null,
-                  ]}
+                  ref={(r) => { inputs.current[i] = r; }}
+                  style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
                   value={digits[i]}
                   onChangeText={(v) => setDigit(i, v)}
-                  onKeyPress={({ nativeEvent }) =>
-                    onKeyPress(i, nativeEvent.key)
-                  }
+                  onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
                   keyboardType="number-pad"
                   maxLength={1}
-                  returnKeyType={i === 5 ? "done" : "next"}
                   textAlign="center"
-                  selectionColor="#1f5fa6"
                   editable={!loading}
                 />
               ))}
             </View>
 
-            {msg ? <Text style={styles.msg}>{msg}</Text> : null}
+            {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
 
-            <Pressable
+            <TouchableOpacity
               onPress={verify}
               disabled={!canSubmit || loading}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                (!canSubmit || loading) && styles.primaryBtnDisabled,
-                pressed && canSubmit && !loading && { opacity: 0.9 },
-              ]}
+              style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
             >
               {loading ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator color="#fff" />
-                  <Text style={styles.primaryBtnText}>
-                    {" "}
-                    {t("auth.verifying")}
-                  </Text>
-                </View>
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryBtnText}>{t("auth.verify")}</Text>
+                <Text style={styles.verifyBtnText}>Verify & Continue</Text>
               )}
-            </Pressable>
+            </TouchableOpacity>
 
-            <View style={styles.footerRow}>
-              <Text style={styles.footerText}>{t("auth.didnt_get_code")}</Text>
-              <Pressable onPress={resend} disabled={loading}>
-                <Text style={[styles.link, loading && { opacity: 0.6 }]}>
-                  {t("auth.resend")}
-                </Text>
-              </Pressable>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Haven't received yet?</Text>
+              <TouchableOpacity onPress={() => { }} disabled={loading}>
+                <Text style={styles.resendText}>Resend Code</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </TouchableWithoutFeedback>
   );
 }
@@ -287,112 +168,120 @@ export default function VerifyScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#fbf6ec",
-    paddingHorizontal: 18,
+    backgroundColor: "#F8FAFC",
   },
-
-  // centers header + card in the page
-  content: {
+  container: {
     flex: 1,
+    paddingHorizontal: 24,
     justifyContent: "center",
-    paddingBottom: 24,
-  },
-
-  header: {
-    marginBottom: 14,
     alignItems: "center",
   },
-
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "green",
-    marginBottom: 6,
-    textAlign: "center",
+  brandHeader: {
+    alignItems: "center",
+    marginBottom: 40,
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#444",
-    lineHeight: 20,
-    textAlign: "center",
+  brandTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#0F172A",
+    letterSpacing: -0.5,
   },
-  phoneText: { fontWeight: "700", color: "#1f5fa6" },
-
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 18,
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 3,
-  },
-
-  cardTitle: {
-    fontSize: 16,
+  brandGreen: { color: "#10B981" },
+  brandTagline: {
+    fontSize: 10,
     fontWeight: "700",
-    color: "#111",
-    marginBottom: 14,
-    textAlign: "center",
+    color: "#64748B",
+    letterSpacing: 2,
+    marginTop: 4,
   },
-
-  otpRow: {
+  card: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 },
+      android: { elevation: 4 },
+    }),
+  },
+  cardHeader: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  instruction: {
+    fontSize: 13,
+    color: "#64748B",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  phoneHighlight: {
+    color: "#0F172A",
+    fontWeight: "700",
+  },
+  otpContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 20,
   },
-
-  otpBox: {
-    width: 48,
-    height: 58,
-    borderRadius: 14,
+  otpInput: {
+    width: (Dimensions.get("window").width - 120) / 6,
+    height: 52,
+    backgroundColor: "#F8FAFC",
     borderWidth: 1,
-    borderColor: "#d8d8d8",
-    backgroundColor: "#fafafa",
+    borderColor: "#E2E8F0",
+    borderRadius: 8,
     fontSize: 20,
     fontWeight: "800",
-    color: "#111",
+    color: "#0F172A",
   },
-  otpBoxFilled: {
-    borderColor: "#1f5fa6",
-    backgroundColor: "#ffffff",
+  otpInputFilled: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
   },
-
-  msg: {
-    marginTop: 4,
-    marginBottom: 10,
-    color: "#b00020",
-    fontSize: 13,
+  errorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    fontWeight: "600",
     textAlign: "center",
+    marginBottom: 16,
   },
-
-  primaryBtn: {
-    marginTop: 6,
-    paddingVertical: 14,
-    borderRadius: 999,
-    backgroundColor: "#1f5fa6",
-    alignItems: "center",
+  verifyBtn: {
+    backgroundColor: "#2563EB",
+    height: 50,
+    borderRadius: 8,
     justifyContent: "center",
-  },
-  primaryBtnDisabled: { opacity: 0.65 },
-
-  primaryBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  loadingRow: {
-    flexDirection: "row",
     alignItems: "center",
+    marginTop: 8,
   },
-
-  footerRow: {
-    marginTop: 14,
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  verifyBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  footer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 6,
+    alignItems: "center",
+    marginTop: 24,
+    gap: 8,
   },
-  footerText: { color: "#444", fontSize: 13 },
-  link: { color: "green", fontWeight: "800", fontSize: 13 },
+  footerText: {
+    fontSize: 13,
+    color: "#64748B",
+    fontWeight: "600",
+  },
+  resendText: {
+    fontSize: 13,
+    color: "#2563EB",
+    fontWeight: "800",
+  },
 });

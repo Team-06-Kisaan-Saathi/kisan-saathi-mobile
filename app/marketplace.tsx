@@ -1,5 +1,7 @@
 // src/screens/MarketplaceScreen.tsx
-import { Stack } from "expo-router";
+import NavFarmer from "../components/navigation/NavFarmer";
+import NavBuyer from "../components/navigation/NavBuyer";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BarChart2,
   IndianRupee,
@@ -11,7 +13,7 @@ import {
   TrendingUp,
   Wheat,
 } from "lucide-react-native";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Alert,
   FlatList,
@@ -26,7 +28,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import NavFarmer from "../components/navigation/NavFarmer";
+import { Stack } from "expo-router";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -37,25 +39,26 @@ import {
 } from "../services/mandiService";
 import { getToken } from "../services/token";
 import { getMyLocation, updateLocation } from "../services/userServices";
+import { getWatchlist, addToWatchlist, removeFromWatchlist, WatchlistItem } from "../services/watchlistService";
 
 // Map (optional dependency)
 let MapView: any = null;
 let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
 
-
 try {
   const maps = require("react-native-maps");
   MapView = maps.default;
-   Marker = maps.Marker;
-   PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
- } catch (e) {
- }
+  Marker = maps.Marker;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+} catch (e) {
+  // react-native-maps not installed (optional)
+}
 
 type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
 type CoordsSource = "backend" | "gps" | "none";
 
-type WatchItem = { crop: Crop; lastAvgPricePerQuintal?: number };
+type WatchItem = { crop: Crop; mandi?: string; _id?: string; lastAvgPricePerQuintal?: number };
 
 type LiveFeedItem = {
   key: string;
@@ -137,6 +140,11 @@ export default function MarketplaceScreen() {
     lng: number;
   } | null>(null);
   const [coordsSource, setCoordsSource] = useState<CoordsSource>("none");
+  const [role, setRole] = useState<string>("farmer");
+
+  useEffect(() => {
+    AsyncStorage.getItem("role").then(r => r && setRole(r));
+  }, []);
 
   // ✅ Always keep the latest gps coords in a ref (no “stale state” problem)
   const gpsRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -155,10 +163,8 @@ export default function MarketplaceScreen() {
   const [feed, setFeed] = useState<LiveFeedItem[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
-  const [watch, setWatch] = useState<WatchItem[]>([
-    { crop: "Tomato" },
-    { crop: "Onion" },
-  ]);
+  const [watch, setWatch] = useState<WatchItem[]>([]);
+  const [watchLoading, setWatchLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const selectedCrop: Crop | null = useMemo(() => {
@@ -173,19 +179,17 @@ export default function MarketplaceScreen() {
       return;
     }
 
-    const { lat, lng } = activeCoords;
-
-    console.log(`📡 loadNearby (Source: ${coordsSource}) -> calling nearby with:`, {
-      lat,
-      lng,
+    console.log("📡 loadNearby -> calling nearby with:", {
+      lat: activeCoords.lat,
+      lng: activeCoords.lng,
       distKm: 50,
       limit: 5,
     });
 
     try {
       const rows = await fetchNearbyMandis({
-        lat,
-        lng,
+        lat: activeCoords.lat,
+        lng: activeCoords.lng,
         distKm: 50,
         limit: 5,
       });
@@ -272,7 +276,7 @@ export default function MarketplaceScreen() {
     const token = await getToken();
     if (!token) return null;
 
-    const loc = await getMyLocation(token);
+    const loc = await getMyLocation();
     const parsed = normalizeCoords(loc);
 
     if (parsed) {
@@ -294,6 +298,62 @@ export default function MarketplaceScreen() {
     return null;
   };
 
+  // ----------------------- Watchlist Backend Sync -----------------------
+  const loadWatchlistFromBackend = useCallback(async () => {
+    try {
+      const items = await getWatchlist();
+      const mapped: WatchItem[] = (items || []).map((w: WatchlistItem) => ({
+        _id: w._id,
+        crop: w.crop as Crop,
+        mandi: w.mandi,
+      }));
+      setWatch(mapped);
+    } catch (e: any) {
+      console.log("⚠️ Failed to load watchlist from backend:", e?.message);
+    }
+  }, []);
+
+  const handleToggleWatch = useCallback(async (crop: Crop, mandiHint?: string) => {
+    const existing = watch.find((w) => w.crop === crop);
+    if (existing) {
+      // Remove from backend
+      if (existing._id) {
+        try {
+          setWatchLoading(true);
+          await removeFromWatchlist(existing._id);
+        } catch (e: any) {
+          console.log("⚠️ Failed to remove from watchlist:", e?.message);
+        } finally {
+          setWatchLoading(false);
+        }
+      }
+      setWatch((prev) => prev.filter((w) => w.crop !== crop));
+    } else {
+      // Add to backend
+      const mandi = mandiHint || feed.find((f) => f.crop === crop)?.mandiName || "All Mandis";
+      try {
+        setWatchLoading(true);
+        const res = await addToWatchlist(crop, mandi);
+        const newItem: WatchItem = {
+          _id: res?.data?._id || res?._id,
+          crop,
+          mandi,
+        };
+        setWatch((prev) => [...prev, newItem]);
+      } catch (e: any) {
+        if (e?.message?.includes("already watching")) {
+          // Already exists on backend, refresh list
+          await loadWatchlistFromBackend();
+        } else {
+          console.log("⚠️ Failed to add to watchlist:", e?.message);
+          Alert.alert("Error", e?.message || "Failed to add to watchlist.");
+        }
+      } finally {
+        setWatchLoading(false);
+      }
+    }
+  }, [watch, feed, loadWatchlistFromBackend]);
+
   // ----------------------- Init -----------------------
   useEffect(() => {
     (async () => {
@@ -313,6 +373,7 @@ export default function MarketplaceScreen() {
         // ignore
       }
 
+      // Load prices on init (watchlist only populates when user explicitly stars a crop)
       await loadPrices("manual");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -367,7 +428,7 @@ export default function MarketplaceScreen() {
       try {
         const token = await getToken();
         if (token) {
-          await updateLocation(token, { lat: g.lat, lng: g.lng });
+          await updateLocation({ lat: g.lat, lng: g.lng });
           // ✅ re-fetch to ensure backend is actually returning what you saved
           const confirmed = await refreshBackendLocation();
           if (!confirmed) {
@@ -460,7 +521,7 @@ export default function MarketplaceScreen() {
             feed={feed}
             refreshing={refreshing}
             onRefresh={onRefresh}
-            onStarCrop={(crop) => toggleWatchCrop(crop, watch, setWatch)}
+            onStarCrop={(crop) => handleToggleWatch(crop)}
             isCropStarred={(crop) => watch.some((w) => w.crop === crop)}
           />
         )}
@@ -477,7 +538,7 @@ export default function MarketplaceScreen() {
           <CompareTable
             crop={compareCrop}
             rows={compareRows}
-            onStarCrop={(c) => toggleWatchCrop(c, watch, setWatch)}
+            onStarCrop={(c) => handleToggleWatch(c)}
             isCropStarred={(c) => watch.some((w) => w.crop === c)}
           />
         )}
@@ -485,7 +546,7 @@ export default function MarketplaceScreen() {
         {tab === "Watchlist" && (
           <Watchlist
             watch={watch}
-            onRemove={(crop) => toggleWatchCrop(crop, watch, setWatch)}
+            onRemove={(crop) => handleToggleWatch(crop)}
             latestFeed={feed}
           />
         )}
@@ -504,19 +565,7 @@ function Header({
 }) {
   return (
     <View style={styles.header}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
-        <Text style={styles.headerTitle}>Marketplace</Text>
-
-        <Pressable style={styles.locationPill} onPress={onUpdateLocation}>
-          <Text style={styles.locationPillText}>Update location</Text>
-        </Pressable>
-      </View>
+      <Text style={styles.headerTitle}>Marketplace</Text>
 
       <Text style={styles.headerSub}>
         Today’s mandi prices, nearby markets & comparisons
@@ -945,17 +994,7 @@ function Watchlist({
   );
 }
 
-/** Watchlist helpers */
-function toggleWatchCrop(
-  crop: Crop,
-  watch: WatchItem[],
-  setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>,
-) {
-  const exists = watch.some((w) => w.crop === crop);
-  setWatch(
-    exists ? watch.filter((w) => w.crop !== crop) : [...watch, { crop }],
-  );
-}
+/** Watchlist helpers (toggleWatchCrop removed — now handled by handleToggleWatch with backend sync) */
 
 function maybeTriggerWatchAlertsQuintal(
   feed: LiveFeedItem[],

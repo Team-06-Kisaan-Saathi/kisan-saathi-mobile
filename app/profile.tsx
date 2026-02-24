@@ -1,470 +1,227 @@
-// app/(tabs)/marketplace.tsx  (or wherever your "Marketplace / Mandis near me" screen lives)
-//
-// ✅ Fixes:
-// 1) Uses SAVED profile location first (Azadpur dropdown / profile location)
-// 2) Falls back to GPS only if profile location missing
-// 3) Shows "Location source: PROFILE | GPS | NONE"
-// 4) Removes deprecated SafeAreaView usage (uses react-native-safe-area-context)
-
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Location from "expo-location";
-import { router } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { router, Stack } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { getProfile, requestVerification } from "../services/userServices";
+import { getToken } from "../services/token";
 
-import { getProfile, updateLocation } from "../services/userServices";
+export default function ProfileScreen() {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const [msg, setMsg] = useState("");
 
-const API = "http://10.12.252.131:5001/api";
+  // Verification fields
+  const [aadhaar, setAadhaar] = useState("");
+  const [pan, setPan] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-type NearbyRow = {
-  _id?: string;
-  locationName?: string;
-  coordinates?: [number, number]; // [lng, lat]
-  distance?: number; // could be meters or km depending on backend
-};
-
-type LocationSource = "PROFILE" | "GPS" | "NONE";
-
-export default function MarketplaceScreen() {
-  const [loading, setLoading] = useState(true);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-
-  const [locationSource, setLocationSource] = useState<LocationSource>("NONE");
-  const [activeLat, setActiveLat] = useState<number | null>(null);
-  const [activeLng, setActiveLng] = useState<number | null>(null);
-  const [activeAddress, setActiveAddress] = useState<string>("");
-
-  const [nearbyRows, setNearbyRows] = useState<NearbyRow[]>([]);
-  const [distKm] = useState(50);
-  const [limit] = useState(5);
-
-  // ---------- Helpers ----------
-  const getTokenOrRedirect = useCallback(async () => {
-    const token = await AsyncStorage.getItem("token");
-    if (!token) {
-      router.replace("/login");
-      return null;
-    }
-    return token;
+  useEffect(() => {
+    (async () => {
+      const t = await getToken();
+      setToken(t);
+      if (t) loadProfile(t);
+    })();
   }, []);
 
-  const extractProfileLocation = (p: any) => {
-    if (!p) return null;
-
-    // address could be stored in many ways
-    const address = String(
-      p?.location?.address ??
-        p?.location?.name ??
-        p?.locationName ??
-        (typeof p?.location === "string" ? p.location : "") ??
-        "",
-    ).trim();
-
-    // Case A: { location: { lat, lng } }
-    const locObj = p?.location;
-    if (locObj && typeof locObj === "object") {
-      const lat = Number(locObj.lat ?? locObj.latitude);
-      const lng = Number(locObj.lng ?? locObj.longitude);
-      if (
-        Number.isFinite(lat) &&
-        Number.isFinite(lng) &&
-        lat !== 0 &&
-        lng !== 0
-      ) {
-        return { lat, lng, address };
-      }
-    }
-
-    // Case B: { locationCoordinates: [lng, lat] }
-    if (
-      Array.isArray(p?.locationCoordinates) &&
-      p.locationCoordinates.length >= 2
-    ) {
-      const lng = Number(p.locationCoordinates[0]);
-      const lat = Number(p.locationCoordinates[1]);
-      if (
-        Number.isFinite(lat) &&
-        Number.isFinite(lng) &&
-        lat !== 0 &&
-        lng !== 0
-      ) {
-        return { lat, lng, address };
-      }
-    }
-
-    return null;
-  };
-
-  const callNearby = useCallback(
-    async (lat: number, lng: number) => {
-      setNearbyLoading(true);
-      try {
-        const body = { lat, lng, distKm, limit };
-        console.log("📡 loadNearby -> calling nearby with:", body);
-
-        const res = await fetch(
-          `${API}/mandi/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(
-            lng,
-          )}&distKm=${encodeURIComponent(distKm)}&limit=${encodeURIComponent(limit)}`,
-        );
-
-        const text = await res.text();
-        console.log("🌐 nearby HTTP:", res.status, res.url);
-        console.log("🌐 nearby RAW(first 200):", text.slice(0, 200));
-
-        if (text.trim().startsWith("<")) {
-          throw new Error(
-            "Nearby API returned HTML (wrong route or server issue).",
-          );
-        }
-
-        const json = JSON.parse(text);
-        console.log("📦 /mandi/nearby raw:", json);
-
-        const rows: NearbyRow[] = Array.isArray(json?.data)
-          ? json.data
-          : Array.isArray(json?.rows)
-            ? json.rows
-            : [];
-
-        setNearbyRows(rows);
-      } catch (e: any) {
-        console.error("nearby error:", e);
-        Alert.alert("Error", e?.message || "Failed to load nearby mandis");
-        setNearbyRows([]);
-      } finally {
-        setNearbyLoading(false);
-      }
-    },
-    [distKm, limit],
-  );
-
-  // ---------- Load profile location first ----------
-  const loadLocationFromProfileOrGps = useCallback(async () => {
-    setLoading(true);
+  const loadProfile = async (tk: string) => {
     try {
-      const token = await getTokenOrRedirect();
-      if (!token) return;
-
-      const profRes = await getProfile(token);
-      const user = profRes?.user || profRes?.data || profRes;
-
-      const saved = extractProfileLocation(user);
-
-      if (saved) {
-        setLocationSource("PROFILE");
-        setActiveLat(saved.lat);
-        setActiveLng(saved.lng);
-        setActiveAddress(saved.address || "Saved location");
-        await callNearby(saved.lat, saved.lng);
-        return;
+      setLoading(true);
+      const res = await getProfile(tk);
+      if (res.success) {
+        setUser(res.user);
+        await AsyncStorage.setItem("profile", JSON.stringify(res.user));
       }
-
-      // Fallback: GPS
-      setLocationSource("NONE");
-      setActiveAddress("");
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLocationSource("NONE");
-        setActiveLat(null);
-        setActiveLng(null);
-        setNearbyRows([]);
-        return;
-      }
-
-      const pos = await Location.getCurrentPositionAsync({});
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      setLocationSource("GPS");
-      setActiveLat(lat);
-      setActiveLng(lng);
-
-      // optional reverse geocode for UI
-      try {
-        const geo = await Location.reverseGeocodeAsync({
-          latitude: lat,
-          longitude: lng,
-        });
-        const addr = geo?.[0]
-          ? [geo[0].city, geo[0].region, geo[0].country]
-              .filter(Boolean)
-              .join(", ")
-          : "GPS Location";
-        setActiveAddress(addr);
-      } catch {
-        setActiveAddress("GPS Location");
-      }
-
-      await callNearby(lat, lng);
+    } catch (e) {
+      setMsg("Failed to load profile");
     } finally {
       setLoading(false);
     }
-  }, [callNearby, getTokenOrRedirect]);
+  };
 
-  useEffect(() => {
-    loadLocationFromProfileOrGps();
-  }, [loadLocationFromProfileOrGps]);
-
-  // ---------- Button: force GPS and also save it to backend ----------
-  const refreshWithGpsAndSave = useCallback(async () => {
-    try {
-      const token = await getTokenOrRedirect();
-      if (!token) return;
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission needed", "Location permission was denied.");
-        return;
-      }
-
-      setNearbyLoading(true);
-
-      const pos = await Location.getCurrentPositionAsync({});
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      let address = "GPS Location";
-      try {
-        const geo = await Location.reverseGeocodeAsync({
-          latitude: lat,
-          longitude: lng,
-        });
-        address = geo?.[0]
-          ? [geo[0].city, geo[0].region, geo[0].country]
-              .filter(Boolean)
-              .join(", ")
-          : "GPS Location";
-      } catch {}
-
-      // Save to backend so next time it becomes PROFILE source
-      await updateLocation(token, { lat, lng, address });
-
-      setLocationSource("GPS"); // currently using GPS
-      setActiveLat(lat);
-      setActiveLng(lng);
-      setActiveAddress(address);
-
-      await callNearby(lat, lng);
-    } catch (e: any) {
-      console.error(e);
-      Alert.alert("Error", e?.message || "Failed to refresh location");
-    } finally {
-      setNearbyLoading(false);
+  const handleVerify = async () => {
+    if (!aadhaar || !pan) {
+      setMsg("Please enter both Aadhaar and PAN numbers");
+      return;
     }
-  }, [callNearby, getTokenOrRedirect]);
+    try {
+      setSubmitting(true);
+      setMsg("");
+      const res = await requestVerification(token, {
+        aadhaarNumber: aadhaar,
+        panNumber: pan,
+      });
+      if (res.success) {
+        setMsg("Verification request submitted successfully!");
+        loadProfile(token); // Refresh status
+      } else {
+        setMsg(res.message || "Submission failed");
+      }
+    } catch (e: any) {
+      setMsg(e.message || "Error submitting verification");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  const headerSubtitle = useMemo(() => {
-    if (locationSource === "PROFILE") return "PROFILE";
-    if (locationSource === "GPS") return "GPS";
-    return "NONE";
-  }, [locationSource]);
+  const logout = async () => {
+    await AsyncStorage.clear();
+    router.replace("/login");
+  };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved": return "#10B981";
+      case "pending": return "#F59E0B";
+      case "rejected": return "#EF4444";
+      default: return "#64748B";
+    }
+  };
+
+  const vStatus = user?.verificationStatus || "unverified";
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.topRow}>
-          <Text style={styles.title}>Marketplace</Text>
+    <ScrollView style={styles.root}>
+      <Stack.Screen options={{
+        title: t("profile.title") || "My Profile",
+        headerRight: () => (
+          <TouchableOpacity onPress={logout} style={{ marginRight: 15 }}>
+            <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+          </TouchableOpacity>
+        )
+      }} />
 
-          <Pressable
-            style={styles.btn}
-            onPress={refreshWithGpsAndSave}
-            disabled={nearbyLoading}
-          >
-            <Ionicons name="navigate-circle-outline" size={18} color="#fff" />
-            <Text style={styles.btnText}>Update location</Text>
-          </Pressable>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#3B82F6" />
         </View>
-
-        <Text style={styles.subtitle}>
-          Today's mandi prices, nearby markets & comparisons
-        </Text>
-
-        <Text style={styles.locationLine}>
-          <Text style={{ fontWeight: "700" }}>Location source:</Text>{" "}
-          {headerSubtitle}
-        </Text>
-        <Text style={styles.addressLine}>
-          Location:{" "}
-          {activeAddress
-            ? activeAddress
-            : "Not set (go to Profile → Change Location)"}
-        </Text>
-
-        <Text style={styles.coordsLine}>
-          Coords:{" "}
-          {activeLat != null && activeLng != null
-            ? `${activeLat.toFixed(6)}, ${activeLng.toFixed(6)}`
-            : "—"}
-        </Text>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            Nearest Mandis (within {distKm} km)
-          </Text>
-
-          {nearbyLoading ? (
-            <View style={{ paddingVertical: 16 }}>
-              <ActivityIndicator />
+      ) : (
+        <>
+          <View style={styles.header}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{user?.name?.charAt(0) || "U"}</Text>
             </View>
-          ) : nearbyRows.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>No mandis found nearby</Text>
-              <Text style={styles.tip}>
-                Tip: try refreshing or updating location
-              </Text>
+            <Text style={styles.name}>{user?.name || "User"}</Text>
+            <Text style={styles.role}>{user?.role?.toUpperCase() || "FARMER"}</Text>
 
-              <Pressable
-                onPress={() => router.push("/profile")}
-                style={[styles.btnOutline, { marginTop: 12 }]}
+            <View style={[styles.badge, { backgroundColor: getStatusColor(vStatus) }]}>
+              <Text style={styles.badgeText}>{vStatus.toUpperCase()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Profile Details</Text>
+            <View style={styles.row}>
+              <Text style={styles.label}>Phone</Text>
+              <Text style={styles.value}>+91 {user?.phone || "--"}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Location</Text>
+              <Text style={styles.value}>{user?.location || "Not set"}</Text>
+            </View>
+          </View>
+
+          {vStatus !== "approved" && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Identity Verification</Text>
+              <Text style={styles.hint}>Submit documents to gain trusted status and access live auctions.</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Aadhaar Number (12 digits)"
+                value={aadhaar}
+                onChangeText={setAadhaar}
+                keyboardType="number-pad"
+                maxLength={12}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="PAN Number"
+                value={pan}
+                onChangeText={setPan}
+                autoCapitalize="characters"
+                maxLength={10}
+              />
+
+              <TouchableOpacity
+                style={[styles.verifyBtn, (submitting || vStatus === "pending") && styles.disabledBtn]}
+                onPress={handleVerify}
+                disabled={submitting || vStatus === "pending"}
               >
-                <Text style={styles.btnOutlineText}>
-                  Go to Profile → Change Location
-                </Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={{ marginTop: 10 }}>
-              {nearbyRows.map((r, idx) => {
-                const name = r.locationName || r._id || `Mandi ${idx + 1}`;
-                const d = r.distance;
-                // If your backend returns meters, show km; if it returns km, still looks OK.
-                const prettyDist =
-                  typeof d === "number"
-                    ? d > 1000
-                      ? `${(d / 1000).toFixed(1)} km`
-                      : `${d.toFixed(0)} m`
-                    : "";
-                return (
-                  <View key={`${name}-${idx}`} style={styles.row}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.rowTitle}>{name}</Text>
-                      {!!prettyDist && (
-                        <Text style={styles.rowSub}>
-                          Distance: {prettyDist}
-                        </Text>
-                      )}
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color="#64748b"
-                    />
-                  </View>
-                );
-              })}
+                {submitting ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.verifyBtnText}>
+                    {vStatus === "pending" ? "Request Pending" : "Submit Documents"}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           )}
-        </View>
 
-        {/* If you have a Map component, center it using activeLat/activeLng:
-            - If locationSource is PROFILE, it will center on Delhi when you pick Azadpur
-            - If GPS fallback, it will center on your current location
-        */}
-        <View style={styles.mapPlaceholder}>
-          <Text style={{ color: "#64748b" }}>
-            Map View (center using activeLat/activeLng)
-            {"\n"}
-            lat={String(activeLat)} lng={String(activeLng)}
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {msg ? <Text style={styles.msgText}>{msg}</Text> : null}
+
+          <View style={styles.actionSection}>
+            <TouchableOpacity
+              style={styles.primaryAction}
+              onPress={() => router.replace(user?.role === "buyer" ? "/buyer-dashboard" : "/farmer-dashboard")}
+            >
+              <Ionicons name="apps-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
+              <Text style={styles.primaryActionText}>Back to Dashboard</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryAction}
+              onPress={() => router.push("/edit-profile")}
+            >
+              <Text style={styles.secondaryActionText}>Edit Profile Info</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  coordsLine: { marginTop: 2, color: "#64748b", fontWeight: "600" },
+  root: { flex: 1, backgroundColor: "#F8FAFC" },
+  center: { padding: 100, alignItems: "center", justifyContent: "center" },
+  header: { padding: 30, alignItems: "center", backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#E2E8F0" },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: "#3B82F6", justifyContent: "center", alignItems: "center", marginBottom: 12 },
+  avatarText: { fontSize: 32, fontWeight: "bold", color: "#fff" },
+  name: { fontSize: 22, fontWeight: "bold", color: "#0F172A" },
+  role: { fontSize: 14, color: "#64748B", marginTop: 4, letterSpacing: 1 },
+  badge: { marginTop: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 99 },
+  badgeText: { fontSize: 11, fontWeight: "800", color: "#fff" },
 
-  safe: { flex: 1, backgroundColor: "#f8fafc" },
-  container: { padding: 16, paddingBottom: 30 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  section: { margin: 16, padding: 16, backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#E2E8F0" },
+  sectionTitle: { fontSize: 16, fontWeight: "bold", color: "#0F172A", marginBottom: 16 },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
+  label: { fontSize: 14, color: "#64748B" },
+  value: { fontSize: 14, fontWeight: "600", color: "#0F172A" },
 
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  title: { fontSize: 26, fontWeight: "800", color: "#0f172a" },
-  subtitle: { color: "#64748b", marginTop: 6, marginBottom: 10 },
+  hint: { fontSize: 13, color: "#64748B", marginBottom: 16, lineHeight: 18 },
+  input: { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 15, backgroundColor: "#F9FAFB" },
+  verifyBtn: { backgroundColor: "#10B981", padding: 14, borderRadius: 8, alignItems: "center" },
+  disabledBtn: { opacity: 0.6 },
+  verifyBtnText: { color: "#fff", fontWeight: "bold" },
 
-  locationLine: { marginTop: 6, color: "#64748b" },
-  addressLine: { marginTop: 4, color: "#0f172a", fontWeight: "600" },
+  msgText: { textAlign: "center", marginTop: 10, color: "#3B82F6", fontWeight: "500", paddingHorizontal: 20 },
 
-  btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#2e7d32",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  btnText: { color: "#fff", fontWeight: "700" },
-
-  card: {
-    marginTop: 14,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  cardTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
-
-  emptyBox: { paddingVertical: 14, alignItems: "center" },
-  emptyText: { fontSize: 15, fontWeight: "700", color: "#334155" },
-  tip: { marginTop: 6, color: "#2e7d32", fontWeight: "600" },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  rowTitle: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
-  rowSub: { marginTop: 4, color: "#64748b" },
-
-  btnOutline: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    backgroundColor: "#fff",
-  },
-  btnOutlineText: { fontWeight: "700", color: "#0f172a" },
-
-  mapPlaceholder: {
-    marginTop: 14,
-    height: 220,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  actionSection: { paddingHorizontal: 16, marginBottom: 40 },
+  primaryAction: { flexDirection: "row", backgroundColor: "#3B82F6", padding: 16, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 12 },
+  primaryActionText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  secondaryAction: { padding: 16, borderRadius: 12, borderWidth: 1, borderColor: "#3B82F6", alignItems: "center", justifyContent: "center" },
+  secondaryActionText: { color: "#3B82F6", fontWeight: "bold" },
 });

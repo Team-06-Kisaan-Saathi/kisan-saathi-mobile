@@ -3,20 +3,19 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { updateLocation } from "../services/userServices";
-
-const API = "http://10.104.34.251:5001/api";
+import { ENDPOINTS } from "../services/api";
 
 type Place = { id: string; name: string; lat: number; lng: number };
 
@@ -48,12 +47,12 @@ export default function ChangeLocation() {
         const id = String(x?._id ?? x?.id ?? idx);
         const name = String(
           x?.locationName ??
-            x?.mandi ??
-            x?.name ??
-            x?.mandiName ??
-            x?.market ??
-            x?.place ??
-            "Unknown",
+          x?.mandi ??
+          x?.name ??
+          x?.mandiName ??
+          x?.market ??
+          x?.place ??
+          "Unknown",
         ).trim();
 
         const lat =
@@ -82,7 +81,7 @@ export default function ChangeLocation() {
   const loadPlaces = async () => {
     try {
       setMsg("");
-      const res = await fetch(`${API}/mandi`);
+      const res = await fetch(ENDPOINTS.MARKET.LOCATIONS);
       if (!res.ok) {
         setMsg("Could not load places.");
         return;
@@ -186,16 +185,16 @@ export default function ChangeLocation() {
         });
         address = geo?.[0]
           ? [
-              geo[0].name,
-              geo[0].district,
-              geo[0].city,
-              geo[0].region,
-              geo[0].country,
-            ]
-              .filter(Boolean)
-              .join(", ")
+            geo[0].name,
+            geo[0].district,
+            geo[0].city,
+            geo[0].region,
+            geo[0].country,
+          ]
+            .filter(Boolean)
+            .join(", ")
           : "Current Location";
-      } catch {}
+      } catch { }
 
       await saveLocation(lat, lng, address);
     } catch (e: any) {

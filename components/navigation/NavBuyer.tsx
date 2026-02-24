@@ -55,31 +55,15 @@ export default function NavBuyer() {
                     onPress={() => router.push("/buyer-dashboard")}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.navText}>{t("nav_buyer.dashboard")}</Text>
+                    <Text style={styles.navText}>{t("nav_buyer.dashboard", "Home")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.navItem}
-                    onPress={() => router.push("/browse-crops")}
+                    onPress={() => router.push("/buyer-marketplace")}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.navText}>{t("nav_buyer.browse_crops")}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/live-auc-buyer")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_buyer.live_auctions")}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.navItem}
-                    onPress={() => router.push("/my-bids")}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.navText}>{t("nav_buyer.my_bids")}</Text>
+                    <Text style={styles.navText}>{t("nav_buyer.browse_crops", "Market")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -87,7 +71,31 @@ export default function NavBuyer() {
                     onPress={() => router.push("/market-insights")}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.navText}>{t("nav_buyer.market_insights")}</Text>
+                    <Text style={styles.navText}>{t("nav_buyer.market_insights", "Insights")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => router.push("/chat")}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.navText}>{t("nav_buyer.messages", "Messages")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => router.push("/negotiations")}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.navText}>{t("nav_buyer.orders", "Orders")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => router.push("/not-available")}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.navText}>{t("nav_buyer.support", "Support")}</Text>
                 </TouchableOpacity>
             </ScrollView>
 
