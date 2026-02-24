@@ -40,7 +40,7 @@ export default function NavBuyer() {
     // Controls visibility of profile dropdown menu
     const [open, setOpen] = useState(false);
 
-    {/* Top navigation container for Buyer role */}
+    {/* Top navigation container for Buyer role */ }
     return (
         <View style={styles.navBuyer}>
             {/* Horizontally scrollable navigation links */}
@@ -68,7 +68,7 @@ export default function NavBuyer() {
 
                 <TouchableOpacity
                     style={styles.navItem}
-                    onPress={() => router.push("/live-auctions")}
+                    onPress={() => router.push("/live-auc-buyer")}
                     activeOpacity={0.7}
                 >
                     <Text style={styles.navText}>{t("nav_buyer.live_auctions")}</Text>

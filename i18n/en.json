@@ -97,6 +97,16 @@
     "trusted_farmers": "Trusted Farmers",
     "trusted_farmers_sub": "Buy from verified farmer profiles"
   },
+  "nav_buyer": {
+    "dashboard": "Dashboard",
+    "browse_crops": "Browse Crops",
+    "live_auctions": "Live Auctions",
+    "my_bids": "My Bids",
+    "market_insights": "Market Insights",
+    "edit_profile": "Edit Profile",
+    "edit_preferences": "Edit Preferences",
+    "logout": "Logout"
+  },
   "listing": {
     "select_category": "Select Category",
     "select_crop": "Select Crop",

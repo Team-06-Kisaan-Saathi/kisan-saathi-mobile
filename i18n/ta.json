@@ -74,6 +74,16 @@
     "trusted_farmers": "நம்பகமான விவசாயிகள்",
     "trusted_farmers_sub": "சான்றளிக்கப்பட்ட விவசாயர்களிடமிருந்து வாங்குங்கள்"
   },
+  "nav_buyer": {
+    "dashboard": "டாஷ்போர்டு",
+    "browse_crops": "பயிர்களை உலாவுக",
+    "live_auctions": "நேரடி ஏலங்கள்",
+    "my_bids": "எனது ஏலங்கள்",
+    "market_insights": "சந்தை நுண்ணறிவு",
+    "edit_profile": "சுயவிவரத்தைத் திருத்து",
+    "edit_preferences": "விருப்பங்களைத் திருத்து",
+    "logout": "வெளியேறு"
+  },
   "listing": {
     "select_category": "வகையைத் தேர்ந்தெடுக்கவும்",
     "select_crop": "பயிரை தேர்ந்தெடுக்கவும்",

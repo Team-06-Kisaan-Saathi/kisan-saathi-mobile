@@ -43,14 +43,14 @@ let MapView: any = null;
 let Marker: any = null;
 let PROVIDER_GOOGLE: any = null;
 
+
 try {
   const maps = require("react-native-maps");
   MapView = maps.default;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch (e) {
-  // react-native-maps not installed (optional)
-}
+   Marker = maps.Marker;
+   PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+ } catch (e) {
+ }
 
 type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
 type CoordsSource = "backend" | "gps" | "none";
