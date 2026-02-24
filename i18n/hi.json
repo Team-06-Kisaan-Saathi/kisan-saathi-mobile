@@ -106,5 +106,15 @@
     "price": "कीमत (₹/kg)",
     "add": "जोड़ें",
     "add_crop_listings": "फसल लिस्टिंग जोड़ें"
+  },
+  "nav_buyer": {
+    "dashboard": "डैशबोर्ड",
+    "browse_crops": "फसलें ब्राउज़ करें",
+    "live_auctions": "लाइव नीलामी",
+    "my_bids": "मेरी बोलियाँ",
+    "market_insights": "मार्केट इनसाइट्स",
+    "edit_profile": "प्रोफ़ाइल एडिट करें",
+    "edit_preferences": "प्रेफरेंस एडिट करें",
+    "logout": "लॉगआउट करें"
   }
 }

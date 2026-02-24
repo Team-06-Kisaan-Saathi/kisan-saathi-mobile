@@ -56,17 +56,7 @@ export default function BuyerDashboard() {
         {/* Navigation bar for Buyer role */}
         <NavBuyer />
 
-        {/* Global Logout button */}
-        <Pressable
-          onPress={() => {
-            router.replace("/login");
-          }}
-          style={{ alignSelf: "flex-end", padding: 12 }}
-        >
-          <Text style={{ color: "red", fontWeight: "600" }}>
-            Logout
-          </Text>
-        </Pressable>
+
 
         {/* Scrollable content of the dashboard */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -90,61 +80,51 @@ export default function BuyerDashboard() {
           <View style={styles.grid}>
             {/* Marketplace */}
             <DashboardTile
-              bg="#2563eb"
+              iconBg="#bbdefb"
+              iconColor="#1565c0"
               icon="storefront-outline"
               title={t("buyer.marketplace", "Marketplace")}
-              sub={t(
-                "buyer.marketplace_sub",
-                "Browse available crops from verified farmers"
-              )}
+              sub={t("buyer.marketplace_sub", "Browse available crops from verified farmers")}
               onPress={() => router.push("/marketplace")}
             />
 
             {/* Live Auctions */}
             <DashboardTile
-              bg="#dc2626"
+              iconBg="#ffcdd2"
+              iconColor="#c62828"
               icon="hammer-outline"
               title={t("buyer.live_auctions", "Live Auctions")}
-              sub={t(
-                "buyer.live_auctions_sub",
-                "Participate in real-time crop bidding"
-              )}
-              onPress={() => router.push("/live-auctions")}
+              sub={t("buyer.live_auctions_sub", "Participate in real-time crop bidding")}
+              onPress={() => router.push("/live-auc-buyer")}
             />
 
             {/* My Bids */}
             <DashboardTile
-              bg="#0d9488"
+              iconBg="#c8e6c9"
+              iconColor="#2e7d32"
               icon="trending-up-outline"
               title={t("buyer.my_bids", "My Bids")}
-              sub={t(
-                "buyer.my_bids_sub",
-                "Track your active and past bids"
-              )}
+              sub={t("buyer.my_bids_sub", "Track your active and past bids")}
               onPress={() => router.push("/my-bids")}
             />
 
             {/* Price & Market Insights */}
             <DashboardTile
-              bg="#7c3aed"
+              iconBg="#e1bee7"
+              iconColor="#6a1b9a"
               icon="analytics-outline"
               title={t("buyer.market_insights", "Market Insights")}
-              sub={t(
-                "buyer.market_insights_sub",
-                "Compare prices and market trends"
-              )}
+              sub={t("buyer.market_insights_sub", "Compare prices and market trends")}
               onPress={() => router.push("/market-insights")}
             />
 
             {/* Trusted Farmers */}
             <DashboardTile
-              bg="#1e40af"
+              iconBg="#ffe0b2"
+              iconColor="#e65100"
               icon="shield-checkmark-outline"
               title={t("buyer.trusted_farmers", "Trusted Farmers")}
-              sub={t(
-                "buyer.trusted_farmers_sub",
-                "Buy from verified farmer profiles"
-              )}
+              sub={t("buyer.trusted_farmers_sub", "Buy from verified farmer profiles")}
               onPress={() => router.push("/browse-crops")}
             />
           </View>
@@ -167,7 +147,8 @@ export default function BuyerDashboard() {
  * Displays icon, title, and description with navigation behavior.
  *
  * Props:
- * - bg: background color for the tile
+ * - iconBg: pastel background color for icon circle
+ * - iconColor: icon tint color
  * - icon: Ionicons name
  * - title: tile label
  * - sub: tile description
@@ -175,13 +156,15 @@ export default function BuyerDashboard() {
  */
 
 function DashboardTile({
-  bg,
+  iconBg,
+  iconColor,
   icon,
   title,
   sub,
   onPress,
 }: {
-  bg: string;
+  iconBg: string;
+  iconColor: string;
   icon: any;
   title: string;
   sub: string;
@@ -192,11 +175,23 @@ function DashboardTile({
       onPress={onPress}
       style={({ pressed }) => [
         styles.tile,
-        { backgroundColor: bg },
+        { backgroundColor: iconBg + "40" },
         pressed && styles.tilePressed,
       ]}
     >
-      <Ionicons name={icon} size={32} color="#fff" />
+      <View
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          justifyContent: "center",
+          alignItems: "center",
+          marginBottom: 10,
+          backgroundColor: iconBg,
+        }}
+      >
+        <Ionicons name={icon} size={28} color={iconColor} />
+      </View>
       <Text style={styles.tileTitle}>{title}</Text>
       <Text style={styles.tileSub}>{sub}</Text>
     </Pressable>
@@ -253,38 +248,30 @@ const styles = StyleSheet.create({
   },
 
   tile: {
-    width: "90%",
-    maxWidth: 320,
-    height: 160,
-    borderRadius: 18,
-    padding: 16,
+    width: "47%",
+    aspectRatio: 1,
+    borderRadius: 16,
+    padding: 20,
     justifyContent: "center",
     alignItems: "center",
-
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
   },
 
   tilePressed: {
-    transform: [{ translateY: -6 }],
-    shadowOpacity: 0.25,
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
 
   tileTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
-    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1f2937",
     textAlign: "center",
   },
 
   tileSub: {
-    fontSize: 12,
-    color: "#e0e7ff",
-    marginTop: 6,
+    fontSize: 11,
+    color: "#6b7280",
+    marginTop: 4,
     textAlign: "center",
   },
 });

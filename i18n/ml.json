@@ -98,6 +98,16 @@
     "trusted_farmers": "വിശ്വസനീയ കർഷകർ",
     "trusted_farmers_sub": "സ്ഥിരീകരിച്ച കർഷക പ്രൊഫൈലുകളിൽ നിന്ന് വാങ്ങുക"
   },
+  "nav_buyer": {
+    "dashboard": "ഡാഷ്‌ബോർഡ്",
+    "browse_crops": "വിളകൾ ബ്രൗസ് ചെയ്യുക",
+    "live_auctions": "തത്സമയ ലേലങ്ങൾ",
+    "my_bids": "എന്റെ ബിഡുകൾ",
+    "market_insights": "മാർക്കറ്റ് ഇൻസൈറ്റുകൾ",
+    "edit_profile": "പ്രൊഫൈൽ എഡിറ്റ് ചെയ്യുക",
+    "edit_preferences": "മുൻഗണനകൾ എഡിറ്റ് ചെയ്യുക",
+    "logout": "ലോഗൗട്ട് ചെയ്യുക"
+  },
   "listing": {
     "select_category": "വിഭാഗം തിരഞ്ഞെടുക്കുക",
     "select_crop": "വിള തിരഞ്ഞെടുക്കുക",
