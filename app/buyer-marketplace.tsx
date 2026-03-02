@@ -45,7 +45,7 @@ export default function BuyerMarketplace() {
 
             if (tab === "Prices") {
                 const res = await fetchMandiPrices({ sort: "latest" });
-                setPrices(res || []);
+                setPrices(res.data || []);
             } else {
                 const res = await getUsers();
                 if (Array.isArray(res)) {

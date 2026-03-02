@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 // ─── Single source of truth for backend connection ───
 // For local development, Android Emulator needs 10.0.2.2
-export const HOST = Platform.OS === "android" ? "10.12.252.10" : "localhost";
+export const HOST = Platform.OS === "android" ? "10.12.252.46" : "localhost";
 export const PORT = "5001";
 export const API_BASE = `http://${HOST}:${PORT}/api`;
 export const UPLOADS_URL = `http://${HOST}:${PORT}/uploads/`;

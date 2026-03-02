@@ -21,8 +21,10 @@ export default function AIInsightsScreen() {
     useEffect(() => {
         (async () => {
             try {
-                const data = await fetchMandiPrices({ crop, limit: 7 });
-                setTrends(data.reverse()); // Oldest to newest
+                const res = await fetchMandiPrices({ crop, limit: 7 });
+                if (res.data) {
+                    setTrends(res.data.reverse()); // Oldest to newest
+                }
             } catch (e) {
                 console.error(e);
             } finally {

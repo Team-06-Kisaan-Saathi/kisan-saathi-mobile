@@ -40,9 +40,9 @@ export default function FarmerDashboard() {
       }
 
       // Load top price for the main card
-      const prices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
-      if (prices && prices.length > 0) {
-        setTopPrice(prices[0]);
+      const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
+      if (resPrices.data && resPrices.data.length > 0) {
+        setTopPrice(resPrices.data[0]);
       } else {
         // Fallback for demo
         setTopPrice({
