@@ -31,26 +31,26 @@ export default function RootLayout() {
 
       if (!token && !inAuthGroup) {
         // Redirect to login if not authenticated
-        router.replace("/login");
+        setTimeout(() => router.replace("/login"), 0);
       } else if (token && role) {
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
-          router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+          setTimeout(() => router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard"), 0);
         }
 
         if (role === "buyer") {
           const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes"];
-          if (farmerOnly.some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
+          if (farmerOnly.some(p => pathname.startsWith(p))) setTimeout(() => router.replace("/buyer-dashboard"), 0);
         }
         if (role === "farmer") {
           const buyerOnly = ["/buyer-dashboard"];
-          if (buyerOnly.some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
+          if (buyerOnly.some(p => pathname.startsWith(p))) setTimeout(() => router.replace("/farmer-dashboard"), 0);
         }
 
         // Excluded features guard (Epic 6, Inventory Add/Edit)
         const excluded = ["/live-auctions", "/my-listings", "/add-crop", "/add-listing", "/my-bids", "/browse-crops"];
         if (excluded.some(p => pathname.startsWith(p))) {
-          router.replace("/not-available");
+          setTimeout(() => router.replace("/not-available"), 0);
         }
       }
     };
