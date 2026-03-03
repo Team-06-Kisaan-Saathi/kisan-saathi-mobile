@@ -29,9 +29,9 @@ export default function WatchlistScreen() {
             // Fetch current prices for watched items
             const priceMap: Record<string, MandiPriceDoc> = {};
             await Promise.all(items.map(async (item) => {
-                const p = await fetchMandiPrices({ crop: item.crop, mandi: item.mandi, limit: 1 });
-                if (p.length > 0) {
-                    priceMap[`${item.crop}-${item.mandi}`] = p[0];
+                const res = await fetchMandiPrices({ crop: item.crop, mandi: item.mandi, limit: 1 });
+                if (res.data && res.data.length > 0) {
+                    priceMap[`${item.crop}-${item.mandi}`] = res.data[0];
                 }
             }));
             setPrices(priceMap);

@@ -48,13 +48,13 @@ export default function BuyerDashboard() {
       if (profileRes?.success) setUser(profileRes.user);
 
       // 2. Fetch Mandi Trends (Line Chart)
-      const mandiRes = await fetchMandiPrices({ crop: "Wheat", limit: 6 });
-      if (Array.isArray(mandiRes) && mandiRes.length > 0) {
+      const resMandi = await fetchMandiPrices({ crop: "Wheat", limit: 6 });
+      if (resMandi.data && resMandi.data.length > 0) {
         setPriceTrend({
           labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-          datasets: [{ data: mandiRes.map(p => p.pricePerQuintal / 100).reverse() }],
+          datasets: [{ data: resMandi.data.map(p => p.pricePerQuintal / 100).reverse() }],
         });
-        setTrendingCrops(mandiRes.slice(0, 3));
+        setTrendingCrops(resMandi.data.slice(0, 3));
       }
 
       // 3. Fetch Negotiation Stats (Bar Chart)

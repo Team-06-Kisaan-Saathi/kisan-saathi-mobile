@@ -29,9 +29,9 @@ export default function MarketInsightsScreen() {
 
     const loadPrices = async () => {
         try {
-            const data = await fetchMandiPrices({ crop: selectedCrop as any, sort: "price_desc" });
-            if (Array.isArray(data)) {
-                setPrices(data);
+            const res = await fetchMandiPrices({ crop: selectedCrop as any, sort: "price_desc" });
+            if (res.data && Array.isArray(res.data)) {
+                setPrices(res.data);
             }
         } catch (e) {
             console.log("Error loading market insights:", e);

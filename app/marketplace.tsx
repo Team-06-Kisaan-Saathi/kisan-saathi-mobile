@@ -212,7 +212,7 @@ export default function MarketplaceScreen() {
         sort: "latest",
       });
 
-      const items: LiveFeedItem[] = (res || []).map((p: any, idx: number) => {
+      const items: LiveFeedItem[] = (res.data || []).map((p: any, idx: number) => {
         const price = Number(p.pricePerQuintal || 0);
         const updatedAt = p.updatedAt || p.date || new Date().toISOString();
         return {
@@ -249,12 +249,12 @@ export default function MarketplaceScreen() {
 
   const loadCompare = async () => {
     try {
-      const rows = await fetchMandiPrices({
+      const res = await fetchMandiPrices({
         crop: compareCrop,
         sort: "price_desc",
       });
 
-      const sorted = [...rows].sort(
+      const sorted = [...res.data].sort(
         (a: any, b: any) =>
           Number(b.pricePerQuintal || 0) - Number(a.pricePerQuintal || 0),
       );
