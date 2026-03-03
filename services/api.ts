@@ -44,4 +44,12 @@ export const ENDPOINTS = {
         GET: (id: string) => `${API_BASE}/deals/${id}`,
     },
     INVOICE: (dealId: string) => `${API_BASE}/invoices/${dealId}/download`,
+    AUCTIONS: {
+        CREATE: `${API_BASE}/auctions`,
+        CLOSE: (id: string) => `${API_BASE}/auctions/${id}/close`,
+        GET_ALL: `${API_BASE}/auctions`,
+        MY_BIDS: `${API_BASE}/auctions/bids/mine`,
+        DELETE: (id: string) => `${API_BASE}/auctions/${id}`,
+        EXTEND: (id: string) => `${API_BASE}/auctions/${id}/extend`,
+    },
 };
