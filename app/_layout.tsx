@@ -31,7 +31,7 @@ export default function RootLayout() {
 
       if (!token && !inAuthGroup) {
         // Redirect to login if not authenticated
-        router.replace("/login");
+        setTimeout(() => router.replace("/login"), 0);
       } else if (token && role) {
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
@@ -59,11 +59,7 @@ export default function RootLayout() {
           router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
         }
 
-        // Excluded features guard (Epic 6, Inventory Add/Edit)
-        const excluded = ["/live-auctions", "/my-listings", "/add-crop", "/add-listing", "/my-bids", "/browse-crops"];
-        if (excluded.some(p => pathname.startsWith(p))) {
-          router.replace("/not-available");
-        }
+
       }
     };
 
@@ -90,7 +86,7 @@ export default function RootLayout() {
         <Stack.Screen name="marketplace" />
       </Stack>
 
-      {/* ✅ Floating overlay ABOVE everything */}
+      {/* Floating overlay ABOVE everything */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
         {/* <VoiceNavButton /> */} {/* Disabled - requires native module build */}

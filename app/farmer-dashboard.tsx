@@ -173,10 +173,10 @@ export default function FarmerDashboard() {
             />
             <BuySellCard
               title="Live Auctions"
-              subtitle="Bid on crops"
+              subtitle="Host an auction"
               icon="flash"
               color="#DC2626"
-              onPress={() => router.push("/not-available")}
+              onPress={() => router.push("/create-auction")}
             />
           </View>
           <View style={styles.row}>
@@ -188,11 +188,11 @@ export default function FarmerDashboard() {
               onPress={() => router.push("/not-available")}
             />
             <BuySellCard
-              title="Add Crop"
-              subtitle="List for sale"
-              icon="add-circle"
+              title="Monitor Auctions"
+              subtitle="View bids & status"
+              icon="stats-chart"
               color="#10B981"
-              onPress={() => router.push("/not-available")}
+              onPress={() => router.push("/farmer-auctions")}
             />
           </View>
         </View>

@@ -17,7 +17,7 @@ import { Stack, useRouter } from "expo-router";
 import Nav from "../components/navigation/Nav";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LineChart, BarChart } from "react-native-chart-kit";
+// import { LineChart, BarChart } from "react-native-chart-kit";
 import { getProfile, getUsers } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
 import { chatService } from "../services/chatService";
@@ -113,14 +113,14 @@ export default function BuyerDashboard() {
               <Text style={styles.welcomeText}>Hello, {user?.name || "Buyer"} </Text>
               <Text style={styles.subtitle}>Discover the best crops & prices today</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push("/settings")}>
+            <TouchableOpacity onPress={() => router.push("/edit-profile")}>
               <Ionicons name="settings-outline" size={24} color="#64748B" />
             </TouchableOpacity>
           </View>
 
           {/* Search Bar - Farmer Discovery */}
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#94A3B8" style={styles.searchIcon} />
+            {/* <Ionicons name="search" size={20} color="#94A3B8" style={styles.searchIcon} /> */}
             <TextInput
               style={styles.searchInput}
               placeholder="Search Farmers or Sellers..."
@@ -150,7 +150,7 @@ export default function BuyerDashboard() {
           {/* Chart 1: Price Trends */}
           <SectionLabel title="WHEAT PRICE TREND (₹/KG)" />
           <View style={styles.chartCard}>
-            {priceTrend ? (
+            {/* {priceTrend ? (
               <LineChart
                 data={priceTrend}
                 width={width - 40}
@@ -159,13 +159,13 @@ export default function BuyerDashboard() {
                 bezier
                 style={styles.chart}
               />
-            ) : <ActivityIndicator color="#1e3a8a" />}
+            ) : <ActivityIndicator color="#1e3a8a" />} */}
           </View>
 
           {/* Chart 2: Negotiation Status */}
           <SectionLabel title="NEGOTIATIONS SNAPSHOT" />
           <View style={styles.chartCard}>
-            <BarChart
+            {/* <BarChart
               data={{
                 labels: ["In Discussion", "Deals Closed"],
                 datasets: [{ data: [negStats.pending, negStats.accepted] }],
@@ -177,7 +177,7 @@ export default function BuyerDashboard() {
               fromZero
               chartConfig={{ ...chartConfig, color: (op) => `rgba(245, 158, 11, ${op})` }}
               style={styles.chart}
-            />
+            /> */}
           </View>
 
           {/* Action Grid */}
@@ -224,7 +224,7 @@ function ActionCard({ bg, icon, title, sub, onPress }: any) {
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <Ionicons name={icon} size={28} color="#fff" />
+      {/* <Ionicons name={icon} size={28} color="#fff" /> */}
       <View style={{ marginTop: 12 }}>
         <Text style={styles.actionTitle}>{title}</Text>
         <Text style={styles.actionSub}>{sub}</Text>
