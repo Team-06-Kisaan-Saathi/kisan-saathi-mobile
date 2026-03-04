@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import Nav from "../components/navigation/Nav";
+
 import {
     ActivityIndicator,
     FlatList,
@@ -99,7 +101,9 @@ export default function WatchlistScreen() {
 
     return (
         <View style={styles.root}>
-            <Stack.Screen options={{ title: "My Watchlist" }} />
+            <Stack.Screen options={{ title: "My Watchlist", headerShown: false }} />
+            <Nav />
+
 
             <FlatList
                 data={watchlist}

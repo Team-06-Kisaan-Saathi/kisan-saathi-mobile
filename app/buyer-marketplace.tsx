@@ -15,7 +15,8 @@ import {
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import NavBuyer from "../components/navigation/NavBuyer";
+import Nav from "../components/navigation/Nav";
+
 import { fetchMandiPrices } from "../services/mandiService";
 import { getUsers, getPublicProfile } from "../services/userServices";
 import { chatService } from "../services/chatService";
@@ -112,7 +113,8 @@ export default function BuyerMarketplace() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            <NavBuyer />
+            <Nav />
+
 
             {/* Search Header */}
             <View style={styles.searchHeader}>

@@ -1,6 +1,8 @@
 import { Stack } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
+import Nav from "../components/navigation/Nav";
+
 import { FilterBar } from "../components/market/FilterBar";
 import { MarketTable } from "../components/market/MarketTable";
 import { SummaryCards } from "../components/market/SummaryCards";
@@ -97,7 +99,9 @@ export default function MandiPricesScreen() {
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ title: "Market Explorer" }} />
+      <Stack.Screen options={{ title: "Market Explorer", headerShown: false }} />
+      <Nav />
+
 
       <View style={styles.header}>
         <Text style={styles.title}>Mandi Prices</Text>

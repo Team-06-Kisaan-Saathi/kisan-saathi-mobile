@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import Nav from "../components/navigation/Nav";
+
 import {
     FlatList,
     StyleSheet,
@@ -125,7 +127,10 @@ export default function NegotiationsScreen() {
             <Stack.Screen options={{
                 title: "My Negotiations",
                 headerShadowVisible: false,
+                headerShown: false,
             }} />
+            <Nav />
+
 
             {loading && !refreshing ? (
                 <View style={styles.center}>

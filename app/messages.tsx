@@ -12,8 +12,9 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import NavFarmer from "../components/navigation/NavFarmer";
+import Nav from "../components/navigation/Nav";
 import { chatService } from "../services/chatService";
+
 
 type ChatItem = {
     _id: string;
@@ -143,7 +144,8 @@ export default function MessagesList() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            <NavFarmer />
+            <Nav />
+
 
             {/* Header */}
             <View style={styles.header}>

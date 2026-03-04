@@ -1,14 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Stack } from "expo-router";
-import NavFarmer from "../components/navigation/NavFarmer";
+import Nav from "../components/navigation/Nav";
+
 
 export default function MyListings() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <NavFarmer />
+        <Nav />
+
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>My Listings</Text>
           <Text style={styles.placeholder}>

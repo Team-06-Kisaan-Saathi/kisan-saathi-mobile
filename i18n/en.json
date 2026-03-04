@@ -114,5 +114,24 @@
     "price": "Price (₹/kg)",
     "add": "Add",
     "add_crop_listings": "Add Crop Listings"
+  },
+  "profile": {
+    "edit_title": "Edit Profile",
+    "change_name": "Change Name",
+    "change_phone": "Change Phone Number",
+    "new_phone": "New Phone Number",
+    "verify_otp": "Verify OTP",
+    "enter_otp": "Enter OTP sent to your phone",
+    "save_success": "Profile updated successfully",
+    "phone_change_verify": "Please verify your new phone number via OTP",
+    "send_otp": "Send OTP",
+    "resend_otp": "Resend OTP",
+    "languages": {
+      "en": "English",
+      "ml": "Malayalam",
+      "hi": "Hindi",
+      "te": "Telugu",
+      "ta": "Tamil"
+    }
   }
 }

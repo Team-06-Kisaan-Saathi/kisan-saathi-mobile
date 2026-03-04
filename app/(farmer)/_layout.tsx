@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import NavFarmer from "../../components/navigation/NavFarmer";
+import NavFarmer from "../../components/navigation/Nav";
 
 export default function FarmerLayout() {
     return (

@@ -35,23 +35,29 @@ export default function RootLayout() {
       } else if (token && role) {
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
-          setTimeout(() => router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard"), 0);
+          if (role === "admin") {
+            router.replace("/admin-dashboard");
+          } else {
+            router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+          }
         }
 
         if (role === "buyer") {
           const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes"];
-          if (farmerOnly.some(p => pathname.startsWith(p))) setTimeout(() => router.replace("/buyer-dashboard"), 0);
+          const adminOnly = ["/admin-dashboard"];
+          if ([...farmerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
         }
         if (role === "farmer") {
           const buyerOnly = ["/buyer-dashboard"];
-          if (buyerOnly.some(p => pathname.startsWith(p))) setTimeout(() => router.replace("/farmer-dashboard"), 0);
+          const adminOnly = ["/admin-dashboard"];
+          if ([...buyerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
         }
 
-        // Excluded features guard (Epic 6, Inventory Add/Edit)
-        const excluded = ["/live-auctions", "/my-listings", "/add-crop", "/add-listing", "/my-bids", "/browse-crops"];
-        if (excluded.some(p => pathname.startsWith(p))) {
-          setTimeout(() => router.replace("/not-available"), 0);
+        if (role !== "admin" && pathname.startsWith("/admin-dashboard")) {
+          router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
         }
+
+
       }
     };
 
@@ -78,7 +84,7 @@ export default function RootLayout() {
         <Stack.Screen name="marketplace" />
       </Stack>
 
-      {/* ✅ Floating overlay ABOVE everything */}
+      {/* Floating overlay ABOVE everything */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
         {/* <VoiceNavButton /> */} {/* Disabled - requires native module build */}

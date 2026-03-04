@@ -1,6 +1,5 @@
-// src/screens/MarketplaceScreen.tsx
-import NavFarmer from "../components/navigation/NavFarmer";
-import NavBuyer from "../components/navigation/NavBuyer";
+import Nav from "../components/navigation/Nav";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BarChart2,
@@ -450,7 +449,8 @@ export default function MarketplaceScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
-      <NavFarmer />
+      <Nav />
+
       <View style={styles.root}>
         <Header
           coordsSource={coordsSource}

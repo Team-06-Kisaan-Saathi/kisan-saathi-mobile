@@ -1,11 +1,15 @@
 import { Stack } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View, SafeAreaView } from "react-native";
+import Nav from "../components/navigation/Nav";
+
 
 export default function BuyerPreferencesScreen() {
     return (
         <SafeAreaView style={styles.container}>
-            <Stack.Screen options={{ title: "Preferences" }} />
+            <Stack.Screen options={{ title: "Preferences", headerShown: false }} />
+            <Nav />
+
             <View style={styles.center}>
                 <Text style={styles.title}>Buyer Preferences</Text>
                 <Text style={styles.sub}>Coming Soon</Text>

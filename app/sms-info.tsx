@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import React from "react";
+import Nav from "../components/navigation/Nav";
+
 import {
     ScrollView,
     StyleSheet,
@@ -17,7 +19,9 @@ export default function SmsInfoScreen() {
 
     return (
         <ScrollView style={styles.root}>
-            <Stack.Screen options={{ title: "SMS & IVR Services" }} />
+            <Stack.Screen options={{ title: "SMS & IVR Services", headerShown: false }} />
+            <Nav />
+
 
             <View style={styles.hero}>
                 <Ionicons name="chatbox-ellipses-outline" size={60} color="#3B82F6" />

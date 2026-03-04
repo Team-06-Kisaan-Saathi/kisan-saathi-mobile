@@ -170,11 +170,15 @@ export default function ProfileLocation() {
       }
 
       // Next step
-      router.replace(
-        role.toLowerCase() === "farmer"
-          ? "/farmer-dashboard"
-          : "/buyer-dashboard",
-      );
+      if (role.toLowerCase() === "admin") {
+        router.replace("/admin");
+      } else {
+        router.replace(
+          role.toLowerCase() === "farmer"
+            ? "/farmer-dashboard"
+            : "/buyer-dashboard",
+        );
+      }
     } catch (e: any) {
       console.log("Registration error:", e?.message || e);
       setMsg(e?.message || "Registration failed. Try again.");
