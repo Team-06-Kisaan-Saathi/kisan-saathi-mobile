@@ -35,13 +35,11 @@ export default function RootLayout() {
       } else if (token && role) {
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
-          if (role === "admin") router.replace("/admin-dashboard");
-          else router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
-        }
-
-        if (role === "admin") {
-          // Admin can access everything or restricted to admin dashboard?
-          // Usually admin has its own space
+          if (role === "admin") {
+            router.replace("/admin-dashboard");
+          } else {
+            router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+          }
         }
 
         if (role === "buyer") {
