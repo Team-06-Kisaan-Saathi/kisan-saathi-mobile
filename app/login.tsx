@@ -68,7 +68,9 @@ export default function LoginScreen() {
       if (user.name) await AsyncStorage.setItem("userName", user.name);
 
       // Dashboard routing
-      if (user.role === "farmer") {
+      if (user.role === "admin") {
+        router.replace("/admin");
+      } else if (user.role === "farmer") {
         router.replace("/farmer-dashboard");
       } else {
         router.replace("/buyer-dashboard");

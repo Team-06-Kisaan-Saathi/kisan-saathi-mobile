@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Stack, useRouter } from "expo-router";
-import NavBuyer from "../components/navigation/NavBuyer";
+import Nav from "../components/navigation/Nav";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LineChart, BarChart } from "react-native-chart-kit";
@@ -101,7 +101,7 @@ export default function BuyerDashboard() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <NavBuyer />
+        <Nav />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -110,10 +110,10 @@ export default function BuyerDashboard() {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.welcomeText}>Hello, {user?.name || "Buyer"} 👋</Text>
+              <Text style={styles.welcomeText}>Hello, {user?.name || "Buyer"} </Text>
               <Text style={styles.subtitle}>Discover the best crops & prices today</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push("/edit-profile")}>
+            <TouchableOpacity onPress={() => router.push("/settings")}>
               <Ionicons name="settings-outline" size={24} color="#64748B" />
             </TouchableOpacity>
           </View>

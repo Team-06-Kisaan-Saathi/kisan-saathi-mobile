@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
-import NavFarmer from "../components/navigation/NavFarmer";
+import Nav from "../components/navigation/Nav";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
@@ -72,7 +72,7 @@ export default function FarmerDashboard() {
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
-      <NavFarmer />
+      <Nav />
 
       <ScrollView
         style={styles.container}
@@ -81,7 +81,7 @@ export default function FarmerDashboard() {
       >
         {/* Jai Kisan Header */}
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Jai Kisan, {user?.name || "Farmer"} 🌾</Text>
+          <Text style={styles.welcomeText}>Jai Kisan, {user?.name || "Farmer"} </Text>
           <Text style={styles.subtext}>Today's prices & market update</Text>
         </View>
 
@@ -213,14 +213,14 @@ export default function FarmerDashboard() {
             subtitle="Talk to an expert"
             icon="call"
             color="#F59E0B"
-            onPress={() => Alert.alert("Support", "Connecting to support line...")}
+            onPress={() => router.push("/call-support")}
           />
           <SupportItem
             title="Settings"
             subtitle="Account & preferences"
             icon="settings"
             color="#64748B"
-            onPress={() => router.push("/farmer-preferences")}
+            onPress={() => router.push("/settings")}
           />
           <SupportItem
             title="Help Center"
@@ -230,7 +230,6 @@ export default function FarmerDashboard() {
             onPress={() => Alert.alert("Help Center", "Redirecting to help portal...")}
           />
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );

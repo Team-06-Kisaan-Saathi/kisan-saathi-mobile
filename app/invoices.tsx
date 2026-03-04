@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
+import Nav from "../components/navigation/Nav";
+
 import {
     FlatList,
     StyleSheet,
@@ -141,7 +143,10 @@ export default function InvoicesScreen() {
             <Stack.Screen options={{
                 title: "Invoices",
                 headerShadowVisible: false,
+                headerShown: false,
             }} />
+            <Nav />
+
 
             {loading && !refreshing ? (
                 <View style={styles.center}>

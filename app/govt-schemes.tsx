@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
+import Nav from "../components/navigation/Nav";
+
 import {
     FlatList,
     StyleSheet,
@@ -89,7 +91,10 @@ export default function GovtSchemesScreen() {
             <Stack.Screen options={{
                 title: "Govt Schemes",
                 headerShadowVisible: false,
+                headerShown: false,
             }} />
+            <Nav />
+
 
             <View style={styles.searchBar}>
                 <Ionicons name="search" size={20} color="#94a3b8" />

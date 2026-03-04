@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import NavBuyer from "../components/navigation/NavBuyer";
+import Nav from "../components/navigation/Nav";
+
 
 // ─── Filter option lists ───
 const STATES = ["All States", "Maharashtra", "Karnataka", "Madhya Pradesh", "Uttar Pradesh", "Punjab"];
@@ -109,7 +110,8 @@ export default function LiveAuctionsBuyer() {
     return (
         <SafeAreaView style={s.safe}>
             <Stack.Screen options={{ headerShown: false }} />
-            <NavBuyer />
+            <Nav />
+
 
             <View style={s.root}>
                 {/* ── Page header ── */}

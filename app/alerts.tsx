@@ -1,14 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
-import NavFarmer from "../components/navigation/NavFarmer";
+import Nav from "../components/navigation/Nav";
+
 
 export default function Alerts() {
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <View style={styles.container}>
-                <NavFarmer />
+                <Nav />
+
                 <View style={styles.content}>
                     <Text style={styles.title}>Alerts</Text>
                     <Text style={styles.placeholder}>

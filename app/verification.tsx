@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Nav from "../components/navigation/Nav";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile, requestVerification } from "../services/userServices";
 
@@ -76,7 +78,9 @@ export default function VerificationScreen() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: "Verify Account", headerShadowVisible: false }} />
+            <Stack.Screen options={{ title: "Verify Account", headerShown: false }} />
+            <Nav />
+
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.headerIcon}>
                     <Ionicons

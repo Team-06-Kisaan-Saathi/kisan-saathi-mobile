@@ -35,16 +35,28 @@ export default function RootLayout() {
       } else if (token && role) {
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
-          router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+          if (role === "admin") router.replace("/admin-dashboard");
+          else router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+        }
+
+        if (role === "admin") {
+          // Admin can access everything or restricted to admin dashboard?
+          // Usually admin has its own space
         }
 
         if (role === "buyer") {
           const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes"];
-          if (farmerOnly.some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
+          const adminOnly = ["/admin-dashboard"];
+          if ([...farmerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
         }
         if (role === "farmer") {
           const buyerOnly = ["/buyer-dashboard"];
-          if (buyerOnly.some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
+          const adminOnly = ["/admin-dashboard"];
+          if ([...buyerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
+        }
+
+        if (role !== "admin" && pathname.startsWith("/admin-dashboard")) {
+          router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
         }
 
         // Excluded features guard (Epic 6, Inventory Add/Edit)

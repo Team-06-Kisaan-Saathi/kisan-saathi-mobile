@@ -14,6 +14,8 @@ import {
 } from "react-native";
 import { getProfile, requestVerification } from "../services/userServices";
 import { getToken } from "../services/token";
+import Nav from "../components/navigation/Nav";
+
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -29,16 +31,16 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     (async () => {
-      const t = await getToken();
-      setToken(t);
-      if (t) loadProfile(t);
+      const userToken = await getToken();
+      setToken(userToken);
+      if (userToken) loadProfile();
     })();
   }, []);
 
-  const loadProfile = async (tk: string) => {
+  const loadProfile = async () => {
     try {
       setLoading(true);
-      const res = await getProfile(tk);
+      const res = await getProfile();
       if (res.success) {
         setUser(res.user);
         await AsyncStorage.setItem("profile", JSON.stringify(res.user));
@@ -58,13 +60,14 @@ export default function ProfileScreen() {
     try {
       setSubmitting(true);
       setMsg("");
-      const res = await requestVerification(token, {
+      const res = await requestVerification({
         aadhaarNumber: aadhaar,
         panNumber: pan,
       });
+
       if (res.success) {
         setMsg("Verification request submitted successfully!");
-        loadProfile(token); // Refresh status
+        loadProfile(); // Refresh status
       } else {
         setMsg(res.message || "Submission failed");
       }
@@ -94,6 +97,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.root}>
       <Stack.Screen options={{
+        headerShown: false,
         title: t("profile.title") || "My Profile",
         headerRight: () => (
           <TouchableOpacity onPress={logout} style={{ marginRight: 15 }}>
@@ -101,6 +105,8 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )
       }} />
+      <Nav />
+
 
       {loading ? (
         <View style={styles.center}>
