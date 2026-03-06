@@ -147,8 +147,9 @@ export default function FarmerDashboard() {
               title="Weather"
               subtitle="7-day forecast"
               icon="cloudy-night"
+              iconType="Ionicons"
               color="#0EA5E9"
-              onPress={() => Alert.alert("Coming Soon", "Weather forecasting is being integrated.")}
+              onPress={() => router.push("/weather")}
             />
             <MarketCard
               title="Govt Schemes"
