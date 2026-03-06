@@ -43,12 +43,12 @@ export default function RootLayout() {
         }
 
         if (role === "buyer") {
-          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes"];
+          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes", "/farmer-auctions", "/create-auction"];
           const adminOnly = ["/admin-dashboard"];
           if ([...farmerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
         }
         if (role === "farmer") {
-          const buyerOnly = ["/buyer-dashboard"];
+          const buyerOnly = ["/buyer-dashboard", "/buyer-auctions", "/my-bids"];
           const adminOnly = ["/admin-dashboard"];
           if ([...buyerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
         }

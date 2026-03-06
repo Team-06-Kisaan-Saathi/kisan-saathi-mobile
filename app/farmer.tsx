@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 import {
   ActivityIndicator,
@@ -15,7 +15,7 @@ import {
 export default function FarmerProfile() {
   return (
     <View style={{ flex: 1 }}>
-      <Nav />
+      <NavFarmer />
       <FarmerProfileContent />
     </View>
   );

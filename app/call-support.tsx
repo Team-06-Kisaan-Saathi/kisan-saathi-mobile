@@ -12,7 +12,7 @@ import {
     Dimensions,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 
 import { Picker } from "@react-native-picker/picker";
@@ -50,7 +50,7 @@ const SupportScreen = () => {
     return (
         <SafeAreaView style={styles.safe}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavAuto />
 
 
             {/* Header Section */}

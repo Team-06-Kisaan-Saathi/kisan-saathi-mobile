@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 // Helper to format currency
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
@@ -94,7 +95,7 @@ export default function FarmerLiveAuctions() {
             let currentUser = profileRes?.user;
             if (currentUser) setUser(currentUser);
 
-            const res = await fetch(ENDPOINTS.AUCTIONS.GET_ALL, {
+            const res = await fetch(`${ENDPOINTS.AUCTIONS.GET_ALL}?status=ALL`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (!res.ok) throw new Error("Failed to fetch auctions");
@@ -137,7 +138,10 @@ export default function FarmerLiveAuctions() {
                     currentHighBid: maxBid,
                     totalBids: a.bids ? a.bids.length : 0,
                     status: a.status,
-                    recentBids: formattedBids
+                    recentBids: formattedBids,
+                    winnerName: a.winningBid?.buyerId?.name || null,
+                    winnerPhone: a.winningBid?.buyerId?.phone || null,
+                    winningAmount: a.winningBid?.amount || 0,
                 };
             });
 
@@ -168,7 +172,8 @@ export default function FarmerLiveAuctions() {
                 console.log("End Auction Status:", res.status);
 
                 if (res.ok) {
-                    setAuctions((prev: any[]) => prev.map(a => a.id === id ? { ...a, status: "CLOSED" } : a));
+                    // Reload auctions to get populated winner data
+                    await loadAuctions();
                     if (Platform.OS === 'web') {
                         window.alert("Auction successfully closed!");
                     } else {
@@ -252,32 +257,33 @@ export default function FarmerLiveAuctions() {
     return (
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
+            <NavFarmer />
 
             {/* Header Area */}
             <View style={styles.topHeader}>
-                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => router.replace("/farmer-dashboard")}>
-                    <Ionicons name="arrow-back" size={24} color="#111827" />
-                </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Live Auction Monitor</Text>
-                    <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
-                </View>
-                <View style={styles.headerControls}>
-                    <View style={styles.filterGroup}>
-                        {["All", "Active", "Ended"].map((f) => (
-                            <TouchableOpacity
-                                key={f}
-                                style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
-                                onPress={() => setFilter(f as any)}
-                            >
-                                <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
-                            </TouchableOpacity>
-                        ))}
+                <View style={styles.headerTopRow}>
+                    <TouchableOpacity style={{ marginRight: 10 }} onPress={() => router.replace("/farmer-dashboard")}>
+                        <Ionicons name="arrow-back" size={24} color="#111827" />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle}>Live Auction Monitor</Text>
+                        <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
                     </View>
                     <TouchableOpacity style={styles.notificationBtn}>
                         <Ionicons name="notifications-outline" size={20} color="#0F172A" />
                         <View style={styles.badge}><Text style={styles.badgeText}>2</Text></View>
                     </TouchableOpacity>
+                </View>
+                <View style={styles.filterRow}>
+                    {["All", "Active", "Ended"].map((f) => (
+                        <TouchableOpacity
+                            key={f}
+                            style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
+                            onPress={() => setFilter(f as any)}
+                        >
+                            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 
@@ -356,13 +362,58 @@ export default function FarmerLiveAuctions() {
                             {isExpanded && (
                                 <View style={[styles.expandedSection, { backgroundColor: cardBgColor }]}>
 
-                                    <View style={styles.sectionHeaderRow}>
-                                        <Feather name="trending-up" size={16} color="#6B7280" />
-                                        <Text style={styles.sectionHeading}>BID PROGRESSION</Text>
-                                    </View>
-                                    <View style={styles.progressionBox}>
-                                        <Text style={styles.emptyText}>Waiting for first bid...</Text>
-                                    </View>
+                                    {/* Winner Card — shown first for CLOSED auctions */}
+                                    {isEnded && auction.winnerName ? (
+                                        <View style={styles.winnerCard}>
+                                            <View style={styles.winnerHeader}>
+                                                <Ionicons name="trophy" size={18} color="#D97706" />
+                                                <Text style={styles.winnerHeaderText}>WINNER DETAILS</Text>
+                                            </View>
+                                            <View style={styles.winnerInfo}>
+                                                <View style={styles.winnerRow}>
+                                                    <Ionicons name="person" size={15} color="#374151" />
+                                                    <Text style={styles.winnerLabel}>Name:</Text>
+                                                    <Text style={styles.winnerValue}>{auction.winnerName}</Text>
+                                                </View>
+                                                <View style={styles.winnerRow}>
+                                                    <Ionicons name="cash" size={15} color="#374151" />
+                                                    <Text style={styles.winnerLabel}>Bid:</Text>
+                                                    <Text style={[styles.winnerValue, { color: '#059669', fontWeight: '900' }]}>{formatCurr(auction.winningAmount)}</Text>
+                                                </View>
+                                                {auction.winnerPhone && (
+                                                    <View style={styles.winnerRow}>
+                                                        <Ionicons name="call" size={15} color="#374151" />
+                                                        <Text style={styles.winnerLabel}>Phone:</Text>
+                                                        <Text style={styles.winnerValue}>{auction.winnerPhone}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        </View>
+                                    ) : isEnded ? (
+                                        <View style={styles.noBidsEndedCard}>
+                                            <Ionicons name="information-circle-outline" size={18} color="#6B7280" />
+                                            <Text style={styles.noBidsEndedText}>Auction ended with no bids</Text>
+                                        </View>
+                                    ) : null}
+
+                                    {/* Bid Progression — for OPEN auctions */}
+                                    {!isEnded && (
+                                        <>
+                                            <View style={styles.sectionHeaderRow}>
+                                                <Feather name="trending-up" size={16} color="#6B7280" />
+                                                <Text style={styles.sectionHeading}>BID PROGRESSION</Text>
+                                            </View>
+                                            <View style={styles.progressionBox}>
+                                                {hasBids ? (
+                                                    <Text style={styles.bidProgressText}>
+                                                        Highest: {formatCurr(auction.currentHighBid)} · {auction.totalBids} bids placed
+                                                    </Text>
+                                                ) : (
+                                                    <Text style={styles.emptyText}>Waiting for first bid...</Text>
+                                                )}
+                                            </View>
+                                        </>
+                                    )}
 
                                     <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
                                         <Feather name="clock" size={16} color="#6B7280" />
@@ -384,13 +435,15 @@ export default function FarmerLiveAuctions() {
                                         <Text style={styles.emptyHistory}>No bids have been placed yet.</Text>
                                     )}
 
-                                    {/* Action Buttons */}
-                                    <View style={styles.actionsRow}>
-                                        <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction.id)}>
-                                            <Feather name="x" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                                            <Text style={styles.cancelBtnText}>End Auction</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    {/* End Auction — only for OPEN */}
+                                    {!isEnded && (
+                                        <View style={styles.actionsRow}>
+                                            <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction.id)}>
+                                                <Feather name="x" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                                                <Text style={styles.cancelBtnText}>End Auction</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
                                 </View>
                             )}
 
@@ -408,28 +461,23 @@ const styles = StyleSheet.create({
     scrollContent: { padding: 16, paddingBottom: 40 },
 
     topHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
         backgroundColor: "#FFF",
         paddingTop: Platform.OS === "ios" ? 50 : 20,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
+        paddingBottom: 12,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: "#E5E7EB",
-        flexWrap: "wrap",
-        gap: 16
     },
-    headerTitle: { fontSize: 22, fontWeight: "800", color: "#111827" },
-    headerSubtitle: { fontSize: 13, color: "#6B7280", marginTop: 2, fontWeight: "500" },
-    headerControls: {
+    headerTopRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 16
     },
-    filterGroup: {
+    headerTitle: { fontSize: 20, fontWeight: "800", color: "#111827" },
+    headerSubtitle: { fontSize: 13, color: "#6B7280", marginTop: 2, fontWeight: "500" },
+    filterRow: {
         flexDirection: "row",
-        gap: 8
+        gap: 8,
+        marginTop: 12,
     },
     filterBtn: {
         paddingHorizontal: 14,
@@ -569,4 +617,38 @@ const styles = StyleSheet.create({
         borderRadius: 6
     },
     cancelBtnText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+
+    winnerCard: {
+        backgroundColor: "#FFF",
+        borderRadius: 10,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: "#FDE68A",
+        overflow: "hidden",
+    },
+    winnerHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "#FEF3C7",
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+    },
+    winnerHeaderText: { fontSize: 11, fontWeight: "800", color: "#92400E", letterSpacing: 0.5 },
+    winnerInfo: { padding: 14, gap: 8 },
+    bidProgressText: { fontSize: 14, fontWeight: "700", color: "#111827" },
+    winnerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    winnerLabel: { fontSize: 13, fontWeight: "600", color: "#6B7280", width: 52 },
+    winnerValue: { fontSize: 15, fontWeight: "700", color: "#111827", flex: 1 },
+
+    noBidsEndedCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "#F3F4F6",
+        borderRadius: 8,
+        padding: 14,
+        marginTop: 12,
+    },
+    noBidsEndedText: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
 });

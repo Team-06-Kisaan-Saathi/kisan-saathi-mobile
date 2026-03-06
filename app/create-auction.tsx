@@ -13,6 +13,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ENDPOINTS } from "../services/api";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 // Mocking icons to avoid web text node errors during development
 const Ionicons = (props: any) => <View {...props} />;
@@ -104,6 +105,7 @@ export default function CreateAuction() {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
             <Stack.Screen options={{ headerShown: false }} />
+            <NavFarmer />
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <Ionicons name="arrow-back" size={24} color="#0F172A" />

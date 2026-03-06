@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { router, Stack } from "expo-router";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -312,7 +312,7 @@ export default function ChangeLocation() {
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Nav />
+      <NavAuto />
       <KeyboardAvoidingView
         style={s.root}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
