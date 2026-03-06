@@ -18,7 +18,7 @@ import * as Lucide from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import { getProfile } from "../services/userServices";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 export default function SettingsScreen() {
     const { t, i18n } = useTranslation();
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavAuto />
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 {/* PROFILE SECTION */}
