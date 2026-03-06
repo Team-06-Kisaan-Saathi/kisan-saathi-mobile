@@ -14,16 +14,16 @@ export const adminService = {
         return apiFetch<any>(`${ENDPOINTS.USER.PROFILE.replace("/profile", "")}${role ? `?role=${role}` : ""}`);
     },
 
-    updateUserStatus: async (userId: string, status: string) => {
-        return apiFetch<any>(`${ENDPOINTS.USER.PROFILE.replace("/profile", "/status")}/${userId}`, {
+    updateUserStatus: async (userId: string, status: string, comment?: string) => {
+        return apiFetch<any>(`${ENDPOINTS.USER.PROFILE.replace("/profile", "")}/${userId}/verify-status`, {
             method: "PUT",
-            body: JSON.stringify({ status })
+            body: JSON.stringify({ status, comment })
         });
     },
 
-    getListings: async (status?: string) => {
-        // Updated to use a more generic query if needed, or stick to users for now
-        return apiFetch<any>(`${API_BASE}/inventory${status ? `?status=${status}` : ""}`);
+    getListings: async () => {
+        // Since there is no 'all inventory' endpoint, we monitor active auctions as 'products'
+        return apiFetch<any>(`${API_BASE}/auctions`);
     },
 
     getAllOrders: async () => {

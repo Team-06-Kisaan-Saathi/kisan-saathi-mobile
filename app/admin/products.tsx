@@ -23,7 +23,8 @@ export default function ProductMonitoring() {
             setLoading(true);
             const res = await adminService.getListings();
             if (res.success) {
-                setProducts(res.inventory || []);
+                // If it's the auctions endpoint, data is in 'data'
+                setProducts(res.data || res.inventory || []);
             }
         } catch (e) {
             console.error("Load Products Error:", e);
@@ -33,23 +34,26 @@ export default function ProductMonitoring() {
         }
     };
 
-    const filtered = products.filter(p =>
-        (p.cropType?.toLowerCase().includes(search.toLowerCase()) || p.farmerId?.name?.toLowerCase().includes(search.toLowerCase())) &&
-        (activeCategory === "All" || p.category === activeCategory)
-    );
+    const filtered = products.filter(p => {
+        const name = (p.cropType || p.crop || "").toLowerCase();
+        const farmer = (p.farmerId?.name || "Farmer").toLowerCase();
+        const matchesSearch = name.includes(search.toLowerCase()) || farmer.includes(search.toLowerCase());
+        const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     const renderItem = ({ item }: { item: any }) => (
         <Card style={styles.productCard}>
             <View style={styles.imagePlaceholder}>
                 <Lucide.Package size={32} color={COLORS.border} />
                 <View style={styles.categoryTag}>
-                    <Text style={styles.categoryText}>{item.cropType}</Text>
+                    <Text style={styles.categoryText}>{item.cropType || item.crop}</Text>
                 </View>
             </View>
 
             <View style={styles.productInfo}>
                 <View style={styles.infoRow}>
-                    <Text style={styles.productName} numberOfLines={1}>{item.cropType}</Text>
+                    <Text style={styles.productName} numberOfLines={1}>{item.cropType || item.crop}</Text>
                     <Badge text={item.status} type={item.status === 'ACTIVE' ? 'success' : 'warning'} />
                 </View>
                 <Text style={styles.farmerName}>by {item.farmerId?.name || "Farmer"}</Text>
@@ -57,11 +61,11 @@ export default function ProductMonitoring() {
                 <View style={styles.priceStockRow}>
                     <View>
                         <Text style={styles.pLabel}>Price</Text>
-                        <Text style={styles.pValue}>₹{item.price}/kg</Text>
+                        <Text style={styles.pValue}>₹{item.price || item.basePrice || 0}/kg</Text>
                     </View>
                     <View>
-                        <Text style={styles.pLabel}>Stock</Text>
-                        <Text style={styles.pValue}>{item.quantity}kg</Text>
+                        <Text style={styles.pLabel}>Quantity</Text>
+                        <Text style={styles.pValue}>{item.quantity || item.quantityKg || 0}kg</Text>
                     </View>
                 </View>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, ScrollView } from "react-native";
 import { COLORS, Header, Badge, Card, AdminSidebar } from "../../components/admin/AdminComponents";
 import * as Lucide from "lucide-react-native";
 import { adminService } from "../../services/adminService";
@@ -10,6 +10,8 @@ export default function BuyerManagement() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
+    const [selectedBuyer, setSelectedBuyer] = useState<any>(null);
+    const [profileVisible, setProfileVisible] = useState(false);
 
     useEffect(() => {
         loadBuyers();
@@ -73,7 +75,10 @@ export default function BuyerManagement() {
                     <Lucide.MessageSquare size={16} color={COLORS.primary} />
                     <Text style={styles.btnTextSecondary}>Contact</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.primaryBtn}>
+                <TouchableOpacity
+                    style={styles.primaryBtn}
+                    onPress={() => { setSelectedBuyer(item); setProfileVisible(true); }}
+                >
                     <Text style={styles.btnTextPrimary}>View Profile</Text>
                 </TouchableOpacity>
             </View>
@@ -111,6 +116,66 @@ export default function BuyerManagement() {
                     />
                 )}
             </View>
+
+            <Modal visible={profileVisible} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Buyer Profile</Text>
+                            <TouchableOpacity onPress={() => setProfileVisible(false)}>
+                                <Lucide.X size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.modalScroll}>
+                            <View style={styles.profileHeader}>
+                                <View style={styles.avatarLarge}>
+                                    <Text style={styles.avatarText}>{selectedBuyer?.name?.charAt(0)}</Text>
+                                </View>
+                                <Text style={styles.profileName}>{selectedBuyer?.name}</Text>
+                                <Text style={styles.profileRole}>{selectedBuyer?.role?.toUpperCase()}</Text>
+                            </View>
+
+                            <View style={styles.detailSection}>
+                                <Text style={styles.detailLabel}>Contact Information</Text>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.dLabel}>Phone</Text>
+                                    <Text style={styles.dValue}>{selectedBuyer?.phone}</Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.dLabel}>Location</Text>
+                                    <Text style={styles.dValue}>{selectedBuyer?.location || "Not set"}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.detailSection}>
+                                <Text style={styles.detailLabel}>Account Summary</Text>
+                                <View style={styles.statsGrid}>
+                                    <View style={styles.miniStat}>
+                                        <Text style={styles.dLabel}>Trust Score</Text>
+                                        <Text style={styles.dValue}>{selectedBuyer?.trustScore}/10</Text>
+                                    </View>
+                                    <View style={styles.miniStat}>
+                                        <Text style={styles.dLabel}>Status</Text>
+                                        <Text style={[styles.dValue, { color: selectedBuyer?.verificationStatus === 'approved' ? COLORS.success : COLORS.warning }]}>
+                                            {selectedBuyer?.verificationStatus?.toUpperCase() || "NONE"}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </ScrollView>
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={[styles.footerBtn, { backgroundColor: COLORS.primary }]}
+                                onPress={() => setProfileVisible(false)}
+                            >
+                                <Text style={styles.btnTextPrimary}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -140,4 +205,23 @@ const styles = StyleSheet.create({
     btnTextPrimary: { color: '#fff', fontWeight: '800', fontSize: 13 },
     secondaryBtn: { flex: 1, flexDirection: 'row', gap: 6, borderWidth: 1, borderColor: COLORS.primary, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
     btnTextSecondary: { color: COLORS.primary, fontWeight: '800', fontSize: 13 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+    modalScroll: { marginBottom: 20 },
+    profileHeader: { alignItems: 'center', marginBottom: 24 },
+    avatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.secondary, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    avatarText: { color: '#fff', fontSize: 32, fontWeight: '800' },
+    profileName: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+    profileRole: { fontSize: 12, fontWeight: '700', color: COLORS.textLight, marginTop: 4 },
+    detailSection: { marginBottom: 24 },
+    detailLabel: { fontSize: 12, fontWeight: '800', color: COLORS.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    detailItem: { marginBottom: 12 },
+    statsGrid: { flexDirection: 'row', gap: 12 },
+    miniStat: { flex: 1, backgroundColor: COLORS.background, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+    dLabel: { fontSize: 10, color: COLORS.textLight, fontWeight: '700', textTransform: 'uppercase' },
+    dValue: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginTop: 2 },
+    modalFooter: { paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+    footerBtn: { height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });
