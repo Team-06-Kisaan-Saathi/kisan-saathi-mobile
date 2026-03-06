@@ -147,9 +147,8 @@ export default function FarmerDashboard() {
               title="Weather"
               subtitle="7-day forecast"
               icon="cloudy-night"
-              iconType="Ionicons"
               color="#0EA5E9"
-              onPress={() => router.push("/weather")}
+              onPress={() => router.push("/weather" as any)}
             />
             <MarketCard
               title="Govt Schemes"

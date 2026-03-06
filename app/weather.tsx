@@ -70,6 +70,27 @@ export default function WeatherScreen() {
         return { text: "Clear Sky", icon: "Sun", color: "#F59E0B" };
     };
 
+    const getAgriTip = () => {
+        if (!weatherData) return "Checking conditions for your crops...";
+
+        const current = weatherData.current_weather;
+        const hourly = weatherData.hourly;
+        const currentTimeIndex = new Date().getHours();
+
+        const temp = current.temperature;
+        const rain = hourly.precipitation[currentTimeIndex] || 0;
+        const humidity = hourly.relativehumidity_2m[currentTimeIndex] || 0;
+        const wind = current.windspeed;
+
+        if (rain > 0.5) return "Rain detected. No need to irrigate today.";
+        if (temp > 35) return "High heat! Ensure your crops have extra water.";
+        if (humidity < 35) return "Dry air detected. Good time for irrigation.";
+        if (wind > 25) return "High winds. Be careful with spray-based pesticides.";
+        if (temp < 12 && temp > 0) return "Cool weather. Growth may be slower today.";
+
+        return "Perfect conditions for irrigation today.";
+    };
+
     if (loading) {
         return (
             <View style={styles.center}>
@@ -136,15 +157,14 @@ export default function WeatherScreen() {
                     <View style={styles.agriTipContainer}>
                         <Lucide.Sprout size={16} color="#ECFDF5" />
                         <Text style={styles.agriTipText}>
-                            Perfect conditions for irrigation today.
+                            {getAgriTip()}
                         </Text>
                     </View>
                 </View>
 
                 {/* WEATHER STATS GRID */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Main Indicators</Text>
-                    <Text style={styles.sectionSubtitle}>Current farm conditions</Text>
+                    <Text style={styles.sectionSubtitle}>Current conditions</Text>
                 </View>
 
                 <View style={styles.statsGrid}>
@@ -181,7 +201,7 @@ export default function WeatherScreen() {
                 {/* FORECAST SECTION */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Next 12 Hours</Text>
-                    <Text style={styles.sectionSubtitle}>Hourly farm forecast</Text>
+                    <Text style={styles.sectionSubtitle}>Hourly forecast</Text>
                 </View>
 
                 <ScrollView
@@ -213,12 +233,6 @@ export default function WeatherScreen() {
                     })}
                 </ScrollView>
 
-                <View style={styles.infoFooter}>
-                    <Lucide.Info size={14} color="#94A3B8" />
-                    <Text style={styles.footerText}>
-                        Weather data provided by Open-Meteo. Precise for your field location.
-                    </Text>
-                </View>
             </ScrollView>
         </View>
     );
@@ -247,7 +261,7 @@ const styles = StyleSheet.create({
     },
     errorText: {
         marginTop: 12,
-        fontSize: 16,
+        fontSize: 10,
         color: "#EF4444",
         textAlign: "center",
         marginBottom: 20,
