@@ -102,7 +102,7 @@
   "nav_buyer": {
     "dashboard": "డాష్‌బోర్డ్",
     "browse_crops": "పంటలను బ్రౌజ్ చేయండి",
-    "live_auctions": "ప్రత్యక్ష వేలం",
+    "live_auctions": "प्रत्यक्ष వేలం",
     "my_bids": "నా బిడ్‌లు",
     "market_insights": "మార్కెట్ అంతర్దృష్టులు",
     "edit_profile": "ప్రొఫైల్‌ను సవరించండి",
@@ -116,5 +116,36 @@
     "price": "ధర (₹/కిలోలు)",
     "add": "జోడించండి",
     "add_crop_listings": "పంటల జాబితాలను జోడించండి"
+  },
+  "profile": {
+    "languages": {
+      "en": "ఇంగ్లీషు",
+      "ml": "మలయాళం",
+      "hi": "హిందీ",
+      "te": "తెలుగు",
+      "ta": "తమిళం"
+    }
+  },
+  "settings": {
+    "title": "సెట్టింగ్‌లు",
+    "profile": "ప్రొఫైల్",
+    "edit_profile": "ప్రొఫైల్ సవరించండి",
+    "security": "భద్రత",
+    "change_pin": "పాస్‌వర్డ్ మార్చండి",
+    "preferences": "ప్రాధాన్యతలు",
+    "language": "భాష",
+    "farm_details": "ఫారమ్ వివరాలు",
+    "farm_location": "ఫారమ్ స్థానం",
+    "total_land_area": "మొత్తం భూమి వైశాల్యం",
+    "acres": "ఎకరాలు",
+    "hectares": "హెక్టార్లు",
+    "support": "మద్దతు",
+    "help_support": "సహాయం మరియు మద్దతు",
+    "logout": "లాగ్ అవుట్",
+    "save": "సేవ్ చేయండి",
+    "version": "వెర్షన్",
+    "verifying": "ధృవీకరిస్తోంది...",
+    "success": "విజయం",
+    "error": "లోపం"
   }
 }

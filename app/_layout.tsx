@@ -8,9 +8,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
+import { ThemeProvider } from "../hooks/ThemeContext";
+import { useColorScheme } from "../hooks/use-color-scheme";
+import { Colors } from "../constants/theme";
 
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <InnerLayout />
+    </ThemeProvider>
+  );
+}
+
+function InnerLayout() {
   const { i18n } = useTranslation();
   const router = useRouter();
   const segments = useSegments();
@@ -71,13 +82,17 @@ export default function RootLayout() {
     await persistLanguage(lang);
   };
 
+  const colorScheme = useColorScheme();
+  const backgroundColor = Colors[colorScheme ?? 'light'].background;
+
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor }]}>
       {/* Screens */}
       <Stack
         initialRouteName="login"
         screenOptions={{
           headerShown: false,
+          contentStyle: { backgroundColor: "transparent" }
         }}
       >
         <Stack.Screen name="login" />
@@ -115,3 +130,4 @@ const styles = StyleSheet.create({
     elevation: 999999,
   },
 });
+
