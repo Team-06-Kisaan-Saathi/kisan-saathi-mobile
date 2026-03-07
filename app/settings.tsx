@@ -10,6 +10,8 @@ import {
     ActivityIndicator,
     Modal,
     Platform,
+    TextInput,
+    KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
@@ -17,8 +19,9 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Lucide from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
-import { getProfile } from "../services/userServices";
-import NavAuto from "../components/navigation/NavAuto";
+import { getProfile, updateProfile, verifyPin, changePassword } from "../services/userServices";
+import Nav from "../components/navigation/Nav";
+import { setLanguage } from "../i18n/i18n";
 
 export default function SettingsScreen() {
     const { t, i18n } = useTranslation();
@@ -29,16 +32,19 @@ export default function SettingsScreen() {
     const [role, setRole] = useState<string | null>(null);
     const [logoutModal, setLogoutModal] = useState(false);
 
-    // Settings State
-    const [darkMode, setDarkMode] = useState(false);
-    const [notifications, setNotifications] = useState({
-        orders: true,
-        prices: true,
-        weather: true,
-    });
-    const [organicOnly, setOrganicOnly] = useState(false);
-    const [twoFactor, setTwoFactor] = useState(false);
-    const [sellingUnit, setSellingUnit] = useState("kg");
+    // Farm Details State
+    const [totalLandArea, setTotalLandArea] = useState("");
+    const [landUnit, setLandUnit] = useState("acres");
+    const [isSavingLand, setIsSavingLand] = useState(false);
+
+    // Change Password State
+    const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+    const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
+    const [pin, setPin] = useState("");
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isVerifying, setIsVerifying] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -51,16 +57,10 @@ export default function SettingsScreen() {
 
             const profile = await getProfile();
             if (profile?.success) {
-                setUser(profile.user);
-            }
-
-            // Load preferences from local storage if any
-            const prefs = await AsyncStorage.getItem("user_settings");
-            if (prefs) {
-                const parsed = JSON.parse(prefs);
-                setDarkMode(parsed.darkMode ?? false);
-                setNotifications(parsed.notifications ?? { orders: true, prices: true, weather: true });
-                setSellingUnit(parsed.sellingUnit ?? "kg");
+                const u = profile.user;
+                setUser(u);
+                setTotalLandArea(u.totalLandArea?.toString() || "");
+                setLandUnit(u.totalLandAreaUnit || "acres");
             }
         } catch (error) {
             console.error("Error loading settings:", error);
@@ -69,14 +69,97 @@ export default function SettingsScreen() {
         }
     };
 
-    const saveSettings = async (updates: any) => {
-        try {
-            const current = await AsyncStorage.getItem("user_settings");
-            const next = { ...(current ? JSON.parse(current) : {}), ...updates };
-            await AsyncStorage.setItem("user_settings", JSON.stringify(next));
-        } catch (e) {
-            console.error("Save settings failed", e);
+    const handleSaveLandArea = async () => {
+        if (!totalLandArea || isNaN(Number(totalLandArea))) {
+            Alert.alert(t("settings.error"), "Please enter a valid numeric value for land area.");
+            return;
         }
+
+        setIsSavingLand(true);
+        try {
+            const res = await updateProfile({
+                totalLandArea: Number(totalLandArea),
+                totalLandAreaUnit: landUnit
+            });
+            if (res.success) {
+                Alert.alert(t("settings.success"), "Farm details updated.");
+                setUser({ ...user, totalLandArea: Number(totalLandArea), totalLandAreaUnit: landUnit });
+            } else {
+                Alert.alert(t("settings.error"), res.message || "Failed to update profile.");
+            }
+        } catch (e) {
+            Alert.alert(t("settings.error"), "Something went wrong.");
+        } finally {
+            setIsSavingLand(false);
+        }
+    };
+
+    const handleVerifyPin = async () => {
+        if (pin.length < 4) {
+            Alert.alert(t("settings.error"), "Please enter a valid PIN.");
+            return;
+        }
+
+        setIsVerifying(true);
+        try {
+            const res = await verifyPin(pin);
+            if (res.success) {
+                setIsPinModalVisible(false);
+                setIsPasswordModalVisible(true);
+                setPin("");
+                setCurrentPassword("");
+            } else {
+                Alert.alert(t("settings.error"), "Incorrect PIN.");
+            }
+        } catch (e) {
+            Alert.alert(t("settings.error"), "Verification failed.");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            Alert.alert(t("settings.error"), "All fields are required.");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            Alert.alert(t("settings.error"), "New passwords do not match.");
+            return;
+        }
+
+        setIsVerifying(true);
+        try {
+            const res = await changePassword({
+                currentPassword,
+                newPassword
+            });
+            if (res.success) {
+                Alert.alert(t("settings.success"), "Password updated successfully.");
+                setIsPasswordModalVisible(false);
+                setNewPassword("");
+                setConfirmPassword("");
+                setCurrentPassword("");
+            } else {
+                Alert.alert(t("settings.error"), res.message || "Failed to update password.");
+            }
+        } catch (e) {
+            Alert.alert(t("settings.error"), "Something went wrong.");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleLanguageChange = async (lang: string) => {
+        await setLanguage(lang);
+    };
+
+    const getLanguageLabel = (code: string) => {
+        if (code.startsWith("hi")) return "Hindi";
+        if (code.startsWith("te")) return "Telugu";
+        if (code.startsWith("ml")) return "Malayalam";
+        if (code.startsWith("ta")) return "Tamil";
+        return "English";
     };
 
     const handleLogout = async () => {
@@ -100,7 +183,7 @@ export default function SettingsScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 {/* PROFILE SECTION */}
-                <SectionHeader title="Profile" />
+                <SectionHeader title={t("settings.profile")} />
                 <View style={styles.card}>
                     <TouchableOpacity
                         style={styles.profileRow}
@@ -111,267 +194,191 @@ export default function SettingsScreen() {
                         </View>
                         <View style={styles.profileInfo}>
                             <Text style={styles.nameText}>{user?.name || "User Name"}</Text>
-                            <Text style={styles.roleText}>{role?.toUpperCase() || "FARMER"}</Text>
                             <Text style={styles.phoneText}>{user?.phone || "+91 XXXXXXXXXX"}</Text>
                         </View>
                         <Lucide.ChevronRight size={20} color="#94A3B8" />
                     </TouchableOpacity>
                     <View style={styles.divider} />
                     <SettingRow
-                        icon={<Lucide.UserCircle size={22} color="#3B82F6" />}
-                        label="Edit Profile"
+                        icon={<Lucide.UserCircle size={18} color="#3B82F6" />}
+                        label={t("settings.edit_profile")}
                         onPress={() => router.push("/edit-profile")}
                     />
                 </View>
 
-                {/* ROLE SPECIFIC: ADMIN SETTINGS */}
-                {role === "admin" && (
-                    <>
-                        <SectionHeader title="Admin Controls" />
-                        <View style={styles.card}>
-                            <SettingRow
-                                icon={<Lucide.ShieldCheck size={22} color="#1E3A8A" />}
-                                label="Security Audit Logs"
-                                onPress={() => Alert.alert("Audit Logs", "Viewing latest system activities...")}
-                            />
-                            <View style={styles.divider} />
-                            <SettingRow
-                                icon={<Lucide.Users size={22} color="#1E3A8A" />}
-                                label="Manage Admin Roles"
-                                onPress={() => Alert.alert("Admin Management", "Manage sub-admin permissions.")}
-                            />
-                            <View style={styles.divider} />
-                            <SettingRow
-                                icon={<Lucide.Megaphone size={22} color="#1E3A8A" />}
-                                label="System Broadcasts"
-                                onPress={() => router.push("/admin-dashboard")}
-                            />
-                        </View>
-                    </>
-                )}
+                {/* SECURITY SECTION */}
+                <SectionHeader title={t("settings.security")} />
+                <View style={styles.card}>
+                    <SettingRow
+                        icon={<Lucide.Lock size={18} color="#64748B" />}
+                        label={t("settings.change_pin")}
+                        onPress={() => setIsPinModalVisible(true)}
+                    />
+                </View>
 
-                {/* ROLE SPECIFIC: FARMER DETAILS */}
+                {/* PREFERENCES SECTION */}
+                <SectionHeader title={t("settings.preferences")} />
+                <View style={styles.card}>
+                    <SettingRow
+                        icon={<Lucide.Languages size={18} color="#3B82F6" />}
+                        label={t("settings.language")}
+                        value={getLanguageLabel(i18n.language)}
+                        onPress={() => {
+                            Alert.alert("Select Language", "Choose app language", [
+                                { text: "English", onPress: () => handleLanguageChange("en") },
+                                { text: "Hindi", onPress: () => handleLanguageChange("hi") },
+                                { text: "Malayalam", onPress: () => handleLanguageChange("ml") },
+                                { text: "Tamil", onPress: () => handleLanguageChange("ta") },
+                                { text: "Telugu", onPress: () => handleLanguageChange("te") },
+                            ]);
+                        }}
+                    />
+                </View>
+
+                {/* FARM DETAILS SECTION */}
                 {role === "farmer" && (
                     <>
-                        <SectionHeader title="Farm Details" />
+                        <SectionHeader title={t("settings.farm_details")} />
                         <View style={styles.card}>
                             <SettingRow
-                                icon={<Lucide.MapPin size={22} color="#10B981" />}
-                                label="Farm Location"
-                                value={user?.location || "Warangal, TS"}
+                                icon={<Lucide.MapPin size={18} color="#10B981" />}
+                                label={t("settings.farm_location")}
+                                value={user?.location || "Not Set"}
                                 onPress={() => router.push("/change-location")}
                             />
                             <View style={styles.divider} />
-                            <SettingRow
-                                icon={<Lucide.Maximize size={22} color="#10B981" />}
-                                label="Total Land Area"
-                                value="5.5 Acres"
-                            />
-                            <View style={styles.divider} />
-                            <SettingRow
-                                icon={<Lucide.Sprout size={22} color="#10B981" />}
-                                label="Main Crops"
-                                value="Paddy, Chilli"
-                            />
-                            <View style={styles.divider} />
-                            <ToggleRow
-                                icon={<Lucide.Leaf size={22} color="#10B981" />}
-                                label="Organic/Non-Organic"
-                                value={organicOnly}
-                                onValueChange={(val: boolean) => setOrganicOnly(val)}
-                                subLabel={organicOnly ? "Only organic listings" : "All listings"}
-                            />
+
+                            <View style={styles.editRow}>
+                                <View style={styles.rowLeft}>
+                                    <View style={styles.iconContainer}>
+                                        <Lucide.Maximize size={18} color="#10B981" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.labelText}>{t("settings.total_land_area")}</Text>
+                                        <View style={styles.landInputContainer}>
+                                            <TextInput
+                                                style={styles.landInput}
+                                                placeholder="0.0"
+                                                placeholderTextColor="#94A3B8"
+                                                keyboardType="numeric"
+                                                value={totalLandArea}
+                                                onChangeText={setTotalLandArea}
+                                            />
+                                            <TouchableOpacity
+                                                style={styles.unitButton}
+                                                onPress={() => {
+                                                    Alert.alert("Select Unit", "Choose land area unit", [
+                                                        { text: "Acres", onPress: () => setLandUnit("acres") },
+                                                        { text: "Hectares", onPress: () => setLandUnit("hectares") },
+                                                    ]);
+                                                }}
+                                            >
+                                                <Text style={styles.unitButtonText}>{t(`settings.${landUnit}`)}</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.smallSaveBtn, isSavingLand && { opacity: 0.5 }]}
+                                                onPress={handleSaveLandArea}
+                                                disabled={isSavingLand}
+                                            >
+                                                {isSavingLand ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnText}>{t("settings.save")}</Text>}
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
                         </View>
                     </>
                 )}
 
-                {/* ROLE SPECIFIC: BUYER PREFERENCES */}
-                {role === "buyer" && (
-                    <>
-                        <SectionHeader title="Buyer Preferences" />
-                        <View style={styles.card}>
-                            <SettingRow
-                                icon={<Lucide.ShoppingBag size={22} color="#6366F1" />}
-                                label="Preferred Crops"
-                                value="Wheat, Maize"
-                                onPress={() => router.push("/buyer-preferences")}
-                            />
-                            <View style={styles.divider} />
-                            <SettingRow
-                                icon={<Lucide.Truck size={22} color="#6366F1" />}
-                                label="Delivery Address"
-                                value="Hyderabad, TS"
-                            />
-                            <View style={styles.divider} />
-                            <SettingRow
-                                icon={<Lucide.Heart size={22} color="#EF4444" />}
-                                label="Saved Farmers"
-                                value="12 Verified"
-                            />
-                        </View>
-                    </>
-                )}
-
-                {/* MARKETPLACE SETTINGS */}
-                <SectionHeader title="Marketplace Settings" />
+                {/* SUPPORT SECTION */}
+                <SectionHeader title={t("settings.support")} />
                 <View style={styles.card}>
                     <SettingRow
-                        icon={<Lucide.Scale size={22} color="#F59E0B" />}
-                        label="Default Selling Unit"
-                        value={sellingUnit.toUpperCase()}
-                        onPress={() => {
-                            Alert.alert("Select Unit", "Choose your default unit", [
-                                { text: "KG", onPress: () => { setSellingUnit("kg"); saveSettings({ sellingUnit: "kg" }); } },
-                                { text: "TON", onPress: () => { setSellingUnit("ton"); saveSettings({ sellingUnit: "ton" }); } },
-                                { text: "BAG", onPress: () => { setSellingUnit("bag"); saveSettings({ sellingUnit: "bag" }); } },
-                            ]);
-                        }}
-                    />
-                    <View style={styles.divider} />
-                    <ToggleRow
-                        icon={<Lucide.BellRing size={22} color="#F59E0B" />}
-                        label="Order Alerts"
-                        value={notifications.orders}
-                        onValueChange={(v: boolean) => {
-                            const next = { ...notifications, orders: v };
-                            setNotifications(next);
-                            saveSettings({ notifications: next });
-                        }}
-                    />
-                    <View style={styles.divider} />
-                    <ToggleRow
-                        icon={<Lucide.TrendingUp size={22} color="#F59E0B" />}
-                        label="Price Change Alerts"
-                        value={notifications.prices}
-                        onValueChange={(v: boolean) => {
-                            const next = { ...notifications, prices: v };
-                            setNotifications(next);
-                            saveSettings({ notifications: next });
-                        }}
-                    />
-                    <View style={styles.divider} />
-                    <ToggleRow
-                        icon={<Lucide.CloudSun size={22} color="#F59E0B" />}
-                        label="Weather Alerts"
-                        value={notifications.weather}
-                        onValueChange={(v: boolean) => {
-                            const next = { ...notifications, weather: v };
-                            setNotifications(next);
-                            saveSettings({ notifications: next });
-                        }}
-                    />
-                </View>
-
-                {/* ACCOUNT & SECURITY */}
-                <SectionHeader title="Account & Security" />
-                <View style={styles.card}>
-                    <SettingRow
-                        icon={<Lucide.Lock size={22} color="#64748B" />}
-                        label="Change Password"
-                        onPress={() => Alert.alert("Coming Soon", "Pin change is available during login.")}
-                    />
-                    <View style={styles.divider} />
-                    <ToggleRow
-                        icon={<Lucide.ShieldCheck size={22} color="#64748B" />}
-                        label="Two-Factor Authentication"
-                        value={twoFactor}
-                        onValueChange={setTwoFactor}
-                    />
-                    <View style={styles.divider} />
-                    <SettingRow
-                        icon={<Lucide.CreditCard size={22} color="#3B82F6" />}
-                        label="Linked Bank Account"
-                        value="SBI **** 4582"
-                    />
-                    <View style={styles.divider} />
-                    <SettingRow
-                        icon={<Lucide.History size={22} color="#64748B" />}
-                        label="Transaction History"
-                        onPress={() => router.push("/invoices")}
-                    />
-                </View>
-
-                {/* APP SETTINGS */}
-                <SectionHeader title="App Settings" />
-                <View style={styles.card}>
-                    <ToggleRow
-                        icon={<Lucide.Moon size={22} color="#1E293B" />}
-                        label="Dark Mode"
-                        value={darkMode}
-                        onValueChange={(v: boolean) => {
-                            setDarkMode(v);
-                            saveSettings({ darkMode: v });
-                        }}
-                    />
-                    <View style={styles.divider} />
-                    <SettingRow
-                        icon={<Lucide.Languages size={22} color="#1E293B" />}
-                        label="Language"
-                        value={i18n.language === "hi" ? "Hindi" : i18n.language === "te" ? "Telugu" : "English"}
-                        onPress={() => {
-                            Alert.alert("Select Language", "Choose app language", [
-                                { text: "English", onPress: () => i18n.changeLanguage("en") },
-                                { text: "Hindi", onPress: () => i18n.changeLanguage("hi") },
-                                { text: "Telugu", onPress: () => i18n.changeLanguage("te") },
-                            ]);
-                        }}
-                    />
-                    <View style={styles.divider} />
-                    <SettingRow
-                        icon={<Lucide.HelpCircle size={22} color="#1E293B" />}
-                        label="Help & Support"
+                        icon={<Lucide.HelpCircle size={18} color="#64748B" />}
+                        label={t("settings.help_support")}
                         onPress={() => router.push("/call-support")}
                     />
                 </View>
 
-                {/* LOGOUT */}
+                {/* LOGOUT BUTTON */}
                 <TouchableOpacity
                     style={styles.logoutBtn}
                     onPress={() => setLogoutModal(true)}
                 >
-                    <Lucide.LogOut size={22} color="#EF4444" />
-                    <Text style={styles.logoutText}>Logout</Text>
+                    <Lucide.LogOut size={18} color="#EF4444" />
+                    <Text style={styles.logoutText}>{t("settings.logout")}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.footer}>
-                    <Text style={styles.versionText}>Version 1.0.0 (Build 124)</Text>
-                    <Text style={styles.footerNote}>© 2026 KrishiConnect Rural Tech</Text>
+                    <Text style={styles.versionText}>{t("settings.version")} 1.2.0 (Stable)</Text>
+                    <Text style={styles.footerNote}>© 2026 Kisan Saathi Connect</Text>
                 </View>
-
             </ScrollView>
 
-            {/* Logout Modal */}
+            {/* MODALS */}
+            <Modal visible={isPinModalVisible} transparent animationType="slide">
+                <View style={styles.modalBackdrop}>
+                    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }}>
+                        <View style={styles.modalContent}>
+                            <Lucide.Lock size={48} color="#3B82F6" style={{ marginBottom: 16 }} />
+                            <Text style={styles.modalTitle}>{t("settings.change_pin")}</Text>
+                            <Text style={styles.modalSub}>Please verify your identity to proceed.</Text>
+                            <TextInput
+                                style={styles.modalInput}
+                                placeholder="Enter PIN"
+                                secureTextEntry
+                                keyboardType="numeric"
+                                value={pin}
+                                onChangeText={setPin}
+                                maxLength={6}
+                            />
+                            <View style={styles.modalButtons}>
+                                <TouchableOpacity style={[styles.modalBtn, styles.modalCancel]} onPress={() => setIsPinModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                                <TouchableOpacity style={[styles.modalBtn, styles.modalAction]} onPress={handleVerifyPin}><Text style={styles.modalActionText}>Verify</Text></TouchableOpacity>
+                            </View>
+                        </View>
+                    </KeyboardAvoidingView>
+                </View>
+            </Modal>
+
+            <Modal visible={isPasswordModalVisible} transparent animationType="slide">
+                <View style={styles.modalBackdrop}>
+                    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: "100%" }}>
+                        <View style={styles.modalContent}>
+                            <Lucide.ShieldCheck size={48} color="#10B981" style={{ marginBottom: 16 }} />
+                            <Text style={styles.modalTitle}>{t("settings.change_pin")}</Text>
+                            <View style={{ width: "100%", gap: 12, marginBottom: 20 }}>
+                                <TextInput style={styles.modalInput} placeholder="Current Password" secureTextEntry value={currentPassword} onChangeText={setCurrentPassword} />
+                                <TextInput style={styles.modalInput} placeholder="New Password" secureTextEntry value={newPassword} onChangeText={setNewPassword} />
+                                <TextInput style={styles.modalInput} placeholder="Confirm Password" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+                            </View>
+                            <View style={styles.modalButtons}>
+                                <TouchableOpacity style={[styles.modalBtn, styles.modalCancel]} onPress={() => setIsPasswordModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                                <TouchableOpacity style={[styles.modalBtn, styles.modalAction, { backgroundColor: "#10B981" }]} onPress={handleChangePassword}><Text style={styles.modalActionText}>Update</Text></TouchableOpacity>
+                            </View>
+                        </View>
+                    </KeyboardAvoidingView>
+                </View>
+            </Modal>
+
             <Modal visible={logoutModal} transparent animationType="fade">
                 <View style={styles.modalBackdrop}>
                     <View style={styles.modalContent}>
                         <Lucide.AlertTriangle size={48} color="#EF4444" style={{ marginBottom: 16 }} />
-                        <Text style={styles.modalTitle}>Confirm Logout</Text>
-                        <Text style={styles.modalSub}>Are you sure you want to sign out from the app?</Text>
-
+                        <Text style={styles.modalTitle}>{t("settings.logout")}</Text>
+                        <Text style={styles.modalSub}>Are you sure you want to sign out?</Text>
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalBtn, styles.modalCancel]}
-                                onPress={() => setLogoutModal(false)}
-                            >
-                                <Text style={styles.modalCancelText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalBtn, styles.modalDelete]}
-                                onPress={handleLogout}
-                            >
-                                <Text style={styles.modalDeleteText}>Logout</Text>
-                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.modalBtn, styles.modalCancel]} onPress={() => setLogoutModal(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                            <TouchableOpacity style={[styles.modalBtn, styles.modalDelete]} onPress={handleLogout}><Text style={styles.modalDeleteText}>{t("settings.logout")}</Text></TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
-
         </View>
     );
 }
 
-// --- SUB COMPONENTS ---
-
+// --- COMPONENTS ---
 function SectionHeader({ title }: { title: string }) {
     return <Text style={styles.sectionHeader}>{title.toUpperCase()}</Text>;
 }
@@ -379,9 +386,8 @@ function SectionHeader({ title }: { title: string }) {
 function SettingRow({ icon, label, value, onPress }: any) {
     const isTappable = !!onPress;
     const Container = isTappable ? TouchableOpacity : View;
-
     return (
-        <Container style={styles.row} onPress={onPress} activeOpacity={0.7}>
+        <Container style={styles.row} onPress={onPress}>
             <View style={styles.rowLeft}>
                 <View style={styles.iconContainer}>{icon}</View>
                 <Text style={styles.labelText}>{label}</Text>
@@ -394,126 +400,48 @@ function SettingRow({ icon, label, value, onPress }: any) {
     );
 }
 
-function ToggleRow({ icon, label, subLabel, value, onValueChange }: any) {
-    return (
-        <View style={styles.row}>
-            <View style={styles.rowLeft}>
-                <View style={styles.iconContainer}>{icon}</View>
-                <View>
-                    <Text style={styles.labelText}>{label}</Text>
-                    {subLabel && <Text style={styles.subLabelText}>{subLabel}</Text>}
-                </View>
-            </View>
-            <Switch
-                value={value}
-                onValueChange={onValueChange}
-                trackColor={{ false: "#E2E8F0", true: "#BFDBFE" }}
-                thumbColor={value ? "#3B82F6" : "#F8FAFC"}
-            />
-        </View>
-    );
-}
-
 // --- STYLES ---
-
 const styles = StyleSheet.create({
     center: { flex: 1, justifyContent: "center", alignItems: "center" },
     scrollContent: { padding: 20, paddingBottom: 100 },
-    sectionHeader: {
-        fontSize: 12,
-        fontWeight: "800",
-        color: "#64748B",
-        letterSpacing: 1.2,
-        marginBottom: 12,
-        marginTop: 24,
-        paddingLeft: 4
-    },
-    card: {
-        backgroundColor: "#FFFFFF",
-        borderRadius: 24,
-        padding: 8,
-        borderWidth: 1,
-        borderColor: "#F1F5F9",
-        ...Platform.select({
-            ios: {
-                shadowColor: "#0F172A",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.05,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
-    },
-    profileRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 16,
-    },
-    avatar: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: "#3B82F6",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    avatarText: { color: "#FFF", fontSize: 24, fontWeight: "bold" },
+    sectionHeader: { fontSize: 12, fontWeight: "800", color: "#64748B", letterSpacing: 1.2, marginBottom: 12, marginTop: 20, paddingLeft: 4 },
+    card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 8, borderWidth: 1, borderColor: "#F1F5F9", marginBottom: 16 },
+    profileRow: { flexDirection: "row", alignItems: "center", padding: 16 },
+    avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#3B82F6", alignItems: "center", justifyContent: "center" },
+    avatarText: { color: "#FFF", fontSize: 20, fontWeight: "bold" },
     profileInfo: { flex: 1, marginLeft: 16 },
-    nameText: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
-    roleText: { fontSize: 12, fontWeight: "700", color: "#64748B", textTransform: "uppercase", marginTop: 2 },
+    nameText: { fontSize: 17, fontWeight: "800", color: "#0F172A" },
     phoneText: { fontSize: 13, color: "#94A3B8", marginTop: 2 },
-
-    row: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-    },
+    row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 12 },
     rowLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: "#F8FAFC",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 16,
-    },
+    iconContainer: { width: 32, height: 32, borderRadius: 8, backgroundColor: "#F8FAFC", alignItems: "center", justifyContent: "center", marginRight: 12 },
     labelText: { fontSize: 15, fontWeight: "600", color: "#334155" },
-    subLabelText: { fontSize: 12, color: "#94A3B8", marginTop: 2 },
     rowRight: { flexDirection: "row", alignItems: "center" },
     valueText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-
     divider: { height: 1, backgroundColor: "#F1F5F9", marginHorizontal: 12 },
-
-    logoutBtn: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#FFF",
-        marginTop: 32,
-        paddingVertical: 18,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: "#FEE2E2",
-    },
-    logoutText: { color: "#EF4444", fontSize: 16, fontWeight: "800", marginLeft: 12 },
-
-    footer: { marginTop: 40, alignItems: "center", marginBottom: 20 },
+    editRow: { padding: 12 },
+    landInputContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+    landInput: { flex: 1, backgroundColor: "#F8FAFC", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, color: "#0F172A", borderWidth: 1, borderColor: "#E2E8F0" },
+    unitButton: { backgroundColor: "#E2E8F0", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    unitButtonText: { fontSize: 13, fontWeight: "700", color: "#475569" },
+    smallSaveBtn: { backgroundColor: "#10B981", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+    saveBtnText: { color: "#FFF", fontWeight: "800", fontSize: 13 },
+    logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#FFF", marginTop: 20, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: "#FEE2E2" },
+    logoutText: { color: "#EF4444", fontSize: 15, fontWeight: "800", marginLeft: 10 },
+    footer: { marginTop: 40, alignItems: "center" },
     versionText: { fontSize: 12, fontWeight: "600", color: "#94A3B8" },
     footerNote: { fontSize: 11, color: "#CBD5E1", marginTop: 4 },
-
-    modalBackdrop: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.6)", justifyContent: "center", alignItems: "center", padding: 24 },
-    modalContent: { backgroundColor: "#FFF", width: "100%", borderRadius: 28, padding: 32, alignItems: "center" },
-    modalTitle: { fontSize: 20, fontWeight: "800", color: "#0F172A", marginBottom: 8 },
-    modalSub: { fontSize: 15, color: "#64748B", textAlign: "center", lineHeight: 22, marginBottom: 28 },
+    modalBackdrop: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)", justifyContent: "center", alignItems: "center", padding: 24 },
+    modalContent: { backgroundColor: "#FFF", width: "100%", borderRadius: 24, padding: 24, alignItems: "center" },
+    modalTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A", marginBottom: 8 },
+    modalSub: { fontSize: 14, color: "#64748B", textAlign: "center", marginBottom: 20 },
+    modalInput: { width: "100%", backgroundColor: "#F8FAFC", borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: "#E2E8F0" },
     modalButtons: { flexDirection: "row", gap: 12, width: "100%" },
-    modalBtn: { flex: 1, paddingVertical: 16, borderRadius: 16, alignItems: "center" },
+    modalBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: "center" },
     modalCancel: { backgroundColor: "#F1F5F9" },
+    modalAction: { backgroundColor: "#3B82F6" },
     modalDelete: { backgroundColor: "#EF4444" },
-    modalCancelText: { color: "#475569", fontWeight: "700", fontSize: 15 },
-    modalDeleteText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
+    modalCancelText: { color: "#475569", fontWeight: "700" },
+    modalActionText: { color: "#FFF", fontWeight: "700" },
+    modalDeleteText: { color: "#FFF", fontWeight: "700" },
 });

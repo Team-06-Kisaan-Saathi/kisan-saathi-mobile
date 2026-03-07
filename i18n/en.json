@@ -133,5 +133,27 @@
       "te": "Telugu",
       "ta": "Tamil"
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "edit_profile": "Edit Profile",
+    "security": "Security",
+    "change_pin": "Change Password",
+    "preferences": "Preferences",
+    "language": "Language",
+    "farm_details": "Farm Details",
+    "farm_location": "Farm Location",
+    "total_land_area": "Total Land Area",
+    "acres": "Acres",
+    "hectares": "Hectares",
+    "support": "Support",
+    "help_support": "Help & Support",
+    "logout": "Logout",
+    "save": "Save",
+    "version": "Version",
+    "verifying": "Verifying...",
+    "success": "Success",
+    "error": "Error"
   }
 }

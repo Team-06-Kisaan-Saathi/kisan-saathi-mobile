@@ -20,6 +20,8 @@ export const ENDPOINTS = {
         PROFILE: `${API_BASE}/users/profile`,
         LOCATION: `${API_BASE}/users/location`,
         VERIFY: `${API_BASE}/users/verify`,
+        VERIFY_PIN: `${API_BASE}/users/verify-pin`,
+        CHANGE_PASSWORD: `${API_BASE}/users/change-password`,
     },
     INVENTORY: {
         MINE: `${API_BASE}/inventory/mine`,
