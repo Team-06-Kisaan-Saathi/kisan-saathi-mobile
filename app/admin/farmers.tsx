@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl, Modal, ScrollView, Alert } from "react-native";
 import { COLORS, Header, Badge, Card, AdminSidebar } from "../../components/admin/AdminComponents";
 import * as Lucide from "lucide-react-native";
 import { adminService } from "../../services/adminService";
@@ -11,6 +11,9 @@ export default function FarmerManagement() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
+    const [selectedFarmer, setSelectedFarmer] = useState<any>(null);
+    const [detailVisible, setDetailVisible] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         loadFarmers();
@@ -31,10 +34,46 @@ export default function FarmerManagement() {
         }
     };
 
-    const filtered = farmers.filter(f =>
-        (f.name?.toLowerCase().includes(search.toLowerCase()) || f.location?.toLowerCase().includes(search.toLowerCase())) &&
-        (filter === "All" || (f.status || "approved").toLowerCase() === filter.toLowerCase())
-    );
+    const filtered = farmers.filter(f => {
+        const matchesSearch = (f.name?.toLowerCase().includes(search.toLowerCase()) || f.location?.toLowerCase().includes(search.toLowerCase()));
+        const status = (f.verificationStatus || "pending").toLowerCase();
+        const mappedStatus = status === "none" ? "pending" : status;
+        const matchesFilter = filter === "All" || mappedStatus === filter.toLowerCase();
+        return matchesSearch && matchesFilter;
+    });
+
+    const handleVerify = async (userId: string, status: 'approved' | 'rejected' | 'suspended') => {
+        try {
+            setSubmitting(true);
+            const res = await adminService.updateUserStatus(userId, status);
+            if (res.success) {
+                Alert.alert("Success", `Farmer ${status} successfully.`);
+                setDetailVisible(false);
+                loadFarmers();
+            } else {
+                Alert.alert("Error", res.message || "Failed to update status.");
+            }
+        } catch (e) {
+            console.error("Verify Error:", e);
+            Alert.alert("Error", "Connectivity issue.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleSuspend = (userId: string) => {
+        Alert.alert(
+            "Suspend Farmer",
+            "Are you sure you want to suspend this farmer? They will lose access to the platform.",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Suspend", style: "destructive", onPress: () => handleVerify(userId, 'suspended') }
+            ]
+        );
+    };
+
+    const validateAadhaar = (val: string) => /^\d{12}$/.test(val || "");
+    const validatePAN = (val: string) => /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val || "");
 
     const renderItem = ({ item }: { item: any }) => (
         <Card style={styles.farmerCard}>
@@ -75,20 +114,34 @@ export default function FarmerManagement() {
                 </View>
                 <View>
                     <Text style={styles.label}>Status</Text>
-                    <Badge text={item.verificationStatus || "none"} type={item.verificationStatus === 'approved' ? 'success' : item.verificationStatus === 'pending' ? 'warning' : 'danger'} />
+                    <Badge
+                        text={(item.verificationStatus === 'none' || !item.verificationStatus) ? "pending" : item.verificationStatus}
+                        type={item.verificationStatus === 'approved' ? 'success' : (item.verificationStatus === 'pending' || item.verificationStatus === 'none' || !item.verificationStatus) ? 'warning' : 'danger'}
+                    />
                 </View>
             </View>
 
             <View style={styles.actionRow}>
-                {item.verificationStatus === 'pending' && (
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.primary }]}>
+                {(item.verificationStatus === 'pending' || item.verificationStatus === 'none' || !item.verificationStatus) && (
+                    <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: COLORS.primary }]}
+                        onPress={() => { setSelectedFarmer(item); setDetailVisible(true); }}
+                    >
                         <Text style={styles.btnText}>Review</Text>
                     </TouchableOpacity>
                 )}
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.danger }]}>
-                    <Text style={styles.btnText}>Suspend</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.info }]}>
+                {item.verificationStatus !== 'suspended' && (
+                    <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: COLORS.danger }]}
+                        onPress={() => handleSuspend(item._id)}
+                    >
+                        <Text style={styles.btnText}>Suspend</Text>
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: COLORS.info }]}
+                    onPress={() => { setSelectedFarmer(item); setDetailVisible(true); }}
+                >
                     <Text style={styles.btnText}>Details</Text>
                 </TouchableOpacity>
             </View>
@@ -140,6 +193,94 @@ export default function FarmerManagement() {
                     </>
                 )}
             </View>
+
+            <Modal visible={detailVisible} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Farmer Details</Text>
+                            <TouchableOpacity onPress={() => setDetailVisible(false)}>
+                                <Lucide.X size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.modalScroll}>
+                            <View style={styles.detailSection}>
+                                <Text style={styles.detailLabel}>Basic Information</Text>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.dLabel}>Full Name</Text>
+                                    <Text style={styles.dValue}>{selectedFarmer?.name}</Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.dLabel}>Phone Number</Text>
+                                    <Text style={styles.dValue}>{selectedFarmer?.phone}</Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.dLabel}>Location</Text>
+                                    <Text style={styles.dValue}>{selectedFarmer?.location || "Not set"}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.detailSection}>
+                                <Text style={styles.detailLabel}>Verification Documents</Text>
+                                <View style={styles.docRow}>
+                                    <View style={styles.docBox}>
+                                        <Text style={styles.dLabel}>Aadhaar Number</Text>
+                                        <Text style={styles.dValue}>{selectedFarmer?.aadhaarNumber || "Not provided"}</Text>
+                                        {selectedFarmer?.aadhaarNumber && (
+                                            <View style={styles.valRow}>
+                                                <Lucide.ShieldCheck size={14} color={validateAadhaar(selectedFarmer.aadhaarNumber) ? COLORS.success : COLORS.danger} />
+                                                <Text style={[styles.valText, { color: validateAadhaar(selectedFarmer.aadhaarNumber) ? COLORS.success : COLORS.danger }]}>
+                                                    {validateAadhaar(selectedFarmer.aadhaarNumber) ? "Valid Format" : "Invalid Format"}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.docBox}>
+                                        <Text style={styles.dLabel}>PAN Number</Text>
+                                        <Text style={styles.dValue}>{selectedFarmer?.panNumber || "Not provided"}</Text>
+                                        {selectedFarmer?.panNumber && (
+                                            <View style={styles.valRow}>
+                                                <Lucide.ShieldCheck size={14} color={validatePAN(selectedFarmer.panNumber) ? COLORS.success : COLORS.danger} />
+                                                <Text style={[styles.valText, { color: validatePAN(selectedFarmer.panNumber) ? COLORS.success : COLORS.danger }]}>
+                                                    {validatePAN(selectedFarmer.panNumber) ? "Valid Format" : "Invalid Format"}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </View>
+                            </View>
+
+                            <View style={styles.detailSection}>
+                                <Text style={styles.detailLabel}>Farm Details</Text>
+                                <View style={styles.detailItem}>
+                                    <Text style={styles.dLabel}>Total Land Area</Text>
+                                    <Text style={styles.dValue}>{selectedFarmer?.totalLandArea || 0} {selectedFarmer?.totalLandAreaUnit || "acres"}</Text>
+                                </View>
+                            </View>
+                        </ScrollView>
+
+                        {((selectedFarmer?.verificationStatus === 'pending' || selectedFarmer?.verificationStatus === 'none' || !selectedFarmer?.verificationStatus)) && (
+                            <View style={styles.modalFooter}>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: COLORS.danger + '15' }]}
+                                    onPress={() => handleVerify(selectedFarmer._id, 'rejected')}
+                                    disabled={submitting}
+                                >
+                                    <Text style={[styles.footerBtnText, { color: COLORS.danger }]}>Reject</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.footerBtn, { backgroundColor: COLORS.primary }]}
+                                    onPress={() => handleVerify(selectedFarmer._id, 'approved')}
+                                    disabled={submitting}
+                                >
+                                    {submitting ? <ActivityIndicator color="#fff" /> : <Text style={[styles.footerBtnText, { color: '#fff' }]}>Approve Farmer</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -183,4 +324,21 @@ const styles = StyleSheet.create({
     actionRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
     actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
     btnText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+    modalScroll: { marginBottom: 20 },
+    detailSection: { marginBottom: 24 },
+    detailLabel: { fontSize: 12, fontWeight: '800', color: COLORS.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    detailItem: { marginBottom: 12 },
+    docRow: { flexDirection: 'row', gap: 12 },
+    docBox: { flex: 1, backgroundColor: COLORS.background, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+    dLabel: { fontSize: 10, color: COLORS.textLight, fontWeight: '700', textTransform: 'uppercase' },
+    dValue: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginTop: 2 },
+    valRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+    valText: { fontSize: 10, fontWeight: '700' },
+    modalFooter: { flexDirection: 'row', gap: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+    footerBtn: { flex: 1, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    footerBtnText: { fontSize: 14, fontWeight: '800' },
 });
