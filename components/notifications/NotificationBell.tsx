@@ -55,7 +55,7 @@ export default function NotificationBell() {
     <>
       {/* Bell icon with unread badge indicator */}
       <TouchableOpacity onPress={openNotifications} style={styles.bellWrapper}>
-        <Bell size={24} color="#1E293B" />
+        <Bell size={26} color="#ffffff" />
         {unreadCount > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -91,25 +91,22 @@ export default function NotificationBell() {
 
 const styles = StyleSheet.create({
   bellWrapper: {
-    padding: 4,
+    marginRight: 25,
   },
   badge: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#EF4444",
-    borderRadius: 8,
+    top: -4,
+    right: -6,
+    backgroundColor: "red",
+    borderRadius: 10,
+    paddingHorizontal: 5,
     minWidth: 16,
-    height: 16,
-    justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#FFF",
   },
   badgeText: {
     color: "#fff",
-    fontSize: 9,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   overlay: {
     flex: 1,

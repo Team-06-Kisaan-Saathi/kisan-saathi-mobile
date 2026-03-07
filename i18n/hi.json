@@ -106,34 +106,5 @@
     "price": "कीमत (₹/kg)",
     "add": "जोड़ें",
     "add_crop_listings": "फसल लिस्टिंग जोड़ें"
-  },
-  "nav_buyer": {
-    "dashboard": "डैशबोर्ड",
-    "browse_crops": "फसलें ब्राउज़ करें",
-    "live_auctions": "लाइव नीलामी",
-    "my_bids": "मेरी बोलियाँ",
-    "market_insights": "मार्केट इनसाइट्स",
-    "edit_profile": "प्रोफ़ाइल एडिट करें",
-    "edit_preferences": "प्रेफरेंस एडिट करें",
-    "logout": "लॉगआउट करें"
-  },
-  "profile": {
-    "edit_title": "प्रोफ़ाइल एडिट करें",
-    "change_name": "नाम बदलें",
-    "change_phone": "फोन नंबर बदलें",
-    "new_phone": "नया फोन नंबर",
-    "verify_otp": "OTP सत्यापित करें",
-    "enter_otp": "OTP दर्ज करें",
-    "save_success": "प्रोफ़ाइल सफलतापूर्वक अपडेट की गई",
-    "phone_change_verify": "फोन नंबर बदलने के लिए OTP सत्यापित करें",
-    "send_otp": "OTP भेजें",
-    "resend_otp": "OTP पुनः भेजें",
-    "languages": {
-      "en": "अंग्रेजी",
-      "ml": "मलयालम",
-      "hi": "हिंदी",
-      "te": "तेलुगु",
-      "ta": "तमिल"
-    }
   }
 }

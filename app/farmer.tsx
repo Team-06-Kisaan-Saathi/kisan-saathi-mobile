@@ -1,8 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import Nav from "../components/navigation/Nav";
-
 import {
   ActivityIndicator,
   Pressable,
@@ -13,16 +11,6 @@ import {
 } from "react-native";
 
 export default function FarmerProfile() {
-  return (
-    <View style={{ flex: 1 }}>
-      <Nav />
-      <FarmerProfileContent />
-    </View>
-  );
-}
-
-function FarmerProfileContent() {
-
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [raw, setRaw] = useState<string>("");
@@ -121,14 +109,14 @@ function FarmerProfileContent() {
       <View style={s.card}>
         <Text style={s.section}>Farm Tools</Text>
 
-        <Action label="My Crops" onPress={() => { }} />
+        <Action label="My Crops" onPress={() => {}} />
         <Action
           label="Add Crop"
           onPress={() => router.push("/add-crop" as any)}
         />
         <Action
           label="Change Location"
-          onPress={() => router.push("/change-location" as any)}
+          onPress={() => router.push("/chnage-location" as any)}
         />
       </View>
 

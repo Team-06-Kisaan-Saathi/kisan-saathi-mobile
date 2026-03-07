@@ -1,4 +1,4 @@
-import { ENDPOINTS } from "./api";
+import { API_BASE } from "./api";
 import { apiFetch } from "./http";
 
 export type MyLocationResponse = {
@@ -9,11 +9,20 @@ export type MyLocationResponse = {
   coordinates?: [number, number] | null; // [lng, lat]
 };
 
-export async function getMyLocation() {
-  return apiFetch<MyLocationResponse>(ENDPOINTS.USER.LOCATION, {
+export async function getMyLocation(token: string) {
+  return apiFetch<MyLocationResponse>(`${API_BASE}/users/location`, {
     method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type UserProfile = {
+  name?: string;
+  phone?: string;
+  role?: string;
+  language?: string;
+  location?: any;
+};
 
 export async function registerUser(payload: {
   phone: string;
@@ -24,7 +33,7 @@ export async function registerUser(payload: {
   location?: { lat: number; lng: number; address?: string };
 }) {
   // 1. Create User (Signup)
-  const signupRes = await apiFetch<any>(ENDPOINTS.AUTH.SIGNUP, {
+  const signupRes = await apiFetch<any>(`${API_BASE}/auth/signup-complete`, {
     method: "POST",
     body: JSON.stringify({
       phone: payload.phone,
@@ -42,22 +51,25 @@ export async function registerUser(payload: {
 
   // 2. Set Language
   if (payload.language) {
-    await apiFetch<any>(ENDPOINTS.USER.PROFILE, {
+    await apiFetch<any>(`${API_BASE}/users/profile`, {
       method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ language: payload.language }),
     });
   }
 
   // 3. Set Location
   if (payload.location) {
+    console.log("📍 Saving location to backend...", payload.location);
     const body = {
       lat: payload.location.lat,
       lng: payload.location.lng,
       address: payload.location.address,
     };
 
-    await apiFetch<any>(ENDPOINTS.USER.LOCATION, {
+    await apiFetch<any>(`${API_BASE}/users/location`, {
       method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
     });
   }
@@ -65,30 +77,26 @@ export async function registerUser(payload: {
   return signupRes;
 }
 
-export type UserProfile = {
-  name?: string;
-  phone?: string;
-  role?: string;
-  language?: string;
-  location?: any;
-};
-
-export async function getProfile() {
-  return apiFetch<any>(ENDPOINTS.USER.PROFILE, {
+export async function getProfile(token: string) {
+  return apiFetch<any>(`${API_BASE}/users/profile`, {
     method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
 
 export async function updateProfile(
+  token: string,
   payload: { name?: string; language?: string; location?: any },
 ) {
-  return apiFetch<any>(ENDPOINTS.USER.PROFILE, {
+  return apiFetch<any>(`${API_BASE}/users/profile`, {
     method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
 }
 
 export async function updateLocation(
+  token: string,
   payload: {
     lat?: number;
     lng?: number;
@@ -99,36 +107,14 @@ export async function updateLocation(
 ) {
   const lat = payload.lat ?? payload.latitude;
   const lng = payload.lng ?? payload.longitude;
+
   const body = { lat, lng, address: payload.address };
 
-  return apiFetch<any>(ENDPOINTS.USER.LOCATION, {
+  console.log("📍 [updateLocation] Sending body:", JSON.stringify(body));
+
+  return apiFetch<any>(`${API_BASE}/users/location`, {
     method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
-  });
-}
-
-/** Request user verification */
-export async function requestVerification(
-  payload: { aadhaarNumber: string; panNumber: string },
-) {
-  return apiFetch<any>(ENDPOINTS.USER.VERIFY, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-/** Discovery: Get all users (farmers/buyers) */
-export async function getUsers() {
-  const url = ENDPOINTS.USER.PROFILE.replace("/profile", "");
-  return apiFetch<any>(url, {
-    method: "GET",
-  });
-}
-
-/** Public View: Get specific user details */
-export async function getPublicProfile(id: string) {
-  const url = ENDPOINTS.USER.PROFILE.replace("/profile", "/public") + `/${id}`;
-  return apiFetch<any>(url, {
-    method: "GET",
   });
 }
