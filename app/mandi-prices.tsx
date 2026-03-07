@@ -27,7 +27,7 @@ export default function MandiPricesScreen() {
 
       const response = await fetchMandiPrices({
         limit: 200,
-        sort: sort === "latest" ? "latest" : sort,
+        sort: "latest",
         bypassCache: isRefresh
       });
 
@@ -43,7 +43,7 @@ export default function MandiPricesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [sort]);
+  }, []);
 
   useEffect(() => {
     loadData();

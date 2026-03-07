@@ -82,6 +82,7 @@ export default function RootLayout() {
         <Stack.Screen name="verify" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="marketplace" />
+        <Stack.Screen name="weather" />
       </Stack>
 
       {/* Floating overlay ABOVE everything */}

@@ -59,6 +59,7 @@ export default function NavFarmer() {
     if (path.includes("sms-info")) return "Offline Access";
     if (path.includes("verification")) return "Verification";
     if (path.includes("live-auc")) return "Live Auctions";
+    if (path.includes("weather")) return "Farm Weather";
     if (path.includes("profile") && !path.includes("edit")) return "My Profile";
     return "Home";
   };
@@ -103,11 +104,12 @@ export default function NavFarmer() {
             <View style={styles.dropdownHeader}>
               <Text style={styles.dropdownTitle}>Farmer Account</Text>
             </View>
-            <ProfileItem icon="person-outline" label="Edit Profile" onPress={() => { setProfileOpen(false); router.push("/edit-profile"); }} />
+            <ProfileItem icon="person-outline" label="Edit Profile" onPress={() => { setProfileOpen(false); router.push("/edit-profile" as any); }} />
+            <ProfileItem icon="cloudy-night-outline" label="Farm Weather" onPress={() => { setProfileOpen(false); router.push("/weather" as any); }} />
             <ProfileItem icon="shield-checkmark-outline" label="Verification & Trust" onPress={() => setProfileOpen(false)} />
-            <ProfileItem icon="settings-outline" label="Settings" onPress={() => { setProfileOpen(false); router.push("/settings"); }} />
+            <ProfileItem icon="settings-outline" label="Settings" onPress={() => { setProfileOpen(false); router.push("/settings" as any); }} />
             <View style={styles.divider} />
-            <ProfileItem icon="log-out-outline" label="Logout" danger onPress={() => { setProfileOpen(false); router.replace("/login"); }} />
+            <ProfileItem icon="log-out-outline" label="Logout" danger onPress={() => { setProfileOpen(false); router.replace("/login" as any); }} />
           </Animated.View>
         </>
       )}
