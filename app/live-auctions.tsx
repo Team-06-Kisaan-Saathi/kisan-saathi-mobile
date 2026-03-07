@@ -1,26 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Stack } from "expo-router";
-import NavFarmer from "../components/navigation/NavFarmer";
+import { Redirect } from "expo-router";
 
-export default function LiveAuctions() {
-    return (
-        <>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.container}>
-                <NavFarmer />
-                <View style={styles.content}>
-                    <Text style={styles.title}>Live Auctions</Text>
-                    <Text style={styles.placeholder}>Real-time bidding events will be displayed here.</Text>
-                </View>
-            </View>
-        </>
-    );
+export default function LiveAuctionsPage() {
+    return <Redirect href="/not-available" />;
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#f5f5f5" },
-    content: { padding: 16 },
-    title: { fontSize: 24, fontWeight: "bold", color: "#1a4b84", marginBottom: 16 },
-    placeholder: { fontSize: 16, color: "#64748b" }
-});

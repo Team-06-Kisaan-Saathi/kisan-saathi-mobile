@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "VoskSpec_autolinked_build",
+		"source" : "C:/mobile/kisan-saathi-mobile/node_modules/react-native-vosk/android/build/generated/source/codegen/jni"
+	}
+}

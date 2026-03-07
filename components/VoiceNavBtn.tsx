@@ -1,11 +1,11 @@
 
 import { Ionicons } from "@expo/vector-icons";
-import { Animated, PanResponder } from "react-native";
+import { Animated, PanResponder , ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { useRouter, type Href } from "expo-router";
 import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+
 import * as Vosk from "react-native-vosk";
 
 type Lang = "en" | "hi" | "te";

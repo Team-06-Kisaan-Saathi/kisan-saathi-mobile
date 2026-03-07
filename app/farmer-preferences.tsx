@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
-import NavFarmer from "../components/navigation/NavFarmer";
+import Nav from "../components/navigation/Nav";
+
 
 /**
  * FarmerPreferences Page
@@ -35,7 +36,8 @@ export default function FarmerPreferences() {
             {/* Hide default header (custom navigation handled via NavFarmer) */}
             <Stack.Screen options={{ headerShown: false }} />
             <View style={styles.container}>
-                <NavFarmer />
+                <Nav />
+
                 <View style={styles.content}>
                     <Text style={styles.title}>Preferences</Text>
                     <Text style={styles.placeholder}>

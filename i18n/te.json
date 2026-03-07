@@ -99,6 +99,16 @@
     "trusted_farmers": "నమ్మదగిన రైతులు",
     "trusted_farmers_sub": "ధృవీకరించిన రైతు ప్రొఫైల్‌ల నుండి కొనండి"
   },
+  "nav_buyer": {
+    "dashboard": "డాష్‌బోర్డ్",
+    "browse_crops": "పంటలను బ్రౌజ్ చేయండి",
+    "live_auctions": "ప్రత్యక్ష వేలం",
+    "my_bids": "నా బిడ్‌లు",
+    "market_insights": "మార్కెట్ అంతర్దృష్టులు",
+    "edit_profile": "ప్రొఫైల్‌ను సవరించండి",
+    "edit_preferences": "ప్రాధాన్యతలను సవరించండి",
+    "logout": "లాగ్ అవుట్ చేయండి"
+  },
   "listing": {
     "select_category": "వర్గం ఎంచుకోండి",
     "select_crop": "పంటను ఎంచుకోండి",
