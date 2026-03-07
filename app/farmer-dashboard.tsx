@@ -10,10 +10,13 @@ import {
   RefreshControl,
   Alert,
   SafeAreaView,
+  Animated,
+  Pressable,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
@@ -72,7 +75,8 @@ export default function FarmerDashboard() {
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Nav />
+      <NavFarmer />
+
 
       <ScrollView
         style={styles.container}
@@ -148,7 +152,7 @@ export default function FarmerDashboard() {
               subtitle="7-day forecast"
               icon="cloudy-night"
               color="#0EA5E9"
-              onPress={() => Alert.alert("Coming Soon", "Weather forecasting is being integrated.")}
+              onPress={() => router.push("/weather" as any)}
             />
             <MarketCard
               title="Govt Schemes"
@@ -289,10 +293,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: "#94A3B8",
-    letterSpacing: 1.5,
-    marginLeft: 20,
-    marginTop: 10,
-    marginBottom: 12
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    letterSpacing: 0.5,
   },
 
   topPriceCard: {
@@ -353,9 +356,9 @@ const styles = StyleSheet.create({
   supportItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F8FAFC"
+    borderBottomColor: "#F1F5F9",
   },
   supportIcon: { width: 44, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   supportTitle: { fontSize: 16, fontWeight: "800", color: "#1E293B" },

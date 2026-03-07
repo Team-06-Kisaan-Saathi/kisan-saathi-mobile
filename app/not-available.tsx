@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 
 export default function NotAvailableScreen() {
@@ -11,7 +11,7 @@ export default function NotAvailableScreen() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ title: "Not Available", headerShown: false }} />
-            <Nav />
+            <NavAuto />
 
             <View style={styles.content}>
                 <Ionicons name="construct-outline" size={80} color="#CBD5E1" />

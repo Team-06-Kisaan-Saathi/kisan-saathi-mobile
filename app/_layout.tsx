@@ -46,22 +46,20 @@ function InnerLayout() {
       } else if (token && role) {
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
-          if (role === "admin") router.replace("/admin-dashboard");
-          else router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
-        }
-
-        if (role === "admin") {
-          // Admin can access everything or restricted to admin dashboard?
-          // Usually admin has its own space
+          if (role === "admin") {
+            router.replace("/admin-dashboard");
+          } else {
+            router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+          }
         }
 
         if (role === "buyer") {
-          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes"];
+          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes", "/farmer-auctions", "/create-auction"];
           const adminOnly = ["/admin-dashboard"];
           if ([...farmerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
         }
         if (role === "farmer") {
-          const buyerOnly = ["/buyer-dashboard"];
+          const buyerOnly = ["/buyer-dashboard", "/buyer-auctions", "/my-bids"];
           const adminOnly = ["/admin-dashboard"];
           if ([...buyerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
         }
@@ -99,6 +97,7 @@ function InnerLayout() {
         <Stack.Screen name="verify" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="marketplace" />
+        <Stack.Screen name="weather" />
       </Stack>
 
       {/* Floating overlay ABOVE everything */}

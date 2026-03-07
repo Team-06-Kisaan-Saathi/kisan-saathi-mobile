@@ -19,7 +19,7 @@ import { getProfile, updateProfile } from "../services/userServices";
 import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
 import { setLanguage as setLanguageService } from "../i18n/i18n";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 
 const COLORS = { primary: "#1B5E20" };
@@ -178,7 +178,7 @@ export default function EditProfileScreen() {
             style={styles.container}
         >
             <Stack.Screen options={{ title: t("profile.edit_title") || "Edit Profile", headerShadowVisible: false }} />
-            <Nav />
+            <NavAuto />
 
             <ScrollView contentContainerStyle={styles.scroll}>
                 <View style={styles.header}>

@@ -179,7 +179,7 @@ export default function SettingsScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavAuto />
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 {/* PROFILE SECTION */}

@@ -10,7 +10,7 @@ import {
     View,
 } from "react-native";
 import { Svg, Polyline, Line, Circle } from "react-native-svg";
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
 
@@ -51,7 +51,7 @@ export default function AIInsightsScreen() {
     return (
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavFarmer />
 
 
             <ScrollView contentContainerStyle={styles.content}>
