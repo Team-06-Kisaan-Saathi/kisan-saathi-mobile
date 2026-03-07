@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Switch,
     Alert,
     ActivityIndicator,
     Modal,
@@ -13,14 +12,14 @@ import {
     TextInput,
     KeyboardAvoidingView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Lucide from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import { getProfile, updateProfile, verifyPin, changePassword } from "../services/userServices";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 import { setLanguage } from "../i18n/i18n";
 
 export default function SettingsScreen() {
