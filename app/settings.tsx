@@ -5,6 +5,7 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    Switch,
     Alert,
     ActivityIndicator,
     Modal,
@@ -12,7 +13,7 @@ import {
     TextInput,
     KeyboardAvoidingView,
 } from "react-native";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Lucide from "lucide-react-native";
