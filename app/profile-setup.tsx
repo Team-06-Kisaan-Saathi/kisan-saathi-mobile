@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ImageBackground,
 } from "react-native";
 
 const LANGS = [
@@ -45,83 +46,116 @@ export default function ProfileSetup() {
 
   return (
     <View style={s.root}>
-      <View style={s.content}>
-        <View style={s.header}>
-          <Text style={s.step}>Step 1 of 2</Text>
-          <Text style={s.title}>Select your language</Text>
-          <Text style={s.header}>
-            Choose the language you want to use in the app
-          </Text>
-        </View>
+      <ImageBackground
+        source={require("../assets/images/f.jpg")}
+        style={s.bg}
+        resizeMode="cover"
+      >
+        <View style={s.overlay} />
+        <View style={s.content}>
+          <View style={s.brandHeader}>
+            <Text style={s.brandTitle}>
+              <Text style={s.brandGreen}>KISSAAN</Text>{" "}
+              <Text style={s.brandBlue}>SAATHI</Text>
+            </Text>
+            <Text style={s.brandTagline}>STEP 1 OF 2</Text>
+          </View>
 
-        <View style={s.options}>
-          {LANGS.map((l) => {
-            const active = lang === l.value;
-            return (
-              <Pressable
-                key={l.value}
-                onPress={() => setLang(l.value)}
-                style={({ pressed }) => [
-                  s.option,
-                  active && s.optionActive,
-                  pressed && s.optionPressed,
-                ]}
-              >
-                <Text style={[s.optionText, active && s.optionTextActive]}>
-                  {l.label}
-                </Text>
-                {active && <View style={s.check}>✓</View>}
-              </Pressable>
-            );
-          })}
-        </View>
+          <View style={s.formWrapper}>
+            <Text style={s.title}>Select Language</Text>
+            <Text style={s.subtitle}>
+              Choose the language you want to use in the app
+            </Text>
 
-        <Pressable
-          onPress={next}
-          disabled={!canContinue}
-          style={({ pressed }) => [
-            s.button,
-            !canContinue && s.buttonDisabled,
-            pressed && canContinue && s.buttonPressed,
-          ]}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={s.buttonText}>Continue</Text>
-          )}
-        </Pressable>
-      </View>
+            <View style={s.options}>
+              {LANGS.map((l) => {
+                const active = lang === l.value;
+                return (
+                  <Pressable
+                    key={l.value}
+                    onPress={() => setLang(l.value)}
+                    style={({ pressed }) => [
+                      s.option,
+                      active && s.optionActive,
+                      pressed && s.optionPressed,
+                    ]}
+                  >
+                    <Text style={[s.optionText, active && s.optionTextActive]}>
+                      {l.label}
+                    </Text>
+                    {active && <View style={s.check}><Text style={s.checkText}>✓</Text></View>}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Pressable
+              onPress={next}
+              disabled={!canContinue}
+              style={({ pressed }) => [
+                s.button,
+                !canContinue && s.buttonDisabled,
+                pressed && canContinue && s.buttonPressed,
+              ]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={s.buttonText}>Continue</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </ImageBackground>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#FAFAFA",
+  root: { flex: 1 },
+  bg: { flex: 1, width: "100%" },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,248,235,0.55)",
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
+    zIndex: 2,
   },
-  header: {
-    marginBottom: 32,
+  brandHeader: {
+    alignItems: "center",
+    marginBottom: 40,
   },
-  step: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    marginBottom: 8,
-    letterSpacing: 0.3,
-  },
-  title: {
+  brandTitle: {
     fontSize: 28,
+    fontWeight: "900",
+    color: "#000",
+  },
+  brandGreen: { color: "green" },
+  brandBlue: { color: "rgb(37,95,153)" },
+  brandTagline: {
+    fontSize: 12,
     fontWeight: "700",
-    color: "#111827",
-    letterSpacing: -0.5,
+    color: "#666",
+    letterSpacing: 2,
+    marginTop: 4,
+  },
+  formWrapper: { flex: 1 },
+  title: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "green",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 32,
   },
   options: {
     gap: 12,
@@ -130,49 +164,51 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 18,
+    paddingVertical: 14,
     paddingHorizontal: 20,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   optionActive: {
-    borderColor: "#3B82F6",
-    backgroundColor: "#EFF6FF",
+    borderColor: "rgb(37,95,153)",
   },
   optionPressed: {
     opacity: 0.7,
   },
   optionText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#374151",
+    color: "#333",
   },
   optionTextActive: {
-    color: "#1D4ED8",
+    color: "rgb(37,95,153)",
   },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#3B82F6",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgb(37,95,153)",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 14,
-    color: "#FFFFFF",
-    fontWeight: "700",
+  },
+  checkText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "900",
   },
   button: {
     marginTop: "auto",
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: "rgb(37,95,153)",
+    height: 52,
+    borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
+    elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: "#D1D5DB",
+    opacity: 0.6,
   },
   buttonPressed: {
     opacity: 0.9,

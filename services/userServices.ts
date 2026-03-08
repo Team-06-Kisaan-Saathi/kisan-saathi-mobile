@@ -44,6 +44,7 @@ export async function registerUser(payload: {
   if (payload.language) {
     await apiFetch<any>(ENDPOINTS.USER.PROFILE, {
       method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ language: payload.language }),
     });
   }
@@ -58,6 +59,7 @@ export async function registerUser(payload: {
 
     await apiFetch<any>(ENDPOINTS.USER.LOCATION, {
       method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
     });
   }

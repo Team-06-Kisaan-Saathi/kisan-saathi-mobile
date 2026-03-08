@@ -7,11 +7,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
+import { notificationService } from "../services/NotificationService";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
 import { ThemeProvider } from "../hooks/ThemeContext";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { Colors } from "../constants/theme";
-
 
 export default function RootLayout() {
   return (
@@ -38,12 +38,21 @@ function InnerLayout() {
       const token = await AsyncStorage.getItem("token");
       const role = await AsyncStorage.getItem("role");
 
-      const inAuthGroup = (segments[0] as any) === "(auth)" || pathname === "/login" || pathname === "/verify" || pathname === "/signin" || pathname === "/set-pin";
+      const inAuthGroup = (segments[0] as any) === "(auth)" ||
+        pathname === "/login" ||
+        pathname === "/verify" ||
+        pathname === "/signin" ||
+        pathname === "/set-pin" ||
+        pathname === "/profile-setup" ||
+        pathname === "/profile-location";
 
       if (!token && !inAuthGroup) {
         // Redirect to login if not authenticated
         setTimeout(() => router.replace("/login"), 0);
       } else if (token && role) {
+        // Init notifications
+        notificationService.init();
+
         // Role based dashboard redirection if on home/index or wrong dashboard
         if (pathname === "/" || pathname === "/index") {
           if (role === "admin") {

@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
   View,
+  ImageBackground,
 } from "react-native";
 import { registerUser } from "../services/userServices";
 import { ENDPOINTS } from "../services/api";
@@ -167,6 +168,9 @@ export default function ProfileLocation() {
             .toLowerCase(),
         );
         await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+        if (res.user._id || res.user.id) {
+          await AsyncStorage.setItem("userId", res.user._id || res.user.id);
+        }
       }
 
       // Next step
@@ -254,261 +258,284 @@ export default function ProfileLocation() {
   // -------------------------------------------------------------------------
 
   return (
-    <KeyboardAvoidingView
-      style={s.root}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-    >
-      <ScrollView
-        contentContainerStyle={s.content}
-        keyboardShouldPersistTaps="handled"
+    <View style={s.root}>
+      <ImageBackground
+        source={require("../assets/images/f.jpg")}
+        style={s.bg}
+        resizeMode="cover"
       >
-        <View style={s.header}>
-          <Text style={s.step}>Step 2 of 2</Text>
-          <Text style={s.title}>Set your location</Text>
-          <Text style={s.subtitle}>We'll show nearby mandis</Text>
-        </View>
-
-        <View style={s.actions}>
-          <Pressable
-            onPress={useGps}
-            disabled={loading}
-            style={({ pressed }) => [
-              s.primaryAction,
-              loading && s.actionDisabled,
-              pressed && !loading && s.actionPressed,
-            ]}
+        <View style={s.overlay} />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        >
+          <ScrollView
+            contentContainerStyle={s.content}
+            keyboardShouldPersistTaps="handled"
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={s.primaryActionText}>Use Current Location</Text>
-            )}
-          </Pressable>
-
-          <View style={s.divider}>
-            <View style={s.dividerLine} />
-            <Text style={s.dividerText}>or</Text>
-            <View style={s.dividerLine} />
-          </View>
-
-          <View>
-            <Pressable
-              onPress={toggleDropdown}
-              style={({ pressed }) => [
-                s.dropdownHeader,
-                editing && s.dropdownHeaderActive,
-                pressed && s.actionPressed,
-              ]}
-            >
-              <Text
-                style={[
-                  s.dropdownHeaderText,
-                  editing && s.dropdownHeaderTextActive,
-                ]}
-              >
-                Choose from list
+            <View style={s.brandHeader}>
+              <Text style={s.brandTitle}>
+                <Text style={s.brandGreen}>KISSAAN</Text>{" "}
+                <Text style={s.brandBlue}>SAATHI</Text>
               </Text>
-              <Text
-                style={[s.dropdownChevron, editing && s.dropdownChevronActive]}
-              >
-                {editing ? "▲" : "▼"}
-              </Text>
-            </Pressable>
+              <Text style={s.brandTagline}>STEP 2 OF 2</Text>
+            </View>
 
-            {editing && (
-              <View style={s.dropdownContent}>
-                <Text style={s.label}>Search place</Text>
-                <TextInput
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Type to filter (e.g., warangal)"
-                  placeholderTextColor="#9CA3AF"
-                  style={s.input}
-                  editable={!loading}
-                  autoFocus
-                />
+            <View style={s.formWrapper}>
+              <Text style={s.title}>Set Location</Text>
+              <Text style={s.subtitle}>This helps us show nearby mandis</Text>
 
-                <View style={{ maxHeight: 220 }}>
-                  {filteredPlaces.length === 0 ? (
-                    <Text style={s.emptyText}>
-                      {places.length === 0 ? "Loading places..." : "No matches"}
-                    </Text>
+              <View style={s.actions}>
+                <Pressable
+                  onPress={useGps}
+                  disabled={loading}
+                  style={({ pressed }) => [
+                    s.primaryAction,
+                    loading && s.actionDisabled,
+                    pressed && !loading && s.actionPressed,
+                  ]}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <ScrollView
-                      style={{ maxHeight: 220 }}
-                      nestedScrollEnabled
-                      keyboardShouldPersistTaps="handled"
-                      showsVerticalScrollIndicator
-                    >
-                      {filteredPlaces.map((item) => (
-                        <Pressable
-                          key={item.id}
-                          onPress={() => onPickPlace(item)}
-                          disabled={loading}
-                          style={({ pressed }) => [
-                            s.placeRow,
-                            pressed && !loading && s.actionPressed,
-                          ]}
-                        >
-                          <Text style={s.placeName}>{item.name}</Text>
-                          <Text style={s.placeMeta}>
-                            {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
+                    <Text style={s.primaryActionText}>Use Current GPS</Text>
                   )}
+                </Pressable>
+
+                <View style={s.divider}>
+                  <View style={s.dividerLine} />
+                  <Text style={s.dividerText}>or</Text>
+                  <View style={s.dividerLine} />
                 </View>
 
-                {filteredPlaces.length > 60 ? (
-                  <Text style={s.hintText}>
-                    Refine search to see more results…
-                  </Text>
-                ) : null}
-              </View>
-            )}
+                <View>
+                  <Pressable
+                    onPress={toggleDropdown}
+                    style={({ pressed }) => [
+                      s.dropdownHeader,
+                      editing && s.dropdownHeaderActive,
+                      pressed && s.actionPressed,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        s.dropdownHeaderText,
+                        editing && s.dropdownHeaderTextActive,
+                      ]}
+                    >
+                      Choose manually
+                    </Text>
+                    <Text
+                      style={[s.dropdownChevron, editing && s.dropdownChevronActive]}
+                    >
+                      {editing ? "▲" : "▼"}
+                    </Text>
+                  </Pressable>
 
-            {selectedPlace ? (
-              <View style={s.selectedBox}>
-                <Text style={s.selectedText}>
-                  Selected: {selectedPlace.name} ({selectedPlace.lat.toFixed(4)}
-                  , {selectedPlace.lng.toFixed(4)})
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
+                  {editing && (
+                    <View style={s.dropdownContent}>
+                      <Text style={s.label}>Search mandis/places</Text>
+                      <View style={s.pillInput}>
+                        <TextInput
+                          value={searchQuery}
+                          onChangeText={setSearchQuery}
+                          placeholder="Type city or market"
+                          placeholderTextColor="#9CA3AF"
+                          style={s.inputStyle}
+                          editable={!loading}
+                          autoFocus
+                        />
+                      </View>
 
-        {msg ? (
-          <View style={s.errorBox}>
-            <Text style={s.errorText}>{msg}</Text>
-          </View>
-        ) : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+                      <View style={{ maxHeight: 220 }}>
+                        {filteredPlaces.length === 0 ? (
+                          <Text style={s.emptyText}>
+                            {places.length === 0 ? "Loading places..." : "No matches"}
+                          </Text>
+                        ) : (
+                          <ScrollView
+                            style={{ maxHeight: 220 }}
+                            nestedScrollEnabled
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator
+                          >
+                            {filteredPlaces.map((item) => (
+                              <Pressable
+                                key={item.id}
+                                onPress={() => onPickPlace(item)}
+                                disabled={loading}
+                                style={({ pressed }) => [
+                                  s.placeRow,
+                                  pressed && !loading && s.actionPressed,
+                                ]}
+                              >
+                                <Text style={s.placeName}>{item.name}</Text>
+                                <Text style={s.placeMeta}>
+                                  {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </ScrollView>
+                        )}
+                      </View>
+                    </View>
+                  )}
+
+                  {selectedPlace ? (
+                    <View style={s.selectedBox}>
+                      <Text style={s.selectedText}>
+                        Selected: {selectedPlace.name}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+
+              {msg ? (
+                <View style={s.errorBox}>
+                  <Text style={s.errorText}>{msg}</Text>
+                </View>
+              ) : null}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FAFAFA" },
+  root: { flex: 1 },
+  bg: { flex: 1, width: "100%" },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,248,235,0.55)",
+  },
   content: {
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
+    zIndex: 2,
   },
-
-  header: { marginBottom: 40 },
-  step: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    fontWeight: "600",
-    marginBottom: 8,
-    letterSpacing: 0.3,
+  brandHeader: {
+    alignItems: "center",
+    marginBottom: 40,
   },
-  title: {
+  brandTitle: {
     fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
-    letterSpacing: -0.5,
-    marginBottom: 6,
+    fontWeight: "900",
+    color: "#000",
   },
-  subtitle: { fontSize: 15, color: "#6B7280", fontWeight: "500" },
-
+  brandGreen: { color: "green" },
+  brandBlue: { color: "rgb(37,95,153)" },
+  brandTagline: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#666",
+    letterSpacing: 2,
+    marginTop: 4,
+  },
+  formWrapper: { flex: 1 },
+  title: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "green",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 32,
+  },
   actions: { gap: 16 },
-
   primaryAction: {
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: "rgb(37,95,153)",
+    height: 52,
+    borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
+    elevation: 4,
   },
   primaryActionText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-
   divider: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginVertical: 8,
+    marginVertical: 4,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#E5E7EB" },
-  dividerText: { fontSize: 13, color: "#9CA3AF", fontWeight: "500" },
-
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#ccc" },
+  dividerText: { fontSize: 13, color: "#666", fontWeight: "600" },
   dropdownHeader: {
     backgroundColor: "#FFFFFF",
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 12,
+    borderRadius: 30,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   dropdownHeaderActive: {
-    borderColor: "#3B82F6",
-    backgroundColor: "#EFF6FF",
+    borderColor: "rgb(37,95,153)",
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
-  dropdownHeaderText: { color: "#374151", fontSize: 16, fontWeight: "600" },
-  dropdownHeaderTextActive: { color: "#1D4ED8" },
+  dropdownHeaderText: { color: "#333", fontSize: 16, fontWeight: "600" },
+  dropdownHeaderTextActive: { color: "rgb(37,95,153)" },
   dropdownChevron: { fontSize: 12, color: "#9CA3AF", fontWeight: "700" },
-  dropdownChevronActive: { color: "#3B82F6" },
-
+  dropdownChevronActive: { color: "rgb(37,95,153)" },
   dropdownContent: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 2,
+    borderWidth: 1,
     borderTopWidth: 0,
-    borderColor: "#3B82F6",
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderColor: "#ccc",
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     padding: 16,
     gap: 12,
   },
-
-  label: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  input: {
-    backgroundColor: "#F9FAFB",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
+  label: { fontSize: 14, color: "#333", marginBottom: 2 },
+  pillInput: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    height: 44,
+    justifyContent: "center",
   },
-
+  inputStyle: {
+    fontSize: 15,
+    color: "#000",
+  },
   placeRow: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#E2E8F0",
   },
   placeName: { fontSize: 15, fontWeight: "700", color: "#111827" },
   placeMeta: {
     marginTop: 2,
     fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
+    color: "#64748B",
   },
-  emptyText: { paddingVertical: 12, color: "#6B7280" },
-  hintText: { paddingTop: 8, color: "#6B7280", fontSize: 12 },
-
+  emptyText: { paddingVertical: 12, color: "#6B7280", textAlign: "center" },
   selectedBox: {
     marginTop: 12,
-    padding: 10,
-    backgroundColor: "#EFF6FF",
-    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "rgba(37,95,153,0.1)",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "rgba(37,95,153,0.3)",
+    alignItems: "center",
   },
-  selectedText: { color: "#1D4ED8", fontWeight: "600" },
-
-  actionDisabled: { backgroundColor: "#D1D5DB" },
+  selectedText: { color: "rgb(37,95,153)", fontWeight: "700", fontSize: 14 },
+  actionDisabled: { opacity: 0.6 },
   actionPressed: { opacity: 0.7 },
-
   errorBox: {
     marginTop: 16,
     padding: 12,
@@ -517,5 +544,5 @@ const s = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: "#DC2626",
   },
-  errorText: { color: "#991B1B", fontSize: 14, fontWeight: "500" },
+  errorText: { color: "#991B1B", fontSize: 13, fontWeight: "500", textAlign: "center" },
 });
