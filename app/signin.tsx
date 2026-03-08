@@ -101,27 +101,29 @@ export default function SigninScreen() {
               <Text style={styles.tagline}>CREATE NEW ACCOUNT</Text>
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Registration</Text>
+            <View style={styles.formWrapper}>
+              <Text style={styles.formTitle}>Registration</Text>
 
               <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Ex: Rajesh Kumar"
-                placeholderTextColor="#94A3B8"
-                style={styles.input}
-              />
+              <View style={styles.pillInput}>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Ex: Rajesh Kumar"
+                  placeholderTextColor="#777"
+                  style={styles.textInput}
+                />
+              </View>
 
               <Text style={styles.label}>Primary Role</Text>
               <Pressable
                 onPress={() => setRoleOpen(!roleOpen)}
-                style={[styles.dropdownHeader, roleOpen && styles.dropdownHeaderActive]}
+                style={[styles.pillInput, roleOpen && styles.pillInputActive]}
               >
-                <Text style={[styles.dropdownText, !role && { color: "#94A3B8" }]}>
+                <Text style={[styles.pillInputText, !role && { color: "#777" }]}>
                   {role ? roles.find(r => r.value === role)?.label : "Select your role"}
                 </Text>
-                <Ionicons name={roleOpen ? "chevron-up" : "chevron-down"} size={14} color="#64748B" />
+                <Ionicons name={roleOpen ? "chevron-up" : "chevron-down"} size={14} color="#666" />
               </Pressable>
 
               {roleOpen && (
@@ -135,23 +137,23 @@ export default function SigninScreen() {
                       <Text style={[styles.dropdownRowText, role === r.value && styles.dropdownRowTextActive]}>
                         {r.label}
                       </Text>
-                      {role === r.value && <Ionicons name="checkmark" size={16} color="#2563EB" />}
+                      {role === r.value && <Ionicons name="checkmark" size={16} color="rgb(37,95,153)" />}
                     </Pressable>
                   ))}
                 </View>
               )}
 
               <Text style={styles.label}>Mobile Number</Text>
-              <View style={styles.phoneRow}>
+              <View style={styles.pillInput}>
                 <Text style={styles.countryCode}>+91</Text>
                 <TextInput
                   value={phone}
                   onChangeText={(v) => setPhone(v.replace(/\D/g, ""))}
                   placeholder="10-digit number"
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#777"
                   keyboardType="number-pad"
                   maxLength={10}
-                  style={styles.phoneInput}
+                  style={styles.textInput}
                 />
               </View>
 
@@ -161,6 +163,7 @@ export default function SigninScreen() {
                 style={[styles.btnPrimary, loading && styles.btnDisabled]}
                 onPress={onContinue}
                 disabled={loading}
+                activeOpacity={0.9}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
   bg: { flex: 1, width: "100%" },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    backgroundColor: "rgba(255,248,235,0.55)",
   },
   kav: { flex: 1 },
   scrollContent: {
@@ -202,84 +205,69 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   brandName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "900",
-    letterSpacing: -0.5,
   },
-  brandGreen: { color: "#10B981" },
-  brandBlue: { color: "#FFFFFF" },
+  brandGreen: { color: "green" },
+  brandBlue: { color: "rgb(37,95,153)" },
   tagline: {
-    fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    color: "#666",
     fontWeight: "700",
     letterSpacing: 2,
     marginTop: 4,
   },
-  card: {
+  formWrapper: {
     width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 24,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 },
-      android: { elevation: 8 },
-    }),
   },
-  cardTitle: {
-    fontSize: 18,
+  formTitle: {
+    fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "green",
     marginBottom: 20,
     textAlign: "center",
   },
   label: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#64748B",
+    fontSize: 14,
+    color: "#333",
     marginBottom: 6,
     marginTop: 16,
-    textTransform: "uppercase",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 48,
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
-    backgroundColor: "#F8FAFC",
-  },
-  dropdownHeader: {
+  pillInput: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
+    borderColor: "#ccc",
+    borderRadius: 30,
+    backgroundColor: "#fff",
     paddingHorizontal: 16,
     height: 48,
-    backgroundColor: "#F8FAFC",
   },
-  dropdownHeaderActive: {
-    borderColor: "#2563EB",
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+  pillInputActive: {
+    borderColor: "rgb(37,95,153)",
   },
-  dropdownText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
+  pillInputText: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
   },
   dropdownBody: {
+    marginTop: 4,
     borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: "#2563EB",
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
+    borderColor: "#ccc",
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   dropdownRow: {
     flexDirection: "row",
@@ -290,7 +278,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F1F5F9",
   },
   dropdownRowActive: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#F0F9FF",
   },
   dropdownRowText: {
     fontSize: 14,
@@ -298,66 +286,50 @@ const styles = StyleSheet.create({
     color: "#475569",
   },
   dropdownRowTextActive: {
-    color: "#2563EB",
-  },
-  phoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 48,
-    backgroundColor: "#F8FAFC",
+    color: "rgb(37,95,153)",
   },
   countryCode: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#333",
     marginRight: 10,
   },
-  phoneInput: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
   errorMsg: {
-    color: "#EF4444",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#b00020",
+    fontSize: 13,
     marginTop: 12,
     textAlign: "center",
   },
   btnPrimary: {
-    backgroundColor: "#2563EB",
-    height: 50,
-    borderRadius: 8,
+    backgroundColor: "rgb(37,95,153)",
+    height: 52,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 24,
+    elevation: 4,
   },
   btnDisabled: { opacity: 0.6 },
   btnText: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 24,
     gap: 6,
   },
   footerText: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "600",
+    fontSize: 14,
+    color: "#666",
   },
   linkText: {
-    fontSize: 13,
-    color: "#2563EB",
+    fontSize: 14,
+    color: "green",
     fontWeight: "800",
+    textDecorationLine: "underline",
   },
 });
