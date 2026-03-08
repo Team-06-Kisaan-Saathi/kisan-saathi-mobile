@@ -17,6 +17,7 @@ import { getProfile } from "../services/userServices";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
 import NotificationBell from "../components/notifications/NotificationBell";
+import { chatService } from "../services/chatService";
 
 // Helper to format currency
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
@@ -141,6 +142,7 @@ export default function FarmerLiveAuctions() {
                     status: a.status,
                     recentBids: formattedBids,
                     winnerName: a.winningBid?.buyerId?.name || null,
+                    winnerId: a.winningBid?.buyerId?._id || a.winningBid?.buyerId || null,
                     winnerPhone: a.winningBid?.buyerId?.phone || null,
                     winningAmount: a.winningBid?.amount || 0,
                 };
@@ -157,15 +159,20 @@ export default function FarmerLiveAuctions() {
         }
     };
 
-    const handleEndAuction = async (id: string) => {
+    const handleEndAuction = async (auction: any) => {
+        const hasBids = auction.totalBids > 0;
+        const highestBid = auction.currentHighBid;
+        // Since auction.recentBids is sorted descending, [0] is the highest bid
+        const topBidderName = hasBids && auction.recentBids.length > 0 ? auction.recentBids[0].buyer : "No one";
+
         const doClose = async () => {
             try {
                 const token = await AsyncStorage.getItem("token");
                 console.log("Token available:", !!token);
-                console.log("Closing auction ID:", id);
-                console.log("URL:", ENDPOINTS.AUCTIONS.CLOSE(id));
+                console.log("Closing auction ID:", auction.id);
+                console.log("URL:", ENDPOINTS.AUCTIONS.CLOSE(auction.id));
 
-                const res = await fetch(ENDPOINTS.AUCTIONS.CLOSE(id), {
+                const res = await fetch(ENDPOINTS.AUCTIONS.CLOSE(auction.id), {
                     method: 'POST',
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -200,17 +207,21 @@ export default function FarmerLiveAuctions() {
             }
         };
 
+        const confirmTitle = "End Auction?";
+        const confirmMessage = hasBids
+            ? `Highest bid: ${formatCurr(highestBid)} by ${topBidderName}\n\nIf you continue, this buyer will win the auction.`
+            : "No bids have been placed. If you continue, the auction will be closed with no winner.";
+
         if (Platform.OS === 'web') {
-            // Alert.alert callbacks don't fire reliably on web
-            const confirmed = window.confirm("Are you sure you want to end this auction early? The highest bidder will be selected as the winner.");
+            const confirmed = window.confirm(`${confirmTitle}\n\n${confirmMessage}`);
             if (confirmed) doClose();
         } else {
             Alert.alert(
-                "End Auction",
-                "Are you sure you want to end this auction early? The highest bidder will be selected as the winner.",
+                confirmTitle,
+                confirmMessage,
                 [
-                    { text: "No", style: "cancel" },
-                    { text: "Yes, End Now", style: "destructive", onPress: doClose }
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Confirm Winner", style: "destructive", onPress: doClose }
                 ]
             );
         }
@@ -385,6 +396,24 @@ export default function FarmerLiveAuctions() {
                                                         <Text style={styles.winnerValue}>{auction.winnerPhone}</Text>
                                                     </View>
                                                 )}
+                                                <TouchableOpacity
+                                                    style={styles.msgBuyerBtn}
+                                                    onPress={async () => {
+                                                        try {
+                                                            const res = await chatService.getOrCreateChat(auction.winnerId, auction.id);
+                                                            if (res?.success) {
+                                                                router.push(`/chat/${res.chat._id}?dealId=${auction.id}`);
+                                                            } else {
+                                                                Alert.alert("Error", "Could not start chat.");
+                                                            }
+                                                        } catch (err) {
+                                                            console.log("Chat init error", err);
+                                                            Alert.alert("Error", "Could not start chat.");
+                                                        }
+                                                    }}>
+                                                    <Ionicons name="chatbubble-ellipses" size={14} color="#FFF" />
+                                                    <Text style={styles.msgBuyerBtnText}>Message Buyer</Text>
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
                                     ) : isEnded ? (
@@ -436,7 +465,7 @@ export default function FarmerLiveAuctions() {
                                     {/* End Auction — only for OPEN */}
                                     {!isEnded && (
                                         <View style={styles.actionsRow}>
-                                            <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction.id)}>
+                                            <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction)}>
                                                 <Feather name="x" size={16} color="#FFF" style={{ marginRight: 6 }} />
                                                 <Text style={styles.cancelBtnText}>End Auction</Text>
                                             </TouchableOpacity>
@@ -638,6 +667,18 @@ const styles = StyleSheet.create({
     winnerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
     winnerLabel: { fontSize: 13, fontWeight: "600", color: "#6B7280", width: 52 },
     winnerValue: { fontSize: 15, fontWeight: "700", color: "#111827", flex: 1 },
+    msgBuyerBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#D97706",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginTop: 6,
+        alignSelf: "flex-start",
+        gap: 6
+    },
+    msgBuyerBtnText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
 
     noBidsEndedCard: {
         flexDirection: "row",

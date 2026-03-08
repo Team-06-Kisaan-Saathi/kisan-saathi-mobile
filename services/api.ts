@@ -7,7 +7,10 @@ const LOCAL_IP = "10.12.252.166"; // <--- Updated to match your current network 
 const LOCAL_HOST = `${LOCAL_IP}:5001`;
 const RENDER_HOST = "backend-e337.onrender.com";
 
-const HOST = LOCAL_HOST; // Change to RENDER_HOST if using the cloud backend
+// ─── Smart URL Selector ───
+const IS_PRODUCTION = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+const HOST = IS_PRODUCTION ? RENDER_HOST : LOCAL_HOST;
+
 
 export const API_BASE = HOST.includes("render.com") ? `https://${HOST}/api` : `http://${HOST}/api`;
 export const UPLOADS_URL = HOST.includes("render.com") ? `https://${HOST}/uploads/` : `http://${HOST}/uploads/`;
@@ -69,5 +72,8 @@ export const ENDPOINTS = {
         GET_ALL: `${API_BASE}/notifications`,
         UNREAD_COUNT: `${API_BASE}/notifications/unread-count`,
         READ_ALL: `${API_BASE}/notifications/read-all`,
+    },
+    ANALYTICS: {
+        FORECAST: `${API_BASE}/analytics/price-forecast`,
     },
 };
