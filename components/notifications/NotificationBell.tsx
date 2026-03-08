@@ -1,144 +1,70 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-} from "react-native";
-import { Bell } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { notificationService } from "../../services/NotificationService";
 
 /**
- * NotificationBell Component
- *
- * Description:
- * Displays a bell icon with unread notification badge.
- * Opens a dropdown-style modal showing notification list.
- *
- * Used In:
- * - Farmer navigation bar (e.g., NavFarmer component)
- *
- * Responsibilities:
- * - Show unread notification count
- * - Mark notifications as read when opened
- * - Toggle notification modal visibility
- *
- * Inputs:
- * - None (currently uses local state; can be extended to accept props/API data)
- *
- * Outputs:
- * - Renders bell icon with badge
- * - Triggers UI state changes (modal visibility & read status)
+ * Real-time Notification Bell Component
  */
+export default function NotificationBell({ color = "#1E293B" }: { color?: string }) {
+  const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(notificationService.getUnreadCount());
 
+  useEffect(() => {
+    const unsubscribe = notificationService.subscribe((count) => {
+      console.log("🔔 NotificationBell: Unread count updated to", count);
+      setUnreadCount(count);
+    });
+    return unsubscribe;
+  }, []);
 
-export default function NotificationBell() {
-  // Controls visibility of notification modal
-  const [visible, setVisible] = useState(false);
-
-  // Local notification state (mock data — replace with API integration later)
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "New bid on your Tomato listing", read: false },
-    { id: 2, text: "Mandi price updated for Onion", read: false },
-  ]);
-
-  // Derived state: calculate number of unread notifications
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // Opens modal and marks all notifications as read
-  const openNotifications = () => {
-    setVisible(true);
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const handlePress = () => {
+    console.log("🔔 NotificationBell: Press detected, navigating to /notifications");
+    router.push("/notifications" as any);
   };
 
   return (
-    <>
-      {/* Bell icon with unread badge indicator */}
-      <TouchableOpacity onPress={openNotifications} style={styles.bellWrapper}>
-        <Bell size={24} color="#1E293B" />
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadCount}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {/* Notification dropdown Modal */}
-      <Modal transparent visible={visible} animationType="fade">
-        {/* Close modal when tapping outside notification box */}
-        <TouchableOpacity
-          style={styles.overlay}
-          onPress={() => setVisible(false)}
-        >
-          <View style={styles.modal}>
-            <Text style={styles.title}>Notifications</Text>
-
-            {notifications.length === 0 ? (
-              <Text style={styles.empty}>No notifications</Text>
-            ) : (
-              notifications.map(n => (
-                <Text key={n.id} style={styles.item}>
-                  • {n.text}
-                </Text>
-              ))
-            )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
-    </>
+    <TouchableOpacity
+      style={styles.bellWrapper}
+      onPress={handlePress}
+      activeOpacity={0.7}
+      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+    >
+      <Ionicons name="notifications-outline" size={24} color={color} />
+      {unreadCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   bellWrapper: {
     padding: 4,
+    position: "relative",
   },
   badge: {
     position: "absolute",
     top: 0,
     right: 0,
     backgroundColor: "#EF4444",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
     borderColor: "#FFF",
   },
   badgeText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "800",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "flex-start",
-    alignItems: "flex-end",
-    paddingTop: 70,
-    paddingRight: 10,
-  },
-  modal: {
-    backgroundColor: "#fff",
-    width: 260,
-    borderRadius: 10,
-    padding: 12,
-    elevation: 5,
-  },
-  title: {
+    color: "#FFF",
+    fontSize: 10,
     fontWeight: "bold",
-    marginBottom: 8,
-    fontSize: 16,
-    color: "#1a4b84",
-  },
-  item: {
-    fontSize: 14,
-    marginVertical: 4,
-    color: "#333",
-  },
-  empty: {
-    color: "#777",
-    fontSize: 14,
+    textAlign: "center",
   },
 });

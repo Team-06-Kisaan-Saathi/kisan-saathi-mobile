@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ImageBackground,
 } from "react-native";
 import { ENDPOINTS } from "../services/api";
 import { apiFetch } from "../services/http";
@@ -103,169 +104,171 @@ export default function VerifyScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.root}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.container}
+        <ImageBackground
+          source={require("../assets/images/f.jpg")}
+          style={styles.bg}
+          resizeMode="cover"
         >
-          <View style={styles.brandHeader}>
-            <Text style={styles.brandTitle}>
-              <Text style={styles.brandGreen}>KISSAAN</Text> SAATHI
-            </Text>
-            <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardHeader}>Verify Identity</Text>
-            <Text style={styles.instruction}>
-              We've sent a 6-digit code to{" "}
-              <Text style={styles.phoneHighlight}>+91 {phone}</Text>
-            </Text>
-
-            <View style={styles.otpContainer}>
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <TextInput
-                  key={i}
-                  ref={(r) => { inputs.current[i] = r; }}
-                  style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
-                  value={digits[i]}
-                  onChangeText={(v) => setDigit(i, v)}
-                  onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  textAlign="center"
-                  editable={!loading}
-                />
-              ))}
+          <View style={styles.overlay} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.container}
+          >
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>
+                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
+                <Text style={styles.brandBlue}>SAATHI</Text>
+              </Text>
+              <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
             </View>
 
-            {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+            <View style={styles.formWrapper}>
+              <Text style={styles.cardHeader}>Verify Identity</Text>
+              <Text style={styles.instruction}>
+                We've sent a 6-digit code to{" "}
+                <Text style={styles.phoneHighlight}>+91 {phone}</Text>
+              </Text>
 
-            <TouchableOpacity
-              onPress={verify}
-              disabled={!canSubmit || loading}
-              style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.verifyBtnText}>Verify & Continue</Text>
-              )}
-            </TouchableOpacity>
+              <View style={styles.otpContainer}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <TextInput
+                    key={i}
+                    ref={(r) => { inputs.current[i] = r; }}
+                    style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
+                    value={digits[i]}
+                    onChangeText={(v) => setDigit(i, v)}
+                    onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    textAlign="center"
+                    editable={!loading}
+                  />
+                ))}
+              </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Haven't received yet?</Text>
-              <TouchableOpacity onPress={() => { }} disabled={loading}>
-                <Text style={styles.resendText}>Resend Code</Text>
+              {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+
+              <TouchableOpacity
+                onPress={verify}
+                disabled={!canSubmit || loading}
+                style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.verifyBtnText}>Verify & Continue</Text>
+                )}
               </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Haven't received yet?</Text>
+                <TouchableOpacity onPress={() => { }} disabled={loading}>
+                  <Text style={styles.resendText}>Resend Code</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </ImageBackground>
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
+  root: { flex: 1 },
+  bg: { flex: 1, width: "100%" },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,248,235,0.55)",
   },
   container: {
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 2,
   },
   brandHeader: {
     alignItems: "center",
     marginBottom: 40,
   },
   brandTitle: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "900",
-    color: "#0F172A",
-    letterSpacing: -0.5,
+    color: "#000",
   },
-  brandGreen: { color: "#10B981" },
+  brandGreen: { color: "green" },
+  brandBlue: { color: "rgb(37,95,153)" },
   brandTagline: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#666",
     letterSpacing: 2,
     marginTop: 4,
   },
-  card: {
+  formWrapper: {
     width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 },
-      android: { elevation: 4 },
-    }),
   },
   cardHeader: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "green",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 20,
   },
   instruction: {
-    fontSize: 13,
-    color: "#64748B",
+    fontSize: 14,
+    color: "#333",
     textAlign: "center",
     marginBottom: 24,
     lineHeight: 20,
   },
   phoneHighlight: {
-    color: "#0F172A",
+    color: "#000",
     fontWeight: "700",
   },
   otpContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 20,
+    gap: 10,
   },
   otpInput: {
-    width: (Dimensions.get("window").width - 120) / 6,
+    flex: 1,
     height: 52,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
+    borderColor: "#ccc",
+    borderRadius: 30,
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#333",
   },
   otpInputFilled: {
-    borderColor: "#2563EB",
-    backgroundColor: "#EFF6FF",
+    borderColor: "rgb(37,95,153)",
   },
   errorText: {
-    color: "#EF4444",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#b00020",
+    fontSize: 13,
     textAlign: "center",
     marginBottom: 16,
   },
   verifyBtn: {
-    backgroundColor: "#2563EB",
-    height: 50,
-    borderRadius: 8,
+    backgroundColor: "rgb(37,95,153)",
+    height: 52,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
+    elevation: 4,
   },
   btnDisabled: {
     opacity: 0.6,
   },
   verifyBtnText: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
   },
   footer: {
     flexDirection: "row",
@@ -275,13 +278,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   footerText: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "600",
+    fontSize: 14,
+    color: "#666",
   },
   resendText: {
-    fontSize: 13,
-    color: "#2563EB",
+    fontSize: 14,
+    color: "green",
     fontWeight: "800",
+    textDecorationLine: "underline",
   },
 });

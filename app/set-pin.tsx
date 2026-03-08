@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ImageBackground,
 } from "react-native";
 
 type SignupCompleteResponse = {
@@ -63,166 +64,176 @@ export default function SetPinScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.root}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.container}
+        <ImageBackground
+          source={require("../assets/images/f.jpg")}
+          style={styles.bg}
+          resizeMode="cover"
         >
-          <View style={styles.brandHeader}>
-            <Text style={styles.brandTitle}>
-              <Text style={styles.brandGreen}>KISSAAN</Text> SAATHI
-            </Text>
-            <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
-          </View>
+          <View style={styles.overlay} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.container}
+          >
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>
+                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
+                <Text style={styles.brandBlue}>SAATHI</Text>
+              </Text>
+              <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
+            </View>
 
-          <View style={styles.card}>
-            <Text style={styles.cardHeader}>Create Access PIN</Text>
-            <Text style={styles.instruction}>
-              Establish a secure PIN to protect your account and transactions.
-            </Text>
+            <View style={styles.formWrapper}>
+              <Text style={styles.cardHeader}>Create Access PIN</Text>
+              <Text style={styles.instruction}>
+                Establish a secure PIN to protect your account and transactions.
+              </Text>
 
-            <Text style={styles.label}>New PIN</Text>
-            <TextInput
-              style={styles.input}
-              value={pin}
-              onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
-              placeholder="••••"
-              placeholderTextColor="#94A3B8"
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={6}
-              editable={!loading}
-            />
+              <Text style={styles.label}>New PIN</Text>
+              <View style={styles.pillInput}>
+                <TextInput
+                  style={styles.input}
+                  value={pin}
+                  onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
+                  placeholder="••••"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={6}
+                  editable={!loading}
+                />
+              </View>
 
-            <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
-            <TextInput
-              style={styles.input}
-              value={confirmPin}
-              onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
-              placeholder="••••"
-              placeholderTextColor="#94A3B8"
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={6}
-              editable={!loading}
-            />
+              <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
+              <View style={styles.pillInput}>
+                <TextInput
+                  style={styles.input}
+                  value={confirmPin}
+                  onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
+                  placeholder="••••"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={6}
+                  editable={!loading}
+                />
+              </View>
 
-            {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+              {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
 
-            <TouchableOpacity
-              style={[styles.saveBtn, loading && styles.btnDisabled]}
-              onPress={onSave}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.saveBtnText}>Secure Account</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+              <TouchableOpacity
+                style={[styles.saveBtn, loading && styles.btnDisabled]}
+                onPress={onSave}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Secure Account</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </ImageBackground>
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
+  root: { flex: 1 },
+  bg: { flex: 1, width: "100%" },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,248,235,0.55)",
   },
   container: {
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 2,
   },
   brandHeader: {
     alignItems: "center",
     marginBottom: 40,
   },
   brandTitle: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "900",
-    color: "#0F172A",
-    letterSpacing: -0.5,
+    color: "#000",
   },
-  brandGreen: { color: "#10B981" },
+  brandGreen: { color: "green" },
+  brandBlue: { color: "rgb(37,95,153)" },
   brandTagline: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#666",
     letterSpacing: 2,
     marginTop: 4,
   },
-  card: {
+  formWrapper: {
     width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 },
-      android: { elevation: 4 },
-    }),
   },
   cardHeader: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "green",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 20,
   },
   instruction: {
-    fontSize: 13,
-    color: "#64748B",
+    fontSize: 14,
+    color: "#333",
     textAlign: "center",
     marginBottom: 24,
     lineHeight: 20,
   },
   label: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#64748B",
+    fontSize: 14,
+    color: "#333",
     marginBottom: 6,
-    textTransform: "uppercase",
+    marginTop: 2,
   },
-  input: {
-    backgroundColor: "#F8FAFC",
+  pillInput: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 8,
+    borderColor: "#ccc",
+    borderRadius: 30,
+    backgroundColor: "#fff",
     paddingHorizontal: 16,
     height: 48,
+  },
+  input: {
+    flex: 1,
     fontSize: 18,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#333",
     textAlign: "center",
     letterSpacing: 8,
   },
   errorText: {
-    color: "#EF4444",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#b00020",
+    fontSize: 13,
     textAlign: "center",
     marginTop: 12,
   },
   saveBtn: {
-    backgroundColor: "#2563EB",
-    height: 50,
-    borderRadius: 8,
+    backgroundColor: "rgb(37,95,153)",
+    height: 52,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 24,
+    elevation: 4,
   },
   btnDisabled: {
     opacity: 0.6,
   },
   saveBtnText: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
