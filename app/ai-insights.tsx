@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
+import { useTheme } from '../hooks/ThemeContext';
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -9,10 +9,12 @@ import {
     TouchableOpacity,
     View,
     Dimensions,
-    RefreshControl
+    RefreshControl,
+    Platform
 } from "react-native";
 import { Svg, Polyline, Line, Circle } from "react-native-svg";
-import NavFarmer from "../components/navigation/NavFarmer";
+import { Stack, useRouter } from "expo-router";
+import NavAuto from "../components/navigation/NavAuto";
 import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
@@ -32,6 +34,8 @@ type ForecastData = {
 };
 
 export default function AIInsightsScreen() {
+  const { highContrast } = useTheme();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<ForecastData | null>(null);
     const [crop, setCrop] = useState("Wheat");
@@ -157,17 +161,17 @@ export default function AIInsightsScreen() {
     }, [data]);
 
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
-            <NavFarmer />
+            <NavAuto />
 
             <ScrollView
                 contentContainerStyle={styles.content}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
-                <View style={styles.header}>
-                    <Text style={styles.title} numberOfLines={1}>Market Price Guide</Text>
-                    <Text style={styles.subtitle} numberOfLines={2}>See when to sell your {crop} in {mandi} for more profit</Text>
+                <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
+                    <Text style={[styles.title, highContrast && { color: "#FFF" }]} numberOfLines={1}>Market Forecast</Text>
+                    <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]} numberOfLines={2}>Find the right time to sell for higher profit</Text>
                 </View>
 
                 {loading ? (
@@ -176,7 +180,7 @@ export default function AIInsightsScreen() {
                     <Text style={styles.errorText}>Could not load prices. Try again later.</Text>
                 ) : (
                     <View>
-                        <View style={styles.card}>
+                        <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                             <View style={styles.cardHeader}>
                                 <Text style={styles.cardTitle} numberOfLines={1}>Price Trend</Text>
                                 <View style={styles.legend}>
@@ -246,17 +250,17 @@ export default function AIInsightsScreen() {
                             <Text style={styles.adviceText}>
                                 {data.recommendation}
                             </Text>
-                            <TouchableOpacity style={styles.actionBtn}>
-                                <Text style={styles.actionBtnText}>See Local Markets</Text>
+                            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/marketplace")}>
+                                <Text style={styles.actionBtnText}>Check Live Prices</Text>
                                 <Ionicons name="arrow-forward" size={16} color="#fff" />
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.weatherStrip}>
-                            <Ionicons name="cloudy-night" size={24} color="#3B82F6" />
+                            <Ionicons name="information-circle" size={24} color="#3B82F6" />
                             <View style={{ flex: 1, marginLeft: 12 }}>
-                                <Text style={styles.weatherTitle}>Tip from Kisaan Saathi</Text>
-                                <Text style={styles.weatherDesc}>These prices are estimated based on market patterns. Use them as a guide for your sales.</Text>
+                                <Text style={styles.weatherTitle}>Price Guide</Text>
+                                <Text style={styles.weatherDesc}>Estimates based on market trends. Use as a guide for your sales.</Text>
                             </View>
                         </View>
                     </View>

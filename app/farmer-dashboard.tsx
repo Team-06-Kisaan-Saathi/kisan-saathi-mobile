@@ -13,6 +13,7 @@ import {
   Animated,
   Pressable,
 } from "react-native";
+import { useTheme } from "../hooks/ThemeContext";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
@@ -22,10 +23,12 @@ import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
 import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
+import { cleanLocation } from "../utils/formatters";
 
 const { width } = Dimensions.get("window");
 
 export default function FarmerDashboard() {
+  const { highContrast, fontScale } = useTheme();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +93,7 @@ export default function FarmerDashboard() {
           });
 
           const rec = aiRes.data.recommendation;
-          setAiInsight(rec.length > 50 ? rec.substring(0, 50) + "..." : rec);
+          setAiInsight(rec.length > 35 ? rec.substring(0, 35) + "..." : rec);
         } else {
           // Standard fetch if AI fails
           const resPrices = await fetchMandiPrices({ crop: cropToLoad, limit: 1 });
@@ -119,36 +122,37 @@ export default function FarmerDashboard() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <NavFarmer />
 
-
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+        contentContainerStyle={[styles.scrollContent, highContrast && { backgroundColor: "#000" }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Jai Kisan Header */}
-        <View style={styles.header}>
-          <Text style={styles.welcomeText} numberOfLines={1}>Jai Kisan, {user?.name || "Farmer"} </Text>
-          <Text style={styles.subtext}>Today's prices & market update</Text>
+        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
+          <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }]} numberOfLines={1}>Jai Kisan, {user?.name || "Farmer"} </Text>
+          <Text style={[styles.subtext, highContrast && { color: "#CCC" }]}>Today's prices & market update</Text>
         </View>
 
         {/* TODAY'S TOP PRICE */}
         <SectionHeader title="TODAY'S TOP PRICE" />
-        <View style={styles.topPriceCard}>
+        <View style={[styles.topPriceCard, highContrast && { backgroundColor: "#111", borderColor: "#FFF", borderWidth: 1 }]}>
           <View style={styles.priceHeader}>
-            <View>
-              <Text style={styles.cropName}>{topPrice?.crop || "Wheat"}</Text>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || "Wheat"}</Text>
               <View style={styles.mandiRow}>
                 <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={styles.mandiName} numberOfLines={1}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
+                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>{cleanLocation(topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi")}</Text>
               </View>
-              <Text style={styles.unitText}>per quintal</Text>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.priceVal}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
+            <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <Text style={[styles.priceVal, highContrast && { color: "#FFF" }]}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
+                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>/ quintal</Text>
+              </View>
               <View style={styles.trendRow}>
                 <MaterialCommunityIcons
                   name={topPrice?.isUp !== false ? "trending-up" : "trending-down"}
@@ -182,7 +186,7 @@ export default function FarmerDashboard() {
         {/* MARKET INFO */}
         <SectionHeader title="MARKET INFO" />
         <View style={styles.grid}>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <MarketCard
               title="Mandi Prices"
               subtitle="Live rates near you"
@@ -198,7 +202,7 @@ export default function FarmerDashboard() {
               onPress={() => router.push("/ai-insights")}
             />
           </View>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <MarketCard
               title="Weather"
               subtitle="7-day forecast"
@@ -219,7 +223,7 @@ export default function FarmerDashboard() {
         {/* BUY & SELL */}
         <SectionHeader title="BUY & SELL" />
         <View style={styles.grid}>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
               title="Marketplace"
               subtitle="Buy inputs & tools"
@@ -235,7 +239,7 @@ export default function FarmerDashboard() {
               onPress={() => router.push("/create-auction")}
             />
           </View>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
               title="My Listings"
               subtitle="Manage your crops"
@@ -292,12 +296,14 @@ export default function FarmerDashboard() {
 }
 
 function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionTitle}>{title}</Text>;
+  const { highContrast } = useTheme();
+  return <Text style={[styles.sectionTitle, highContrast && { color: "#FFF" }]}>{title}</Text>;
 }
 
 function MarketCard({ title, subtitle, icon, color, onPress }: any) {
+  const { highContrast } = useTheme();
   return (
-    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }, highContrast && { backgroundColor: "#222", borderColor: color, borderWidth: 2 }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <Text style={styles.cardTitle}>{title}</Text>
       <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
@@ -306,8 +312,9 @@ function MarketCard({ title, subtitle, icon, color, onPress }: any) {
 }
 
 function BuySellCard({ title, subtitle, icon, color, onPress }: any) {
+  const { highContrast } = useTheme();
   return (
-    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }, highContrast && { backgroundColor: "#222", borderColor: color, borderWidth: 2 }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <View style={{ marginTop: 12 }}>
         <Text style={styles.cardTitle}>{title}</Text>
@@ -318,14 +325,15 @@ function BuySellCard({ title, subtitle, icon, color, onPress }: any) {
 }
 
 function SupportItem({ title, subtitle, icon, color, onPress }: any) {
+  const { highContrast } = useTheme();
   return (
-    <TouchableOpacity style={styles.supportItem} onPress={onPress}>
+    <TouchableOpacity style={[styles.supportItem, highContrast && { backgroundColor: "#111", borderBottomColor: "#333" }]} onPress={onPress}>
       <View style={[styles.supportIcon, { backgroundColor: color + '15' }]}>
         <Ionicons name={icon} size={22} color={color} />
       </View>
       <View style={{ flex: 1, marginLeft: 16 }}>
-        <Text style={styles.supportTitle}>{title}</Text>
-        <Text style={styles.supportSubtitle}>{subtitle}</Text>
+        <Text style={[styles.supportTitle, highContrast && { color: "#FFF" }]}>{title}</Text>
+        <Text style={[styles.supportSubtitle, highContrast && { color: "#CCC" }]}>{subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
     </TouchableOpacity>
