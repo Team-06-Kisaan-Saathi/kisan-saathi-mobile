@@ -34,7 +34,7 @@ function speak(text: string) {
   try {
     Speech.stop();
     Speech.speak(text, { rate: 0.95, pitch: 1.0 });
-  } catch {}
+  } catch { }
 }
 
 function normalizeText(e: any): string {
@@ -59,7 +59,7 @@ export default function VoiceNavBtn() {
   const stop = async (reason = "manual") => {
     try {
       await (Vosk as any).stop?.();
-    } catch {}
+    } catch { }
     setListening(false);
     log("🛑 STOP:", reason);
   };
@@ -67,7 +67,7 @@ export default function VoiceNavBtn() {
   const unload = async () => {
     try {
       await (Vosk as any).unload?.();
-    } catch {}
+    } catch { }
     loadedLangRef.current = null;
     log("🧹 UNLOAD");
   };
@@ -234,7 +234,7 @@ export default function VoiceNavBtn() {
       unload();
       try {
         Speech.stop();
-      } catch {}
+      } catch { }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -323,24 +323,33 @@ export default function VoiceNavBtn() {
       {...panResponder.panHandlers}
       style={{
         position: "absolute",
-        bottom: 100,
-        right: 24,
+        bottom: 110,
+        right: 20,
+        width: 64,
+        height: 64,
         zIndex: 999999,
         elevation: 999999,
         transform: pan.getTranslateTransform(),
+        backgroundColor: "transparent", // Ensure it has a layer
       }}
     >
       <Pressable
         onPress={toggleListening}
-        onLongPress={cycleLanguage} // long press switches EN/HI/TE
+        onLongPress={cycleLanguage}
         style={{
           width: 64,
           height: 64,
           borderRadius: 32,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: listening ? "#dc4a26" : "#2d6ec9",
-          opacity: ready ? 1 : 0.6,
+          backgroundColor: listening ? "#ef4444" : "#2563eb",
+          opacity: ready ? 1 : 0.8,
+          // Premium shadow
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 10,
         }}
         accessibilityRole="button"
         accessibilityLabel={
@@ -348,28 +357,30 @@ export default function VoiceNavBtn() {
             ? `Stop voice input (${LANG_LABEL[lang]})`
             : `Start voice input (${LANG_LABEL[lang]})`
         }
-        accessibilityHint="Drag to move. Long press to change language."
       >
         {listening ? (
           <ActivityIndicator color="#fff" />
+        ) : !ready ? (
+          <ActivityIndicator color="#fff" size="small" />
         ) : (
-          <Ionicons name="mic" size={26} color="#fff" />
+          <Ionicons name="mic" size={30} color="#fff" />
         )}
 
-        {/* Language label INSIDE the button */}
         <View
           pointerEvents="none"
           style={{
             position: "absolute",
-            bottom: 6,
-            right: 6,
-            backgroundColor: "rgba(0,0,0,0.55)",
+            bottom: -2,
+            right: -2,
+            backgroundColor: "#1f2937",
             paddingHorizontal: 6,
             paddingVertical: 2,
-            borderRadius: 8,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: "#374151",
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900" }}>
             {LANG_LABEL[lang]}
           </Text>
         </View>

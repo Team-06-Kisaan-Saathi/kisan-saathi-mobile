@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Appearance, ColorSchemeName } from 'react-native';
+import { ColorSchemeName } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type ThemeContextType = {
+export type ThemeContextType = {
     colorScheme: ColorSchemeName;
     setColorScheme: (scheme: ColorSchemeName) => void;
     toggleTheme: () => void;
@@ -14,7 +14,7 @@ type ThemeContextType = {
     setZoomEnabled: (v: boolean) => void;
 };
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [colorScheme, setScheme] = useState<ColorSchemeName>('light');
@@ -76,7 +76,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-export function useTheme() {
+export function useTheme(): ThemeContextType {
     const context = useContext(ThemeContext);
     if (context === undefined) {
         throw new Error('useTheme must be used within a ThemeProvider');
