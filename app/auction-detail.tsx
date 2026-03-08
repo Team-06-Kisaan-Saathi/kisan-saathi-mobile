@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -58,6 +59,7 @@ const AuctionTimer = ({ createdAt, status }: { createdAt: string, status: string
 };
 
 export default function AuctionDetail() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const { id } = useLocalSearchParams();
     const auctionId = id as string;
@@ -254,7 +256,7 @@ export default function AuctionDetail() {
     const isMet = auction.currentHighBid >= auction.reservePrice;
 
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavBuyer />
 
@@ -272,7 +274,7 @@ export default function AuctionDetail() {
                 </View>
             </View>
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
                 {/* Auction Info Card */}
                 <View style={styles.infoCard}>
                     <Text style={styles.infoTitle}>Auction Details</Text>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -76,6 +77,7 @@ const AuctionTimer = ({ createdAt, status, extendedHours }: { createdAt: string,
 };
 
 export default function FarmerLiveAuctions() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [auctions, setAuctions] = useState<any[]>([]);
@@ -267,7 +269,7 @@ export default function FarmerLiveAuctions() {
     });
 
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavFarmer />
 
@@ -281,7 +283,7 @@ export default function FarmerLiveAuctions() {
                         <Text style={styles.headerTitle}>Live Auction Monitor</Text>
                         <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
                     </View>
-                    <NotificationBell color="#0F172A" />
+                    <NotificationBell color={highContrast ? "#FFF" : "#0F172A"} />
                 </View>
                 <View style={styles.filterRow}>
                     {["All", "Active", "Ended"].map((f) => (
@@ -296,11 +298,11 @@ export default function FarmerLiveAuctions() {
                 </View>
             </View>
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
                 {loading ? (
                     <ActivityIndicator size="large" color="#10B981" style={{ marginTop: 40 }} />
                 ) : filteredAuctions.length === 0 ? (
-                    <Text style={styles.emptyText}>No auctions found.</Text>
+                    <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No auctions found.</Text>
                 ) : filteredAuctions.map((auction, index) => {
                     const isExpanded = expandedId === auction.id;
                     const hasBids = auction.totalBids > 0;
@@ -436,7 +438,7 @@ export default function FarmerLiveAuctions() {
                                                         Highest: {formatCurr(auction.currentHighBid)} · {auction.totalBids} bids placed
                                                     </Text>
                                                 ) : (
-                                                    <Text style={styles.emptyText}>Waiting for first bid...</Text>
+                                                    <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>Waiting for first bid...</Text>
                                                 )}
                                             </View>
                                         </>

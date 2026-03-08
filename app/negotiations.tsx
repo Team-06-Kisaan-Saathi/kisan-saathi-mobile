@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavAuto from "../components/navigation/NavAuto";
@@ -23,6 +24,7 @@ import { dealService } from "../services/dealService";
  */
 
 export default function NegotiationsScreen() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [deals, setDeals] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function NegotiationsScreen() {
     const renderItem = ({ item }: { item: any }) => (
         <Pressable
             onPress={() => router.push(`/chat/${item.chatId}?dealId=${item._id}`)}
-            style={styles.card}
+            style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}
         >
             <View style={styles.cardHeader}>
                 <View style={styles.cropBadge}>
@@ -123,7 +125,7 @@ export default function NegotiationsScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
                 title: "My Negotiations",
                 headerShadowVisible: false,
@@ -133,7 +135,7 @@ export default function NegotiationsScreen() {
 
 
             {loading && !refreshing ? (
-                <View style={styles.center}>
+                <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                     <ActivityIndicator size="large" color="#1e3a8a" />
                 </View>
             ) : (

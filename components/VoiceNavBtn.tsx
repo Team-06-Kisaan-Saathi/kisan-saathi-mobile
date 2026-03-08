@@ -1,6 +1,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Animated, PanResponder , ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
 
 import { useRouter, type Href } from "expo-router";
 import * as Speech from "expo-speech";
@@ -29,6 +30,7 @@ const GRAMMAR: Record<Lang, string[]> = {
 };
 
 function speak(text: string) {
+
   try {
     Speech.stop();
     Speech.speak(text, { rate: 0.95, pitch: 1.0 });

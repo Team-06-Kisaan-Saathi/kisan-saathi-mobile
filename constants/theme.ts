@@ -27,6 +27,16 @@ export const Colors = {
     card: '#1E293B',
     divider: '#334155',
   },
+  contrast: {
+    text: '#FFFFFF',
+    background: '#000000',
+    tint: '#FFFFFF',
+    icon: '#FFFFFF',
+    tabIconDefault: '#FFFFFF',
+    tabIconSelected: '#FFFFFF',
+    card: '#222222',
+    divider: '#FFFFFF',
+  }
 };
 
 export const Fonts = Platform.select({

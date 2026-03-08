@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -25,6 +26,7 @@ import NavAuto from "../components/navigation/NavAuto";
 const COLORS = { primary: "#1B5E20" };
 
 export default function EditProfileScreen() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ export default function EditProfileScreen() {
 
     if (loading) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#1B5E20" />
             </View>
         );
@@ -175,13 +177,13 @@ export default function EditProfileScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
+            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
         >
             <Stack.Screen options={{ title: t("profile.edit_title") || "Edit Profile", headerShadowVisible: false }} />
             <NavAuto />
 
             <ScrollView contentContainerStyle={styles.scroll}>
-                <View style={styles.header}>
+                <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>{name.charAt(0) || "U"}</Text>
                     </View>
@@ -190,17 +192,18 @@ export default function EditProfileScreen() {
 
                 <View style={styles.form}>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Full Name</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Full Name</Text>
                         <TextInput
                             style={styles.input}
                             value={name}
                             onChangeText={setName}
                             placeholder="Enter your name"
+                            placeholderTextColor="#94A3B8"
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Phone Number</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Phone Number</Text>
                         <View style={styles.phoneInputRow}>
                             <Text style={styles.prefix}>+91</Text>
                             <TextInput
@@ -210,6 +213,7 @@ export default function EditProfileScreen() {
                                 keyboardType="number-pad"
                                 maxLength={10}
                                 placeholder="10-digit mobile number"
+                                placeholderTextColor="#94A3B8"
                             />
                         </View>
                         {phone !== originalPhone && !otpSent && (
@@ -219,7 +223,7 @@ export default function EditProfileScreen() {
 
                     {otpSent && (
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Enter OTP</Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Enter OTP</Text>
                             <TextInput
                                 style={styles.input}
                                 value={otp}
@@ -227,6 +231,7 @@ export default function EditProfileScreen() {
                                 keyboardType="number-pad"
                                 maxLength={6}
                                 placeholder="Enter 6-digit OTP"
+                                placeholderTextColor="#94A3B8"
                             />
                             <TouchableOpacity onPress={handleSendOTP}>
                                 <Text style={styles.resendText}>Didn't get code? Resend</Text>
@@ -235,7 +240,7 @@ export default function EditProfileScreen() {
                     )}
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Preferred Language</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Preferred Language</Text>
                         <View style={styles.langGrid}>
                             {languages.map(l => (
                                 <TouchableOpacity

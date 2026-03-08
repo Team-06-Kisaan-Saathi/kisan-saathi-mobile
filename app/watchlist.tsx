@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavAuto from "../components/navigation/NavAuto";
@@ -16,6 +17,7 @@ import { getWatchlist, removeFromWatchlist, WatchlistItem } from "../services/wa
 import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
 
 export default function WatchlistScreen() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
     const [prices, setPrices] = useState<Record<string, MandiPriceDoc>>({});
@@ -67,11 +69,11 @@ export default function WatchlistScreen() {
         const priceData = prices[`${item.crop}-${item.mandi}`];
 
         return (
-            <View style={styles.card}>
+            <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                 <View style={styles.cardHeader}>
                     <View>
-                        <Text style={styles.cropName}>{item.crop}</Text>
-                        <Text style={styles.mandiName}>{item.mandi}</Text>
+                        <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
+                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.mandi}</Text>
                     </View>
                     <TouchableOpacity onPress={() => removeItem(item._id)}>
                         <Ionicons name="notifications-off-outline" size={22} color="#EF4444" />
@@ -100,7 +102,7 @@ export default function WatchlistScreen() {
     };
 
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ title: "My Watchlist", headerShown: false }} />
             <NavAuto />
 
@@ -115,7 +117,7 @@ export default function WatchlistScreen() {
                     loading ? (
                         <ActivityIndicator size="large" color="#3B82F6" style={{ marginTop: 40 }} />
                     ) : (
-                        <View style={styles.empty}>
+                        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
                             <Ionicons name="bookmark-outline" size={60} color="#CBD5E1" />
                             <Text style={styles.emptyTitle}>Your watchlist is empty</Text>
                             <Text style={styles.emptySub}>Add crops from the Mandi Prices screen to get alerts.</Text>
