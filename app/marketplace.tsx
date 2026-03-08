@@ -20,7 +20,6 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
