@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -24,6 +25,7 @@ import NavAuto from "../components/navigation/NavAuto";
 import { setLanguage } from "../i18n/i18n";
 
 export default function SettingsScreen() {
+  const { highContrast } = useTheme();
     const { t, i18n } = useTranslation();
     const router = useRouter();
 
@@ -170,7 +172,7 @@ export default function SettingsScreen() {
 
     if (loading) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#3B82F6" />
             </View>
         );
@@ -184,7 +186,7 @@ export default function SettingsScreen() {
 
                 {/* PROFILE SECTION */}
                 <SectionHeader title={t("settings.profile")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <TouchableOpacity
                         style={styles.profileRow}
                         onPress={() => router.push("/edit-profile")}
@@ -208,7 +210,7 @@ export default function SettingsScreen() {
 
                 {/* SECURITY SECTION */}
                 <SectionHeader title={t("settings.security")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <SettingRow
                         icon={<Lucide.Lock size={18} color="#64748B" />}
                         label={t("settings.change_pin")}
@@ -218,7 +220,7 @@ export default function SettingsScreen() {
 
                 {/* PREFERENCES SECTION */}
                 <SectionHeader title={t("settings.preferences")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <SettingRow
                         icon={<Lucide.Languages size={18} color="#3B82F6" />}
                         label={t("settings.language")}
@@ -239,7 +241,7 @@ export default function SettingsScreen() {
                 {role === "farmer" && (
                     <>
                         <SectionHeader title={t("settings.farm_details")} />
-                        <View style={styles.card}>
+                        <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                             <SettingRow
                                 icon={<Lucide.MapPin size={18} color="#10B981" />}
                                 label={t("settings.farm_location")}
@@ -292,7 +294,7 @@ export default function SettingsScreen() {
 
                 {/* SUPPORT SECTION */}
                 <SectionHeader title={t("settings.support")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <SettingRow
                         icon={<Lucide.HelpCircle size={18} color="#64748B" />}
                         label={t("settings.help_support")}
@@ -384,10 +386,11 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 function SettingRow({ icon, label, value, onPress }: any) {
+  const { highContrast } = useTheme();
     const isTappable = !!onPress;
     const Container = isTappable ? TouchableOpacity : View;
     return (
-        <Container style={styles.row} onPress={onPress}>
+        <Container style={[styles.row, highContrast && { borderBottomColor: "#333" }]} onPress={onPress}>
             <View style={styles.rowLeft}>
                 <View style={styles.iconContainer}>{icon}</View>
                 <Text style={styles.labelText}>{label}</Text>

@@ -1,17 +1,19 @@
 import { Stack } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View, SafeAreaView } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
 import NavBuyer from "../components/navigation/NavBuyer";
 
 
 export default function BuyerPreferencesScreen() {
+  const { highContrast } = useTheme();
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ title: "Preferences", headerShown: false }} />
             <NavBuyer />
 
-            <View style={styles.center}>
-                <Text style={styles.title}>Buyer Preferences</Text>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
+                <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Buyer Preferences</Text>
                 <Text style={styles.sub}>Coming Soon</Text>
             </View>
         </SafeAreaView>

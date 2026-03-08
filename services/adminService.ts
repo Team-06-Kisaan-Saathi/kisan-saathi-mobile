@@ -40,5 +40,14 @@ export const adminService = {
     },
     getMonthlyDetail: async () => {
         return apiFetch<any>(`${ENDPOINTS.ADMIN.STATS.replace('/stats', '/monthly-detail')}`);
+    },
+    getSupportRequests: async () => {
+        return apiFetch<any>(`${API_BASE}/support/admin/requests`);
+    },
+    updateSupportRequestStatus: async (id: string, status: string) => {
+        return apiFetch<any>(`${API_BASE}/support/admin/requests/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({ status })
+        });
     }
 };

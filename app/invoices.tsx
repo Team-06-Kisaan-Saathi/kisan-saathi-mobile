@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavAuto from "../components/navigation/NavAuto";
@@ -28,6 +29,7 @@ import { ENDPOINTS } from "../services/api";
  */
 
 export default function InvoicesScreen() {
+  const { highContrast } = useTheme();
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -58,7 +60,7 @@ export default function InvoicesScreen() {
                         return null;
                     }
                 });
-
+                9
                 const resolved = (await Promise.all(dealPromises)).filter(Boolean);
                 setInvoices(resolved);
             }
@@ -111,7 +113,7 @@ export default function InvoicesScreen() {
     };
 
     const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.card}>
+        <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
             <View style={styles.cardInfo}>
                 <Ionicons name="document-text" size={24} color="#6366f1" />
                 <View style={styles.textContainer}>
@@ -139,7 +141,7 @@ export default function InvoicesScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
                 title: "Invoices",
                 headerShadowVisible: false,
@@ -147,9 +149,8 @@ export default function InvoicesScreen() {
             }} />
             <NavAuto />
 
-
             {loading && !refreshing ? (
-                <View style={styles.center}>
+                <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                     <ActivityIndicator size="large" color="#1e3a8a" />
                 </View>
             ) : (
@@ -168,7 +169,7 @@ export default function InvoicesScreen() {
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 

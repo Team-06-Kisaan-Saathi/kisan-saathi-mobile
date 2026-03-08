@@ -1,3 +1,4 @@
+import { useTheme } from '../hooks/ThemeContext';
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { apiFetch } from "../services/http";
@@ -5,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -22,6 +24,8 @@ import { ENDPOINTS } from "../services/api";
 type Role = "farmer" | "buyer";
 
 export default function SigninScreen() {
+  const { highContrast, fontScale } = useTheme();
+
   const { t } = useTranslation();
 
   const [name, setName] = useState<string>("");
@@ -77,7 +81,7 @@ export default function SigninScreen() {
   };
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
       <ImageBackground
         source={require("../assets/images/f.jpg")}
         style={styles.bg}
@@ -94,28 +98,33 @@ export default function SigninScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.brandContainer}>
+              <Image
+                source={require("../assets/images/logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
               <Text style={styles.brandName}>
-                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
-                <Text style={styles.brandBlue}>SAATHI</Text>
+                <Text style={styles.brandGreen}>AGRI</Text>{" "}
+                <Text style={styles.brandBlue}>BAZAAR</Text>
               </Text>
-              <Text style={styles.tagline}>CREATE NEW ACCOUNT</Text>
+              <Text style={styles.tagline}>Be Part of the Agri Community</Text>
             </View>
 
             <View style={styles.formWrapper}>
               <Text style={styles.formTitle}>Registration</Text>
 
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Full Name</Text>
               <View style={styles.pillInput}>
                 <TextInput
                   value={name}
                   onChangeText={setName}
                   placeholder="Ex: Rajesh Kumar"
-                  placeholderTextColor="#777"
+                  placeholderTextColor="#94A3B8"
                   style={styles.textInput}
                 />
               </View>
 
-              <Text style={styles.label}>Primary Role</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Primary Role</Text>
               <Pressable
                 onPress={() => setRoleOpen(!roleOpen)}
                 style={[styles.pillInput, roleOpen && styles.pillInputActive]}
@@ -143,14 +152,14 @@ export default function SigninScreen() {
                 </View>
               )}
 
-              <Text style={styles.label}>Mobile Number</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Mobile Number</Text>
               <View style={styles.pillInput}>
                 <Text style={styles.countryCode}>+91</Text>
                 <TextInput
                   value={phone}
                   onChangeText={(v) => setPhone(v.replace(/\D/g, ""))}
                   placeholder="10-digit number"
-                  placeholderTextColor="#777"
+                  placeholderTextColor="#94A3B8"
                   keyboardType="number-pad"
                   maxLength={10}
                   style={styles.textInput}
@@ -202,7 +211,12 @@ const styles = StyleSheet.create({
   },
   brandContainer: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 20,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 8,
   },
   brandName: {
     fontSize: 28,

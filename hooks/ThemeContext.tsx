@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Appearance, ColorSchemeName } from 'react-native';
+import { ColorSchemeName } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ThemeContextType = {
@@ -10,50 +10,38 @@ export type ThemeContextType = {
     setHighContrast: (v: boolean) => void;
     fontScale: number;
     setFontScale: (v: number) => void;
+    zoomEnabled: boolean;
+    setZoomEnabled: (v: boolean) => void;
 };
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [colorScheme, setScheme] = useState<ColorSchemeName>('light');
-    const [highContrast, setHC] = useState(false);
-    const [fontScale, setFS] = useState(1);
+    const [highContrast, setHighContrastState] = useState(false);
+    const [fontScale, setFontScaleState] = useState(1);
+    const [zoomEnabled, setZoomEnabledState] = useState(false);
 
     useEffect(() => {
-        const loadTheme = async () => {
+        const loadSettings = async () => {
             const savedTheme = await AsyncStorage.getItem('theme');
-            const savedHC = await AsyncStorage.getItem('highContrast');
-            if (savedTheme === 'dark' || savedTheme === 'light') {
-                setScheme(savedTheme);
-            }
-            if (savedHC === 'true') {
-                setHC(true);
-            }
-            const savedFS = await AsyncStorage.getItem('fontScale');
-            if (savedFS) {
-                setFS(parseFloat(savedFS));
-            }
+            if (savedTheme === 'dark' || savedTheme === 'light') setScheme(savedTheme);
+
+            const savedContrast = await AsyncStorage.getItem('highContrast');
+            if (savedContrast === 'true') setHighContrastState(true);
+
+            const savedFontScale = await AsyncStorage.getItem('fontScale');
+            if (savedFontScale) setFontScaleState(parseFloat(savedFontScale));
+
+            const savedZoom = await AsyncStorage.getItem('zoomEnabled');
+            if (savedZoom === 'true') setZoomEnabledState(true);
         };
-        loadTheme();
+        loadSettings();
     }, []);
 
     const setColorScheme = async (scheme: ColorSchemeName) => {
         setScheme(scheme);
-        if (scheme) {
-            await AsyncStorage.setItem('theme', scheme);
-        } else {
-            await AsyncStorage.removeItem('theme');
-        }
-    };
-
-    const setHighContrast = async (v: boolean) => {
-        setHC(v);
-        await AsyncStorage.setItem('highContrast', String(v));
-    };
-
-    const setFontScale = async (v: number) => {
-        setFS(v);
-        await AsyncStorage.setItem('fontScale', String(v));
+        if (scheme) await AsyncStorage.setItem('theme', scheme);
     };
 
     const toggleTheme = () => {
@@ -61,8 +49,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setColorScheme(next);
     };
 
+    const setHighContrast = async (v: boolean) => {
+        setHighContrastState(v);
+        await AsyncStorage.setItem('highContrast', v ? 'true' : 'false');
+    };
+
+    const setFontScale = async (v: number) => {
+        setFontScaleState(v);
+        await AsyncStorage.setItem('fontScale', v.toString());
+    };
+
+    const setZoomEnabled = async (v: boolean) => {
+        setZoomEnabledState(v);
+        await AsyncStorage.setItem('zoomEnabled', v ? 'true' : 'false');
+    };
+
     return (
-        <ThemeContext.Provider value={{ colorScheme, setColorScheme, toggleTheme, highContrast, setHighContrast, fontScale, setFontScale }}>
+        <ThemeContext.Provider value={{
+            colorScheme, setColorScheme, toggleTheme,
+            highContrast, setHighContrast,
+            fontScale, setFontScale,
+            zoomEnabled, setZoomEnabled
+        }}>
             {children}
         </ThemeContext.Provider>
     );

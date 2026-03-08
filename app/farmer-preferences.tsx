@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import NavFarmer from "../components/navigation/NavFarmer";
 
@@ -31,15 +32,16 @@ import NavFarmer from "../components/navigation/NavFarmer";
 
 
 export default function FarmerPreferences() {
+  const { highContrast } = useTheme();
     return (
         <>
             {/* Hide default header (custom navigation handled via NavFarmer) */}
             <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.container}>
+            <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
                 <NavFarmer />
 
-                <View style={styles.content}>
-                    <Text style={styles.title}>Preferences</Text>
+                <View style={[styles.content, highContrast && { backgroundColor: "#000" }]}>
+                    <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Preferences</Text>
                     <Text style={styles.placeholder}>
                         Manage your crop preferences and notification settings.
                     </Text>
