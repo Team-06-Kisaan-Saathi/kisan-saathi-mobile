@@ -20,6 +20,8 @@ import NavFarmer from "../components/navigation/NavFarmer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
+import { apiFetch } from "../services/http";
+import { ENDPOINTS } from "../services/api";
 
 const { width } = Dimensions.get("window");
 
@@ -29,6 +31,7 @@ export default function FarmerDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [topPrice, setTopPrice] = useState<any>(null);
+  const [aiInsight, setAiInsight] = useState<string>("Smart crop advice");
 
   const loadData = async () => {
     try {
@@ -42,18 +45,40 @@ export default function FarmerDashboard() {
         setUser(res.user);
       }
 
-      // Load top price for the main card
-      const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
-      if (resPrices.data && resPrices.data.length > 0) {
-        setTopPrice(resPrices.data[0]);
-      } else {
-        // Fallback for demo
-        setTopPrice({
-          crop: "Wheat",
-          mandi: "Azadpur Mandi",
-          pricePerQuintal: 2340,
-          trend: "+4.2% this week"
-        });
+      // Load latest price and AI prediction for the main card
+      try {
+        const query = `?crop=Wheat&mandi=Azadpur Mandi&days=7`;
+        const aiRes = await apiFetch<any>(ENDPOINTS.ANALYTICS.FORECAST + query);
+
+        if (aiRes.success) {
+          const historical = aiRes.data.historical;
+          const predicted = aiRes.data.predicted;
+
+          // Latest price from historical
+          const latest = historical[historical.length - 1];
+          // Simple trend calculation based on forecast
+          const trendDir = predicted[predicted.length - 1].price > latest.price ? "up" : "down";
+          const trendPct = ((Math.abs(predicted[predicted.length - 1].price - latest.price) / latest.price) * 100).toFixed(1);
+
+          setTopPrice({
+            crop: "Wheat",
+            locationName: "Azadpur Mandi",
+            pricePerQuintal: latest.price,
+            trend: `${predicted[predicted.length - 1].price > latest.price ? '+' : '-'}${trendPct}% predicted`,
+            isUp: trendDir === "up"
+          });
+
+          const rec = aiRes.data.recommendation;
+          setAiInsight(rec.length > 50 ? rec.substring(0, 50) + "..." : rec);
+        } else {
+          // Standard fetch if AI fails
+          const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
+          if (resPrices.data && resPrices.data.length > 0) {
+            setTopPrice(resPrices.data[0]);
+          }
+        }
+      } catch (err) {
+        console.warn("Dashboard Price Load Error:", err);
       }
     } catch (e) {
       console.log("Dashboard load error:", e);
@@ -85,7 +110,7 @@ export default function FarmerDashboard() {
       >
         {/* Jai Kisan Header */}
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Jai Kisan, {user?.name || "Farmer"} </Text>
+          <Text style={styles.welcomeText} numberOfLines={1}>Jai Kisan, {user?.name || "Farmer"} </Text>
           <Text style={styles.subtext}>Today's prices & market update</Text>
         </View>
 
@@ -97,15 +122,21 @@ export default function FarmerDashboard() {
               <Text style={styles.cropName}>{topPrice?.crop || "Wheat"}</Text>
               <View style={styles.mandiRow}>
                 <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={styles.mandiName}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
+                <Text style={styles.mandiName} numberOfLines={1}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
               </View>
               <Text style={styles.unitText}>per quintal</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.priceVal}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
               <View style={styles.trendRow}>
-                <MaterialCommunityIcons name="trending-up" size={16} color="#22C55E" />
-                <Text style={styles.trendText}>+4.2% this week</Text>
+                <MaterialCommunityIcons
+                  name={topPrice?.isUp !== false ? "trending-up" : "trending-down"}
+                  size={16}
+                  color={topPrice?.isUp !== false ? "#22C55E" : "#EF4444"}
+                />
+                <Text style={[styles.trendText, topPrice?.isUp === false && { color: '#EF4444' }]}>
+                  {topPrice?.trend || "+4.2% this week"}
+                </Text>
               </View>
             </View>
           </View>
@@ -140,7 +171,7 @@ export default function FarmerDashboard() {
             />
             <MarketCard
               title="AI Insights"
-              subtitle="Smart crop advice"
+              subtitle={aiInsight}
               icon="bulb"
               color="#EA580C"
               onPress={() => router.push("/ai-insights")}
@@ -248,7 +279,7 @@ function MarketCard({ title, subtitle, icon, color, onPress }: any) {
     <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardSubtitle}>{subtitle}</Text>
+      <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
     </TouchableOpacity>
   );
 }
@@ -259,7 +290,7 @@ function BuySellCard({ title, subtitle, icon, color, onPress }: any) {
       <Ionicons name={icon} size={24} color="#FFF" />
       <View style={{ marginTop: 12 }}>
         <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardSubtitle}>{subtitle}</Text>
+        <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
       </View>
     </TouchableOpacity>
   );

@@ -20,6 +20,7 @@ import NavBuyer from "../components/navigation/NavBuyer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
+import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
 
 const { width } = Dimensions.get("window");
@@ -44,16 +45,34 @@ export default function BuyerDashboard() {
         setUser(res.user);
       }
 
-      const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
-      if (resPrices.data && resPrices.data.length > 0) {
-        setTopPrice(resPrices.data[0]);
-      } else {
-        setTopPrice({
-          crop: "Wheat",
-          mandi: "Azadpur Mandi",
-          pricePerQuintal: 2340,
-          trend: "+4.2% this week"
-        });
+      // Load latest price and AI prediction for the main card
+      try {
+        const query = `?crop=Wheat&mandi=Azadpur Mandi&days=7`;
+        const aiRes = await apiFetch<any>(ENDPOINTS.ANALYTICS.FORECAST + query);
+
+        if (aiRes.success) {
+          const historical = aiRes.data.historical;
+          const predicted = aiRes.data.predicted;
+
+          const latest = historical[historical.length - 1];
+          const trendDir = predicted[predicted.length - 1].price > latest.price ? "up" : "down";
+          const trendPct = ((Math.abs(predicted[predicted.length - 1].price - latest.price) / latest.price) * 100).toFixed(1);
+
+          setTopPrice({
+            crop: "Wheat",
+            locationName: "Azadpur Mandi",
+            pricePerQuintal: latest.price,
+            trend: `${predicted[predicted.length - 1].price > latest.price ? '+' : '-'}${trendPct}% predicted`,
+            isUp: trendDir === "up"
+          });
+        } else {
+          const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
+          if (resPrices.data && resPrices.data.length > 0) {
+            setTopPrice(resPrices.data[0]);
+          }
+        }
+      } catch (err) {
+        console.warn("Dashboard Price Load Error:", err);
       }
 
       // Fetch bid stats
@@ -107,7 +126,7 @@ export default function BuyerDashboard() {
       >
         {/* Welcome Header */}
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome, {user?.name || "Buyer"} </Text>
+          <Text style={styles.welcomeText} numberOfLines={1}>Welcome, {user?.name || "Buyer"} </Text>
           <Text style={styles.subtext}>Find the best deals & place your bids</Text>
         </View>
 
@@ -140,15 +159,21 @@ export default function BuyerDashboard() {
               <Text style={styles.cropName}>{topPrice?.crop || "Wheat"}</Text>
               <View style={styles.mandiRow}>
                 <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={styles.mandiName}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
+                <Text style={styles.mandiName} numberOfLines={1}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
               </View>
               <Text style={styles.unitText}>per quintal</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.priceVal}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
               <View style={styles.trendRow}>
-                <MaterialCommunityIcons name="trending-up" size={16} color="#22C55E" />
-                <Text style={styles.trendText}>+4.2% this week</Text>
+                <MaterialCommunityIcons
+                  name={topPrice?.isUp !== false ? "trending-up" : "trending-down"}
+                  size={16}
+                  color={topPrice?.isUp !== false ? "#22C55E" : "#EF4444"}
+                />
+                <Text style={[styles.trendText, topPrice?.isUp === false && { color: '#EF4444' }]}>
+                  {topPrice?.trend || "+4.2% this week"}
+                </Text>
               </View>
             </View>
           </View>
@@ -254,7 +279,7 @@ function MarketCard({ title, subtitle, icon, color, onPress }: any) {
     <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardSubtitle}>{subtitle}</Text>
+      <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
     </TouchableOpacity>
   );
 }
@@ -269,7 +294,7 @@ function BuySellCard({ title, subtitle, icon, color, onPress, iconFamily }: any)
       )}
       <View style={{ marginTop: 12 }}>
         <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardSubtitle}>{subtitle}</Text>
+        <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
       </View>
     </TouchableOpacity>
   );
