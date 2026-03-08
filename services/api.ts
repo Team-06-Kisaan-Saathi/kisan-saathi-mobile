@@ -70,4 +70,7 @@ export const ENDPOINTS = {
         UNREAD_COUNT: `${API_BASE}/notifications/unread-count`,
         READ_ALL: `${API_BASE}/notifications/read-all`,
     },
+    ANALYTICS: {
+        FORECAST: `${API_BASE}/analytics/price-forecast`,
+    },
 };
