@@ -45,9 +45,30 @@ export default function FarmerDashboard() {
         setUser(res.user);
       }
 
+      // --- DYNAMIC DATA LOGIC ---
+      let cropToLoad = "Wheat";
+      let mandiToLoad = res?.user?.location || "Azadpur Mandi";
+
+      try {
+        const auctionsRes = await fetch(`${ENDPOINTS.AUCTIONS.GET_ALL}?status=ALL`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (auctionsRes.ok) {
+          const allAuctions = await auctionsRes.json();
+          const myAuctions = allAuctions.filter((a: any) =>
+            String(a.farmerId?._id || a.farmerId) === String(res?.user?._id)
+          );
+          if (myAuctions.length > 0) {
+            cropToLoad = myAuctions[0].crop;
+          }
+        }
+      } catch (e) {
+        console.log("Error determining dynamic crop:", e);
+      }
+
       // Load latest price and AI prediction for the main card
       try {
-        const query = `?crop=Wheat&mandi=Azadpur Mandi&days=7`;
+        const query = `?crop=${encodeURIComponent(cropToLoad)}&mandi=${encodeURIComponent(mandiToLoad)}&days=7`;
         const aiRes = await apiFetch<any>(ENDPOINTS.ANALYTICS.FORECAST + query);
 
         if (aiRes.success) {
@@ -61,8 +82,8 @@ export default function FarmerDashboard() {
           const trendPct = ((Math.abs(predicted[predicted.length - 1].price - latest.price) / latest.price) * 100).toFixed(1);
 
           setTopPrice({
-            crop: "Wheat",
-            locationName: "Azadpur Mandi",
+            crop: cropToLoad,
+            locationName: mandiToLoad,
             pricePerQuintal: latest.price,
             trend: `${predicted[predicted.length - 1].price > latest.price ? '+' : '-'}${trendPct}% predicted`,
             isUp: trendDir === "up"
@@ -72,7 +93,7 @@ export default function FarmerDashboard() {
           setAiInsight(rec.length > 50 ? rec.substring(0, 50) + "..." : rec);
         } else {
           // Standard fetch if AI fails
-          const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
+          const resPrices = await fetchMandiPrices({ crop: cropToLoad, limit: 1 });
           if (resPrices.data && resPrices.data.length > 0) {
             setTopPrice(resPrices.data[0]);
           }

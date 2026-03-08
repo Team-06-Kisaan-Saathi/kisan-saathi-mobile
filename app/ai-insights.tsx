@@ -15,6 +15,8 @@ import { Svg, Polyline, Line, Circle } from "react-native-svg";
 import NavFarmer from "../components/navigation/NavFarmer";
 import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
+import { getProfile } from "../services/userServices";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -37,10 +39,39 @@ export default function AIInsightsScreen() {
 
     const [refreshing, setRefreshing] = useState(false);
 
+    useEffect(() => {
+        const initialize = async () => {
+            try {
+                const token = await AsyncStorage.getItem("token");
+                const profileRes = await getProfile();
+
+                if (profileRes?.success) {
+                    const user = profileRes.user;
+                    if (user.location) setMandi(user.location);
+
+                    // Try to find recent crop from auctions
+                    const auctionsRes = await fetch(`${ENDPOINTS.AUCTIONS.GET_ALL}?status=ALL`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+                    if (auctionsRes.ok) {
+                        const all = await auctionsRes.json();
+                        const mine = all.filter((a: any) => String(a.farmerId?._id || a.farmerId) === String(user._id));
+                        if (mine.length > 0) {
+                            setCrop(mine[0].crop);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("AI Insights initialization error:", e);
+            }
+        };
+        initialize();
+    }, []);
+
     const loadForecast = async (isRefresh = false) => {
         try {
             if (!isRefresh) setLoading(true);
-            const query = `?crop=${crop}&mandi=${mandi}&days=7`;
+            const query = `?crop=${encodeURIComponent(crop)}&mandi=${encodeURIComponent(mandi)}&days=7`;
             const res = await apiFetch<any>(ENDPOINTS.ANALYTICS.FORECAST + query);
             if (res.success) {
                 setData(res.data);
@@ -54,7 +85,9 @@ export default function AIInsightsScreen() {
     };
 
     useEffect(() => {
-        loadForecast();
+        if (crop && mandi) {
+            loadForecast();
+        }
     }, [crop, mandi]);
 
     const onRefresh = React.useCallback(() => {
