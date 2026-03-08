@@ -14,11 +14,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Lucide from "lucide-react-native";
+import * as Location from "expo-location";
 import WeatherCard from "../components/weather/WeatherCard";
 import ForecastItem from "../components/weather/ForecastItem";
 import Nav from "../components/navigation/Nav";
 
-// Default coordinates (Warangal, Telangana - agriculture hub)
+// Fallback coordinates (Warangal, Telangana) — used only if GPS denied
 const DEFAULT_LAT = 17.9689;
 const DEFAULT_LON = 79.5941;
 
@@ -29,8 +30,10 @@ export default function WeatherScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [weatherData, setWeatherData] = useState<any>(null);
+    const [locationName, setLocationName] = useState<string>("Fetching location...");
+    const [coords, setCoords] = useState({ lat: DEFAULT_LAT, lon: DEFAULT_LON });
 
-    const fetchWeather = async (lat = DEFAULT_LAT, lon = DEFAULT_LON) => {
+    const fetchWeather = async (lat: number, lon: number) => {
         try {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,precipitation,relativehumidity_2m,weathercode&timezone=auto`;
             const response = await fetch(url);
@@ -51,14 +54,52 @@ export default function WeatherScreen() {
         }
     };
 
-    useEffect(() => {
-        fetchWeather();
-    }, []);
+    const initLocation = async () => {
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchWeather();
+            if (status !== "granted") {
+                // Permission denied — use fallback coords
+                setLocationName("Warangal, TS");
+                await fetchWeather(DEFAULT_LAT, DEFAULT_LON);
+                return;
+            }
+
+            const pos = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+            });
+
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            setCoords({ lat, lon });
+
+            // Reverse geocode to get human-readable city name
+            const places = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+            if (places && places.length > 0) {
+                const p = places[0];
+                const city = p.city || p.district || p.subregion || p.region || "Your Location";
+                const region = p.region ? `, ${p.region}` : "";
+                setLocationName(`${city}${region}`);
+            } else {
+                setLocationName("Your Location");
+            }
+
+            await fetchWeather(lat, lon);
+        } catch (err) {
+            console.error("Location Error:", err);
+            setLocationName("Warangal, TS");
+            await fetchWeather(DEFAULT_LAT, DEFAULT_LON);
+        }
     };
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await fetchWeather(coords.lat, coords.lon);
+    };
+
+    useEffect(() => {
+        initLocation();
+    }, []);
 
     const getWeatherCondition = (code: number) => {
         // simplified WMO Weather interpretation codes
@@ -134,7 +175,7 @@ export default function WeatherScreen() {
                 <View style={styles.headerCard}>
                     <View style={styles.headerTop}>
                         <View>
-                            <Text style={styles.locationName}>Warangal, TS</Text>
+                            <Text style={styles.locationName}>{locationName}</Text>
                             <Text style={styles.dateText}>
                                 {new Date().toLocaleDateString("en-IN", {
                                     weekday: "long",
