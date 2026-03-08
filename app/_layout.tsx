@@ -4,12 +4,12 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
+import VoiceNavButton from "../components/VoiceNavBtn";
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
 import { notificationService } from "../services/NotificationService";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
-import { ThemeProvider } from "../hooks/ThemeContext";
+import { ThemeProvider, useTheme } from "../hooks/ThemeContext";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { Colors } from "../constants/theme";
 
@@ -28,9 +28,17 @@ function InnerLayout() {
   const pathname = usePathname();
 
   const [open, setOpen] = useState(false);
-  const [fontScale, setFontScale] = useState(1);
-  const [highContrast, setHighContrast] = useState(false);
+  const { highContrast, setHighContrast, fontScale, setFontScale } = useTheme();
   const [language, setLang] = useState(i18n.language || "en");
+
+  const isAuthPage = (segments[0] as any) === "(auth)" ||
+    pathname === "/login" ||
+    pathname === "/verify" ||
+    pathname === "/signin" ||
+    pathname === "/verification" ||
+    pathname === "/set-pin" ||
+    pathname === "/profile-setup" ||
+    pathname === "/profile-location";
 
   // Authentication & Role Guard logic
   useEffect(() => {
@@ -38,13 +46,7 @@ function InnerLayout() {
       const token = await AsyncStorage.getItem("token");
       const role = await AsyncStorage.getItem("role");
 
-      const inAuthGroup = (segments[0] as any) === "(auth)" ||
-        pathname === "/login" ||
-        pathname === "/verify" ||
-        pathname === "/signin" ||
-        pathname === "/set-pin" ||
-        pathname === "/profile-setup" ||
-        pathname === "/profile-location";
+      const inAuthGroup = isAuthPage;
 
       if (!token && !inAuthGroup) {
         // Redirect to login if not authenticated
@@ -112,7 +114,7 @@ function InnerLayout() {
       {/* Floating overlay ABOVE everything */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
-        {/* <VoiceNavButton /> */} {/* Disabled - requires native module build */}
+        {!isAuthPage && <VoiceNavButton />}
       </View>
 
       {/* Sheet */}
