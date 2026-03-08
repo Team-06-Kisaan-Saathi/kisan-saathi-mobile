@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { getProfile, requestVerification } from "../services/userServices";
 import { getToken } from "../services/token";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 
 export default function ProfileScreen() {
@@ -105,7 +105,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )
       }} />
-      <Nav />
+      <NavAuto />
 
 
       {loading ? (

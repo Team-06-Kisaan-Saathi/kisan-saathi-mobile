@@ -35,7 +35,10 @@ export const adminService = {
             method: "POST"
         });
     },
-    getAnalytics: async () => {
-        return apiFetch<any>(ENDPOINTS.ADMIN.ANALYTICS);
+    getAnalytics: async (timeframe: string = "6m") => {
+        return apiFetch<any>(`${ENDPOINTS.ADMIN.ANALYTICS}?timeframe=${timeframe}`);
+    },
+    getMonthlyDetail: async () => {
+        return apiFetch<any>(`${ENDPOINTS.ADMIN.STATS.replace('/stats', '/monthly-detail')}`);
     }
 };

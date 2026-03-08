@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 import {
     FlatList,
@@ -80,7 +80,7 @@ export default function MarketInsightsScreen() {
                 headerShadowVisible: false,
                 headerShown: false,
             }} />
-            <Nav />
+            <NavAuto />
 
 
             {/* Crop Selector */}

@@ -44,6 +44,7 @@ export async function registerUser(payload: {
   if (payload.language) {
     await apiFetch<any>(ENDPOINTS.USER.PROFILE, {
       method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ language: payload.language }),
     });
   }
@@ -58,6 +59,7 @@ export async function registerUser(payload: {
 
     await apiFetch<any>(ENDPOINTS.USER.LOCATION, {
       method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),
     });
   }
@@ -71,6 +73,8 @@ export type UserProfile = {
   role?: string;
   language?: string;
   location?: any;
+  totalLandArea?: number;
+  totalLandAreaUnit?: string;
 };
 
 export async function getProfile() {
@@ -80,10 +84,30 @@ export async function getProfile() {
 }
 
 export async function updateProfile(
-  payload: { name?: string; language?: string; location?: any },
+  payload: {
+    name?: string;
+    language?: string;
+    location?: any;
+    totalLandArea?: number;
+    totalLandAreaUnit?: string;
+  },
 ) {
   return apiFetch<any>(ENDPOINTS.USER.PROFILE, {
     method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function verifyPin(pin: string) {
+  return apiFetch<any>(ENDPOINTS.USER.VERIFY_PIN, {
+    method: "POST",
+    body: JSON.stringify({ pin }),
+  });
+}
+
+export async function changePassword(payload: { currentPassword: string; newPassword: string }) {
+  return apiFetch<any>(ENDPOINTS.USER.CHANGE_PASSWORD, {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }

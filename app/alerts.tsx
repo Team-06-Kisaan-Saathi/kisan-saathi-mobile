@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 
 export default function Alerts() {
@@ -9,7 +9,7 @@ export default function Alerts() {
         <>
             <Stack.Screen options={{ headerShown: false }} />
             <View style={styles.container}>
-                <Nav />
+                <NavAuto />
 
                 <View style={styles.content}>
                     <Text style={styles.title}>Alerts</Text>

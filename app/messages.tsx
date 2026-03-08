@@ -12,7 +12,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 import { chatService } from "../services/chatService";
 
 
@@ -144,7 +144,7 @@ export default function MessagesList() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavAuto />
 
 
             {/* Header */}
@@ -157,6 +157,13 @@ export default function MessagesList() {
                             : "Your conversations"}
                     </Text>
                 </View>
+                <TouchableOpacity
+                    style={styles.newChatBtn}
+                    onPress={() => router.push("/new-chat")}
+                >
+                    <Ionicons name="create-outline" size={20} color="#FFF" />
+                    <Text style={styles.newChatText}>New</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Content */}
@@ -212,6 +219,9 @@ export default function MessagesList() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F1F5F9" },
     header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         paddingHorizontal: 20,
         paddingTop: 16,
         paddingBottom: 12,
@@ -230,6 +240,20 @@ const styles = StyleSheet.create({
         color: "#64748B",
         fontWeight: "500",
         marginTop: 2,
+    },
+    newChatBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#2563EB",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+    },
+    newChatText: {
+        color: "#FFF",
+        fontWeight: "800",
+        fontSize: 14,
     },
     list: { padding: 12, paddingBottom: 100 },
 

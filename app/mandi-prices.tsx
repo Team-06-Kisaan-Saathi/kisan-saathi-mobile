@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 import { FilterBar } from "../components/market/FilterBar";
 import { MarketTable } from "../components/market/MarketTable";
@@ -27,7 +27,7 @@ export default function MandiPricesScreen() {
 
       const response = await fetchMandiPrices({
         limit: 200,
-        sort: sort === "latest" ? "latest" : sort,
+        sort: "latest",
         bypassCache: isRefresh
       });
 
@@ -43,7 +43,7 @@ export default function MandiPricesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [sort]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -100,7 +100,7 @@ export default function MandiPricesScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ title: "Market Explorer", headerShown: false }} />
-      <Nav />
+      <NavAuto />
 
 
       <View style={styles.header}>

@@ -1,13 +1,20 @@
-// ─── Single source of truth for backend connection ───
 import { Platform } from "react-native";
 
 // ─── Single source of truth for backend connection ───
-// For local development, Android Emulator needs 10.0.2.2
-export const HOST = Platform.OS === "android" ? "10.12.252.166" : "localhost";
-export const PORT = "5001";
-export const API_BASE = `http://${HOST}:${PORT}/api`;
-export const UPLOADS_URL = `http://${HOST}:${PORT}/uploads/`;
-export const SOCKET_URL = `http://${HOST}:${PORT}`;
+// IMPORTANT: If testing on a physical phone, replace 'localhost' with your computer's IP
+// You can find your IP by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
+const LOCAL_IP = "10.12.252.166"; // <--- Updated to match your current network IP
+const LOCAL_HOST = `${LOCAL_IP}:5001`;
+const RENDER_HOST = "backend-e337.onrender.com";
+
+// ─── Smart URL Selector ───
+const IS_PRODUCTION = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+const HOST = IS_PRODUCTION ? RENDER_HOST : LOCAL_HOST;
+
+
+export const API_BASE = HOST.includes("render.com") ? `https://${HOST}/api` : `http://${HOST}/api`;
+export const UPLOADS_URL = HOST.includes("render.com") ? `https://${HOST}/uploads/` : `http://${HOST}/uploads/`;
+export const SOCKET_URL = HOST.includes("render.com") ? `https://${HOST}` : `http://${HOST}`;
 
 export const ENDPOINTS = {
     AUTH: {
@@ -20,6 +27,8 @@ export const ENDPOINTS = {
         PROFILE: `${API_BASE}/users/profile`,
         LOCATION: `${API_BASE}/users/location`,
         VERIFY: `${API_BASE}/users/verify`,
+        VERIFY_PIN: `${API_BASE}/users/verify-pin`,
+        CHANGE_PASSWORD: `${API_BASE}/users/change-password`,
     },
     INVENTORY: {
         MINE: `${API_BASE}/inventory/mine`,
@@ -57,5 +66,14 @@ export const ENDPOINTS = {
         MY_BIDS: `${API_BASE}/auctions/bids/mine`,
         DELETE: (id: string) => `${API_BASE}/auctions/${id}`,
         EXTEND: (id: string) => `${API_BASE}/auctions/${id}/extend`,
+    },
+    NOTIFICATIONS: {
+        BASE: `${API_BASE}/notifications`,
+        GET_ALL: `${API_BASE}/notifications`,
+        UNREAD_COUNT: `${API_BASE}/notifications/unread-count`,
+        READ_ALL: `${API_BASE}/notifications/read-all`,
+    },
+    ANALYTICS: {
+        FORECAST: `${API_BASE}/analytics/price-forecast`,
     },
 };

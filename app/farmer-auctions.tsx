@@ -15,6 +15,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import NavFarmer from "../components/navigation/NavFarmer";
+import NotificationBell from "../components/notifications/NotificationBell";
+import { chatService } from "../services/chatService";
 
 // Helper to format currency
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
@@ -94,7 +97,7 @@ export default function FarmerLiveAuctions() {
             let currentUser = profileRes?.user;
             if (currentUser) setUser(currentUser);
 
-            const res = await fetch(ENDPOINTS.AUCTIONS.GET_ALL, {
+            const res = await fetch(`${ENDPOINTS.AUCTIONS.GET_ALL}?status=ALL`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (!res.ok) throw new Error("Failed to fetch auctions");
@@ -137,7 +140,11 @@ export default function FarmerLiveAuctions() {
                     currentHighBid: maxBid,
                     totalBids: a.bids ? a.bids.length : 0,
                     status: a.status,
-                    recentBids: formattedBids
+                    recentBids: formattedBids,
+                    winnerName: a.winningBid?.buyerId?.name || null,
+                    winnerId: a.winningBid?.buyerId?._id || a.winningBid?.buyerId || null,
+                    winnerPhone: a.winningBid?.buyerId?.phone || null,
+                    winningAmount: a.winningBid?.amount || 0,
                 };
             });
 
@@ -152,15 +159,20 @@ export default function FarmerLiveAuctions() {
         }
     };
 
-    const handleEndAuction = async (id: string) => {
+    const handleEndAuction = async (auction: any) => {
+        const hasBids = auction.totalBids > 0;
+        const highestBid = auction.currentHighBid;
+        // Since auction.recentBids is sorted descending, [0] is the highest bid
+        const topBidderName = hasBids && auction.recentBids.length > 0 ? auction.recentBids[0].buyer : "No one";
+
         const doClose = async () => {
             try {
                 const token = await AsyncStorage.getItem("token");
                 console.log("Token available:", !!token);
-                console.log("Closing auction ID:", id);
-                console.log("URL:", ENDPOINTS.AUCTIONS.CLOSE(id));
+                console.log("Closing auction ID:", auction.id);
+                console.log("URL:", ENDPOINTS.AUCTIONS.CLOSE(auction.id));
 
-                const res = await fetch(ENDPOINTS.AUCTIONS.CLOSE(id), {
+                const res = await fetch(ENDPOINTS.AUCTIONS.CLOSE(auction.id), {
                     method: 'POST',
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -168,7 +180,8 @@ export default function FarmerLiveAuctions() {
                 console.log("End Auction Status:", res.status);
 
                 if (res.ok) {
-                    setAuctions((prev: any[]) => prev.map(a => a.id === id ? { ...a, status: "CLOSED" } : a));
+                    // Reload auctions to get populated winner data
+                    await loadAuctions();
                     if (Platform.OS === 'web') {
                         window.alert("Auction successfully closed!");
                     } else {
@@ -194,17 +207,21 @@ export default function FarmerLiveAuctions() {
             }
         };
 
+        const confirmTitle = "End Auction?";
+        const confirmMessage = hasBids
+            ? `Highest bid: ${formatCurr(highestBid)} by ${topBidderName}\n\nIf you continue, this buyer will win the auction.`
+            : "No bids have been placed. If you continue, the auction will be closed with no winner.";
+
         if (Platform.OS === 'web') {
-            // Alert.alert callbacks don't fire reliably on web
-            const confirmed = window.confirm("Are you sure you want to end this auction early? The highest bidder will be selected as the winner.");
+            const confirmed = window.confirm(`${confirmTitle}\n\n${confirmMessage}`);
             if (confirmed) doClose();
         } else {
             Alert.alert(
-                "End Auction",
-                "Are you sure you want to end this auction early? The highest bidder will be selected as the winner.",
+                confirmTitle,
+                confirmMessage,
                 [
-                    { text: "No", style: "cancel" },
-                    { text: "Yes, End Now", style: "destructive", onPress: doClose }
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Confirm Winner", style: "destructive", onPress: doClose }
                 ]
             );
         }
@@ -252,32 +269,30 @@ export default function FarmerLiveAuctions() {
     return (
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
+            <NavFarmer />
 
             {/* Header Area */}
             <View style={styles.topHeader}>
-                <TouchableOpacity style={{ marginRight: 10 }} onPress={() => router.replace("/farmer-dashboard")}>
-                    <Ionicons name="arrow-back" size={24} color="#111827" />
-                </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Live Auction Monitor</Text>
-                    <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
-                </View>
-                <View style={styles.headerControls}>
-                    <View style={styles.filterGroup}>
-                        {["All", "Active", "Ended"].map((f) => (
-                            <TouchableOpacity
-                                key={f}
-                                style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
-                                onPress={() => setFilter(f as any)}
-                            >
-                                <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                    <TouchableOpacity style={styles.notificationBtn}>
-                        <Ionicons name="notifications-outline" size={20} color="#0F172A" />
-                        <View style={styles.badge}><Text style={styles.badgeText}>2</Text></View>
+                <View style={styles.headerTopRow}>
+                    <TouchableOpacity style={{ marginRight: 10 }} onPress={() => router.replace("/farmer-dashboard")}>
+                        <Ionicons name="arrow-back" size={24} color="#111827" />
                     </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle}>Live Auction Monitor</Text>
+                        <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
+                    </View>
+                    <NotificationBell color="#0F172A" />
+                </View>
+                <View style={styles.filterRow}>
+                    {["All", "Active", "Ended"].map((f) => (
+                        <TouchableOpacity
+                            key={f}
+                            style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
+                            onPress={() => setFilter(f as any)}
+                        >
+                            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 
@@ -356,13 +371,76 @@ export default function FarmerLiveAuctions() {
                             {isExpanded && (
                                 <View style={[styles.expandedSection, { backgroundColor: cardBgColor }]}>
 
-                                    <View style={styles.sectionHeaderRow}>
-                                        <Feather name="trending-up" size={16} color="#6B7280" />
-                                        <Text style={styles.sectionHeading}>BID PROGRESSION</Text>
-                                    </View>
-                                    <View style={styles.progressionBox}>
-                                        <Text style={styles.emptyText}>Waiting for first bid...</Text>
-                                    </View>
+                                    {/* Winner Card — shown first for CLOSED auctions */}
+                                    {isEnded && auction.winnerName ? (
+                                        <View style={styles.winnerCard}>
+                                            <View style={styles.winnerHeader}>
+                                                <Ionicons name="trophy" size={18} color="#D97706" />
+                                                <Text style={styles.winnerHeaderText}>WINNER DETAILS</Text>
+                                            </View>
+                                            <View style={styles.winnerInfo}>
+                                                <View style={styles.winnerRow}>
+                                                    <Ionicons name="person" size={15} color="#374151" />
+                                                    <Text style={styles.winnerLabel}>Name:</Text>
+                                                    <Text style={styles.winnerValue}>{auction.winnerName}</Text>
+                                                </View>
+                                                <View style={styles.winnerRow}>
+                                                    <Ionicons name="cash" size={15} color="#374151" />
+                                                    <Text style={styles.winnerLabel}>Bid:</Text>
+                                                    <Text style={[styles.winnerValue, { color: '#059669', fontWeight: '900' }]}>{formatCurr(auction.winningAmount)}</Text>
+                                                </View>
+                                                {auction.winnerPhone && (
+                                                    <View style={styles.winnerRow}>
+                                                        <Ionicons name="call" size={15} color="#374151" />
+                                                        <Text style={styles.winnerLabel}>Phone:</Text>
+                                                        <Text style={styles.winnerValue}>{auction.winnerPhone}</Text>
+                                                    </View>
+                                                )}
+                                                <TouchableOpacity
+                                                    style={styles.msgBuyerBtn}
+                                                    onPress={async () => {
+                                                        try {
+                                                            const res = await chatService.getOrCreateChat(auction.winnerId, auction.id);
+                                                            if (res?.success) {
+                                                                router.push(`/chat/${res.chat._id}?dealId=${auction.id}`);
+                                                            } else {
+                                                                Alert.alert("Error", "Could not start chat.");
+                                                            }
+                                                        } catch (err) {
+                                                            console.log("Chat init error", err);
+                                                            Alert.alert("Error", "Could not start chat.");
+                                                        }
+                                                    }}>
+                                                    <Ionicons name="chatbubble-ellipses" size={14} color="#FFF" />
+                                                    <Text style={styles.msgBuyerBtnText}>Message Buyer</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    ) : isEnded ? (
+                                        <View style={styles.noBidsEndedCard}>
+                                            <Ionicons name="information-circle-outline" size={18} color="#6B7280" />
+                                            <Text style={styles.noBidsEndedText}>Auction ended with no bids</Text>
+                                        </View>
+                                    ) : null}
+
+                                    {/* Bid Progression — for OPEN auctions */}
+                                    {!isEnded && (
+                                        <>
+                                            <View style={styles.sectionHeaderRow}>
+                                                <Feather name="trending-up" size={16} color="#6B7280" />
+                                                <Text style={styles.sectionHeading}>BID PROGRESSION</Text>
+                                            </View>
+                                            <View style={styles.progressionBox}>
+                                                {hasBids ? (
+                                                    <Text style={styles.bidProgressText}>
+                                                        Highest: {formatCurr(auction.currentHighBid)} · {auction.totalBids} bids placed
+                                                    </Text>
+                                                ) : (
+                                                    <Text style={styles.emptyText}>Waiting for first bid...</Text>
+                                                )}
+                                            </View>
+                                        </>
+                                    )}
 
                                     <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
                                         <Feather name="clock" size={16} color="#6B7280" />
@@ -384,13 +462,15 @@ export default function FarmerLiveAuctions() {
                                         <Text style={styles.emptyHistory}>No bids have been placed yet.</Text>
                                     )}
 
-                                    {/* Action Buttons */}
-                                    <View style={styles.actionsRow}>
-                                        <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction.id)}>
-                                            <Feather name="x" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                                            <Text style={styles.cancelBtnText}>End Auction</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    {/* End Auction — only for OPEN */}
+                                    {!isEnded && (
+                                        <View style={styles.actionsRow}>
+                                            <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction)}>
+                                                <Feather name="x" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                                                <Text style={styles.cancelBtnText}>End Auction</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
                                 </View>
                             )}
 
@@ -408,28 +488,23 @@ const styles = StyleSheet.create({
     scrollContent: { padding: 16, paddingBottom: 40 },
 
     topHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
         backgroundColor: "#FFF",
         paddingTop: Platform.OS === "ios" ? 50 : 20,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
+        paddingBottom: 12,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: "#E5E7EB",
-        flexWrap: "wrap",
-        gap: 16
     },
-    headerTitle: { fontSize: 22, fontWeight: "800", color: "#111827" },
-    headerSubtitle: { fontSize: 13, color: "#6B7280", marginTop: 2, fontWeight: "500" },
-    headerControls: {
+    headerTopRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 16
     },
-    filterGroup: {
+    headerTitle: { fontSize: 20, fontWeight: "800", color: "#111827" },
+    headerSubtitle: { fontSize: 13, color: "#6B7280", marginTop: 2, fontWeight: "500" },
+    filterRow: {
         flexDirection: "row",
-        gap: 8
+        gap: 8,
+        marginTop: 12,
     },
     filterBtn: {
         paddingHorizontal: 14,
@@ -569,4 +644,50 @@ const styles = StyleSheet.create({
         borderRadius: 6
     },
     cancelBtnText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+
+    winnerCard: {
+        backgroundColor: "#FFF",
+        borderRadius: 10,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: "#FDE68A",
+        overflow: "hidden",
+    },
+    winnerHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "#FEF3C7",
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+    },
+    winnerHeaderText: { fontSize: 11, fontWeight: "800", color: "#92400E", letterSpacing: 0.5 },
+    winnerInfo: { padding: 14, gap: 8 },
+    bidProgressText: { fontSize: 14, fontWeight: "700", color: "#111827" },
+    winnerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    winnerLabel: { fontSize: 13, fontWeight: "600", color: "#6B7280", width: 52 },
+    winnerValue: { fontSize: 15, fontWeight: "700", color: "#111827", flex: 1 },
+    msgBuyerBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#D97706",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginTop: 6,
+        alignSelf: "flex-start",
+        gap: 6
+    },
+    msgBuyerBtnText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
+
+    noBidsEndedCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        backgroundColor: "#F3F4F6",
+        borderRadius: 8,
+        padding: 14,
+        marginTop: 12,
+    },
+    noBidsEndedText: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
 });

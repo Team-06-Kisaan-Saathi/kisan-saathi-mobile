@@ -8,136 +8,265 @@ import {
     Text,
     TouchableOpacity,
     View,
+    Dimensions,
+    RefreshControl
 } from "react-native";
 import { Svg, Polyline, Line, Circle } from "react-native-svg";
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
+import { apiFetch } from "../services/http";
+import { ENDPOINTS } from "../services/api";
+import { getProfile } from "../services/userServices";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+type PricePoint = {
+    date: string;
+    price: number;
+};
+
+type ForecastData = {
+    historical: PricePoint[];
+    predicted: PricePoint[];
+    recommendation: string;
+};
 
 export default function AIInsightsScreen() {
     const [loading, setLoading] = useState(true);
-    const [trends, setTrends] = useState<MandiPriceDoc[]>([]);
+    const [data, setData] = useState<ForecastData | null>(null);
     const [crop, setCrop] = useState("Wheat");
+    const [mandi, setMandi] = useState("Azadpur Mandi");
+
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
-        (async () => {
+        const initialize = async () => {
             try {
-                const res = await fetchMandiPrices({ crop, limit: 7 });
-                if (res.data) {
-                    setTrends(res.data.reverse()); // Oldest to newest
+                const token = await AsyncStorage.getItem("token");
+                const profileRes = await getProfile();
+
+                if (profileRes?.success) {
+                    const user = profileRes.user;
+                    if (user.location) setMandi(user.location);
+
+                    // Try to find recent crop from auctions
+                    const auctionsRes = await fetch(`${ENDPOINTS.AUCTIONS.GET_ALL}?status=ALL`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+                    if (auctionsRes.ok) {
+                        const all = await auctionsRes.json();
+                        const mine = all.filter((a: any) => String(a.farmerId?._id || a.farmerId) === String(user._id));
+                        if (mine.length > 0) {
+                            setCrop(mine[0].crop);
+                        }
+                    }
                 }
             } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
+                console.log("AI Insights initialization error:", e);
             }
-        })();
-    }, [crop]);
+        };
+        initialize();
+    }, []);
 
-    // Sparkline data calculation
-    const getPoints = () => {
-        if (trends.length < 2) return "";
-        const max = Math.max(...trends.map(t => t.pricePerQuintal));
-        const min = Math.min(...trends.map(t => t.pricePerQuintal));
+    const loadForecast = async (isRefresh = false) => {
+        try {
+            if (!isRefresh) setLoading(true);
+            const query = `?crop=${encodeURIComponent(crop)}&mandi=${encodeURIComponent(mandi)}&days=7`;
+            const res = await apiFetch<any>(ENDPOINTS.ANALYTICS.FORECAST + query);
+            if (res.success) {
+                setData(res.data);
+            }
+        } catch (e) {
+            console.error("Forecast Error:", e);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        if (crop && mandi) {
+            loadForecast();
+        }
+    }, [crop, mandi]);
+
+    const onRefresh = React.useCallback(() => {
+        setRefreshing(true);
+        loadForecast(true);
+    }, [crop, mandi]);
+
+    // Graph points calculation
+    const getHistoricalPoints = () => {
+        if (!data || data.historical.length < 2) return "";
+        const allPrices = [...data.historical.map(p => p.price), ...data.predicted.map(p => p.price)];
+        const max = Math.max(...allPrices);
+        const min = Math.min(...allPrices);
         const range = max - min || 1;
 
-        return trends.map((t, i) => {
-            const x = (i / (trends.length - 1)) * 200;
-            const y = 80 - ((t.pricePerQuintal - min) / range) * 60;
+        const chartWidth = SCREEN_WIDTH - 80;
+        const sliceWidth = chartWidth / (data.historical.length + data.predicted.length - 1);
+
+        return data.historical.map((p, i) => {
+            const x = i * sliceWidth;
+            const y = 80 - ((p.price - min) / range) * 60;
             return `${x},${y}`;
         }).join(" ");
     };
 
+    const getPredictedPoints = () => {
+        if (!data || data.predicted.length < 1) return "";
+        const allPrices = [...data.historical.map(p => p.price), ...data.predicted.map(p => p.price)];
+        const max = Math.max(...allPrices);
+        const min = Math.min(...allPrices);
+        const range = max - min || 1;
+
+        const chartWidth = SCREEN_WIDTH - 80;
+        const totalPoints = data.historical.length + data.predicted.length;
+        const sliceWidth = chartWidth / (totalPoints - 1);
+
+        // Start from the last historical point
+        const historical = data.historical;
+        const lastH = historical[historical.length - 1];
+        const startX = (historical.length - 1) * sliceWidth;
+        const startY = 80 - ((lastH.price - min) / range) * 60;
+
+        let points = `${startX},${startY} `;
+
+        points += data.predicted.map((p, i) => {
+            const x = (historical.length + i) * sliceWidth;
+            const y = 80 - ((p.price - min) / range) * 60;
+            return `${x},${y}`;
+        }).join(" ");
+
+        return points;
+    };
+
+    const peakInfo = React.useMemo(() => {
+        if (!data) return null;
+        const maxPrice = Math.max(...data.predicted.map(p => p.price));
+        const day = data.predicted.find(p => p.price === maxPrice);
+
+        // Simple date format: "15 Mar"
+        let dateStr = day?.date || "";
+        try {
+            const dateObj = new Date(dateStr);
+            dateStr = dateObj.toLocaleDateString("en-IN", { day: 'numeric', month: 'short' });
+        } catch (e) { }
+
+        return { price: maxPrice, date: dateStr };
+    }, [data]);
+
     return (
         <View style={styles.root}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavFarmer />
 
-
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
                 <View style={styles.header}>
-                    <Text style={styles.title}>AI Market Advisor</Text>
-                    <Text style={styles.subtitle}>Predictive modeling for your {crop} harvest</Text>
+                    <Text style={styles.title} numberOfLines={1}>Market Price Guide</Text>
+                    <Text style={styles.subtitle} numberOfLines={2}>See when to sell your {crop} in {mandi} for more profit</Text>
                 </View>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#3B82F6" style={{ marginTop: 40 }} />
+                ) : !data ? (
+                    <Text style={styles.errorText}>Could not load prices. Try again later.</Text>
                 ) : (
-                    <>
+                    <View>
                         <View style={styles.card}>
                             <View style={styles.cardHeader}>
-                                <Text style={styles.cardTitle}>Price Trend (Last 7 Days)</Text>
-                                <View style={styles.trendBadge}>
-                                    <Ionicons name="trending-up" size={12} color="#10B981" />
-                                    <Text style={styles.trendText}>+3.4%</Text>
+                                <Text style={styles.cardTitle} numberOfLines={1}>Price Trend</Text>
+                                <View style={styles.legend}>
+                                    <View style={[styles.dot, { backgroundColor: "#3B82F6" }]} />
+                                    <Text style={styles.legendText}>Past</Text>
+                                    <View style={[styles.dot, { backgroundColor: "#10B981", marginLeft: 10 }]} />
+                                    <Text style={styles.legendText}>Future</Text>
                                 </View>
                             </View>
 
                             <View style={styles.chartContainer}>
                                 <Svg height="100" width="100%">
                                     <Polyline
-                                        points={getPoints()}
+                                        points={getHistoricalPoints()}
                                         fill="none"
                                         stroke="#3B82F6"
                                         strokeWidth="3"
                                     />
-                                    {trends.map((t, i) => {
-                                        const max = Math.max(...trends.map(d => d.pricePerQuintal));
-                                        const min = Math.min(...trends.map(d => d.pricePerQuintal));
-                                        const range = max - min || 1;
-                                        const x = (i / (trends.length - 1)) * 260; // Adjusted for width
-                                        const y = 80 - ((t.pricePerQuintal - min) / range) * 60;
-                                        return <Circle key={i} cx={x} cy={y} r="4" fill="#3B82F6" />;
-                                    })}
+                                    <Polyline
+                                        points={getPredictedPoints()}
+                                        fill="none"
+                                        stroke="#10B981"
+                                        strokeWidth="3"
+                                        strokeDasharray="5,5"
+                                    />
+                                    {(() => {
+                                        if (!data) return null;
+                                        const chartWidth = SCREEN_WIDTH - 80;
+                                        const totalPoints = data.historical.length + data.predicted.length;
+                                        const sliceWidth = chartWidth / (totalPoints - 1);
+                                        const x = (data.historical.length - 1) * sliceWidth;
+                                        return (
+                                            <Line x1={x} y1="0" x2={x} y2="100" stroke="#CBD5E1" strokeWidth="1" strokeDasharray="2,2" />
+                                        );
+                                    })()}
                                 </Svg>
                                 <View style={styles.chartLabels}>
-                                    <Text style={styles.chartLabelText}>7 days ago</Text>
-                                    <Text style={styles.chartLabelText}>Today</Text>
+                                    <Text style={styles.chartLabelText}>Last 30 Days</Text>
+                                    <View style={{ alignItems: 'center' }}>
+                                        <Text style={[styles.chartLabelText, { fontWeight: 'bold', color: '#64748B' }]}>Today</Text>
+                                    </View>
+                                    <Text style={styles.chartLabelText}>Next 7 Days</Text>
                                 </View>
                             </View>
                         </View>
 
                         <View style={styles.forecastGrid}>
                             <View style={[styles.forecastCard, { backgroundColor: "#DBEAFE" }]}>
-                                <Text style={styles.forecastLabel}>3-Day Forecast</Text>
-                                <Text style={styles.forecastValue}>₹2,450 - 2,510</Text>
-                                <Text style={styles.forecastSub}>Upward trend likely</Text>
+                                <Text style={styles.forecastLabel}>Best Price</Text>
+                                <Text style={styles.forecastValue}>₹{peakInfo?.price?.toFixed(0)}</Text>
+                                <Text style={styles.forecastSub}>Likely on {peakInfo?.date}</Text>
                             </View>
                             <View style={[styles.forecastCard, { backgroundColor: "#DCFCE7" }]}>
-                                <Text style={styles.forecastLabel}>Best Time to Sell</Text>
-                                <Text style={styles.forecastValue}>This Thursday</Text>
-                                <Text style={styles.forecastSub}>Peak mandi activity</Text>
+                                <Text style={styles.forecastLabel}>Market Trend</Text>
+                                <Text style={styles.forecastValue}>
+                                    {data.predicted[data.predicted.length - 1].price > data.historical[data.historical.length - 1].price ? "Going Up" : "Going Down"}
+                                </Text>
+                                <Text style={styles.forecastSub}>Next 7 days</Text>
                             </View>
                         </View>
 
                         <View style={styles.adviceCard}>
                             <View style={styles.adviceHeader}>
                                 <Ionicons name="bulb" size={24} color="#F59E0B" />
-                                <Text style={styles.adviceTitle}>Smart Advice</Text>
+                                <Text style={styles.adviceTitle}>Advice for You</Text>
                             </View>
                             <Text style={styles.adviceText}>
-                                Based on weather patterns (Expected rain on Sat) and current Azadpur Mandi stocks,
-                                we recommend harvesting early. Prices in nearby Sonipat are ₹40 higher than your current location.
+                                {data.recommendation}
                             </Text>
                             <TouchableOpacity style={styles.actionBtn}>
-                                <Text style={styles.actionBtnText}>View Best Markets</Text>
+                                <Text style={styles.actionBtnText}>See Local Markets</Text>
                                 <Ionicons name="arrow-forward" size={16} color="#fff" />
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.weatherStrip}>
-                            <Ionicons name="rainy" size={24} color="#3B82F6" />
+                            <Ionicons name="cloudy-night" size={24} color="#3B82F6" />
                             <View style={{ flex: 1, marginLeft: 12 }}>
-                                <Text style={styles.weatherTitle}>Weather Alert: High Humidity</Text>
-                                <Text style={styles.weatherDesc}>Risk of fungal growth. Ensure proper storage ventilation.</Text>
+                                <Text style={styles.weatherTitle}>Tip from Kisaan Saathi</Text>
+                                <Text style={styles.weatherDesc}>These prices are estimated based on market patterns. Use them as a guide for your sales.</Text>
                             </View>
                         </View>
-                    </>
+                    </View>
                 )}
             </ScrollView>
         </View>
     );
 }
+
+
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: "#F8FAFC" },
@@ -149,10 +278,11 @@ const styles = StyleSheet.create({
     card: { backgroundColor: "#fff", borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: "#E2E8F0" },
     cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
     cardTitle: { fontSize: 16, fontWeight: "bold", color: "#334155" },
-    trendBadge: { flexDirection: "row", alignItems: "center", backgroundColor: "#DCFCE7", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-    trendText: { fontSize: 12, fontWeight: "bold", color: "#166534", marginLeft: 4 },
+    legend: { flexDirection: 'row', alignItems: 'center' },
+    dot: { width: 8, height: 8, borderRadius: 4 },
+    legendText: { fontSize: 10, color: '#94A3B8', marginLeft: 4 },
 
-    chartContainer: { height: 120, justifyContent: "center", paddingHorizontal: 10 },
+    chartContainer: { height: 120, justifyContent: "center", paddingHorizontal: 10, marginTop: 10 },
     chartLabels: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
     chartLabelText: { fontSize: 10, color: "#94A3B8" },
 
@@ -172,4 +302,5 @@ const styles = StyleSheet.create({
     weatherStrip: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", padding: 16, borderRadius: 16, borderWidth: 1, borderColor: "#E2E8F0" },
     weatherTitle: { fontSize: 14, fontWeight: "bold", color: "#0F172A" },
     weatherDesc: { fontSize: 12, color: "#64748B", marginTop: 2 },
+    errorText: { textAlign: 'center', marginTop: 40, color: '#DC2626', fontWeight: 'bold' }
 });

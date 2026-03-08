@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Stack } from "expo-router";
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 
 export default function MyListings() {
@@ -9,7 +9,7 @@ export default function MyListings() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <Nav />
+        <NavFarmer />
 
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>My Listings</Text>
