@@ -70,12 +70,17 @@ export default function AdminDashboardHome() {
                     </Card>
                 )}
 
-                <Text style={styles.sectionTitle}>Weekly Revenue Overview</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Weekly Revenue Overview</Text>
+                    <TouchableOpacity onPress={() => router.push("/admin/monthly-stats")}>
+                        <Text style={styles.viewAll}>See for month</Text>
+                    </TouchableOpacity>
+                </View>
                 <Card style={styles.chartCard}>
                     <BarChart
                         data={{
                             labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-                            datasets: [{ data: [45, 28, 80, 55, 99, 43, 70] }],
+                            datasets: [{ data: stats?.weeklyRevenue || [0, 0, 0, 0, 0, 0, 0] }],
                         }}
                         width={width - 72}
                         height={220}
@@ -138,10 +143,10 @@ const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: COLORS.background },
     scroll: { padding: 20 },
     grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 8 },
-    sectionTitle: { fontSize: 18, fontWeight: "800", color: COLORS.text, marginBottom: 12, marginTop: 10 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 10 },
-    viewAll: { color: COLORS.primary, fontWeight: '700', fontSize: 13 },
-    chartCard: { padding: 16, alignItems: "center" },
+    sectionTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 16 },
+    viewAll: { fontSize: 13, color: COLORS.primary, fontWeight: '700' },
+    chartCard: { padding: 16, alignItems: 'center', marginBottom: 20 },
     chart: { marginVertical: 8, borderRadius: 16 },
     approvalCard: { backgroundColor: COLORS.primary, marginBottom: 20 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

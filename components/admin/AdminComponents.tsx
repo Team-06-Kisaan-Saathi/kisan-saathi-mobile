@@ -1,3 +1,4 @@
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ViewStyle, TextStyle, Modal, Pressable } from "react-native";
 import * as Lucide from "lucide-react-native";
 import { useRouter } from "expo-router";
@@ -29,6 +30,17 @@ export const Card = ({ children, style }: CardProps) => (
 
 export const AdminSidebar = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
     const router = useRouter();
+    const [user, setUser] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        if (visible) {
+            const { getProfile } = require("../../services/userServices");
+            getProfile().then((res: any) => {
+                if (res.success) setUser(res.user);
+            }).catch(() => { });
+        }
+    }, [visible]);
+
     const menuItems = [
         { label: "Dashboard", icon: "LayoutDashboard", route: "/admin" },
         { label: "Farmers", icon: "Users", route: "/admin/farmers" },
@@ -36,6 +48,7 @@ export const AdminSidebar = ({ visible, onClose }: { visible: boolean; onClose: 
         { label: "Products", icon: "Package", route: "/admin/products" },
         { label: "Orders", icon: "ShoppingCart", route: "/admin/orders" },
         { label: "Analytics", icon: "PieChart", route: "/admin/analytics" },
+        { label: "Profile", icon: "User", route: "/admin/profile" },
     ];
 
     const navigate = (route: any) => {
@@ -50,11 +63,11 @@ export const AdminSidebar = ({ visible, onClose }: { visible: boolean; onClose: 
                 <View style={styles.sidebar}>
                     <View style={s.sidebarHeader}>
                         <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>A</Text>
+                            <Text style={styles.avatarText}>{user?.name?.[0] || 'A'}</Text>
                         </View>
                         <View>
-                            <Text style={s.adminName}>System Admin</Text>
-                            <Text style={s.adminRole}>Master Control</Text>
+                            <Text style={s.adminName}>{user?.name || "System Admin"}</Text>
+                            <Text style={s.adminRole}>{user?.role?.toUpperCase() || "MASTER CONTROL"}</Text>
                         </View>
                     </View>
 
@@ -110,30 +123,33 @@ export const Badge = ({ text, type = "info" }: { text: string; type?: "success" 
     );
 };
 
-export const Header = ({ title, subtitle, showBack = false, onBack, onMenu }: { title: string; subtitle?: string; showBack?: boolean; onBack?: () => void; onMenu?: () => void }) => (
-    <View style={styles.header}>
-        <View style={styles.headerRow}>
-            {onMenu ? (
-                <TouchableOpacity onPress={onMenu} style={styles.backBtn}>
-                    <Lucide.Menu size={24} color={COLORS.text} />
-                </TouchableOpacity>
-            ) : showBack ? (
-                <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-                    <Lucide.ChevronLeft size={24} color={COLORS.text} />
-                </TouchableOpacity>
-            ) : null}
-            <View>
-                <Text style={styles.headerTitle}>{title}</Text>
-                {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
+export const Header = ({ title, subtitle, showBack = false, onBack, onMenu }: { title: string; subtitle?: string; showBack?: boolean; onBack?: () => void; onMenu?: () => void }) => {
+    const router = useRouter();
+    return (
+        <View style={styles.header}>
+            <View style={styles.headerRow}>
+                {onMenu ? (
+                    <TouchableOpacity onPress={onMenu} style={styles.backBtn}>
+                        <Lucide.Menu size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                ) : showBack ? (
+                    <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+                        <Lucide.ChevronLeft size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                ) : null}
+                <View>
+                    <Text style={styles.headerTitle}>{title}</Text>
+                    {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
+                </View>
             </View>
+            <TouchableOpacity style={styles.profileBtn} onPress={() => { router.push("/admin/profile") }}>
+                <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>A</Text>
+                </View>
+            </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.profileBtn}>
-            <View style={styles.avatar}>
-                <Text style={styles.avatarText}>A</Text>
-            </View>
-        </TouchableOpacity>
-    </View>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     card: { backgroundColor: COLORS.card, borderRadius: 16, padding: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: COLORS.border },

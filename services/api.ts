@@ -1,9 +1,8 @@
-// ─── Single source of truth for backend connection ───
 import { Platform } from "react-native";
 
 // ─── Single source of truth for backend connection ───
-// ─── Production Backend Connection (Render) ───
-export const HOST = "backend-e337.onrender.com";
+const HOST = "backend-e337.onrender.com";
+
 export const API_BASE = `https://${HOST}/api`;
 export const UPLOADS_URL = `https://${HOST}/uploads/`;
 export const SOCKET_URL = `https://${HOST}`;

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
 import { COLORS, Header, Card, StatCard, AdminSidebar } from "../../components/admin/AdminComponents";
 import { LineChart, PieChart } from "react-native-chart-kit";
 import * as Lucide from "lucide-react-native";
 import { adminService } from "../../services/adminService";
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -12,15 +13,16 @@ export default function AnalyticsScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [data, setData] = useState<any>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        loadAnalytics();
+        loadAnalytics("6m");
     }, []);
 
-    const loadAnalytics = async () => {
+    const loadAnalytics = async (tf: string = "6m") => {
         try {
             if (!refreshing) setLoading(true);
-            const res = await adminService.getAnalytics();
+            const res = await adminService.getAnalytics(tf);
             if (res.success) {
                 setData(res.analytics);
             }
@@ -47,14 +49,20 @@ export default function AnalyticsScreen() {
 
             <ScrollView
                 contentContainerStyle={styles.scroll}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadAnalytics(); }} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadAnalytics("6m"); }} />}
             >
                 <View style={styles.grid}>
                     <StatCard label="Monthly Revenue" value={`₹${(data?.revenueGrowth?.data?.reduce((a: any, b: any) => a + b, 0) || 0).toFixed(1)}k`} icon="TrendingUp" color={COLORS.primary} trend="+5.4%" trendUp={true} />
                     <StatCard label="Categories" value={data?.categoryDistribution?.length || 0} icon="Layers" color={COLORS.info} />
                 </View>
 
-                <Text style={styles.sectionTitle}>Revenue Trend (in ₹'000)</Text>
+                <View style={s.chartHeader}>
+                    <Text style={styles.sectionTitle}>Revenue Trend (in ₹'000)</Text>
+                    <TouchableOpacity onPress={() => router.push("/admin/yearly-stats")}>
+                        <Text style={s.viewFullLink}>See for year</Text>
+                    </TouchableOpacity>
+                </View>
+
                 <Card style={styles.chartCard}>
                     {data?.revenueGrowth && (
                         <LineChart
@@ -127,4 +135,14 @@ const styles = StyleSheet.create({
     itemName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
     itemVolume: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
     itemSales: { fontSize: 15, fontWeight: '800', color: COLORS.primary },
+});
+
+const s = StyleSheet.create({
+    chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    viewFullLink: { fontSize: 13, color: COLORS.primary, fontWeight: '700' },
+    toggleContainer: { flexDirection: 'row', backgroundColor: COLORS.border, borderRadius: 20, padding: 2, height: 32 },
+    toggleBtn: { paddingHorizontal: 16, justifyContent: 'center', borderRadius: 18 },
+    activeToggle: { backgroundColor: COLORS.primary },
+    toggleText: { fontSize: 11, fontWeight: '700', color: COLORS.textLight },
+    activeToggleText: { color: '#fff' },
 });
