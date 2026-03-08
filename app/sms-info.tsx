@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import React from "react";
-import Nav from "../components/navigation/Nav";
+import NavAuto from "../components/navigation/NavAuto";
 
 import {
     ScrollView,
@@ -20,7 +20,7 @@ export default function SmsInfoScreen() {
     return (
         <ScrollView style={styles.root}>
             <Stack.Screen options={{ title: "SMS & IVR Services", headerShown: false }} />
-            <Nav />
+            <NavAuto />
 
 
             <View style={styles.hero}>

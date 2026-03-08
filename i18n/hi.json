@@ -135,5 +135,27 @@
       "te": "तेलुगु",
       "ta": "तमिल"
     }
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "profile": "प्रोफ़ाइल",
+    "edit_profile": "प्रोफ़ाइल संपादित करें",
+    "security": "सुरक्षा",
+    "change_pin": "पासवर्ड बदलें",
+    "preferences": "पसंद",
+    "language": "भाषा",
+    "farm_details": "खेत का विवरण",
+    "farm_location": "खेत का स्थान",
+    "total_land_area": "कुल भूमि क्षेत्र",
+    "acres": "एकड़",
+    "hectares": "हेक्टेयर",
+    "support": "सहायता",
+    "help_support": "सहायता और समर्थन",
+    "logout": "लॉगआउट",
+    "save": "सहेजें",
+    "version": "संस्करण",
+    "verifying": "सत्यापित किया जा रहा है...",
+    "success": "सफलता",
+    "error": "त्रुटि"
   }
 }

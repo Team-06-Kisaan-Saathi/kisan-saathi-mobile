@@ -1,4 +1,4 @@
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -449,7 +449,7 @@ export default function MarketplaceScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Nav />
+      <NavFarmer />
 
       <View style={styles.root}>
         <Header

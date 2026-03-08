@@ -1,11 +1,11 @@
-// ─── Single source of truth for backend connection ───
 import { Platform } from "react-native";
 
-// ─── Local Backend Connection ───
-export const HOST = "10.12.252.166:5001";
-export const API_BASE = `http://${HOST}/api`;
-export const UPLOADS_URL = `http://${HOST}/uploads/`;
-export const SOCKET_URL = `http://${HOST}`;
+// ─── Single source of truth for backend connection ───
+const HOST = "backend-e337.onrender.com";
+
+export const API_BASE = `https://${HOST}/api`;
+export const UPLOADS_URL = `https://${HOST}/uploads/`;
+export const SOCKET_URL = `https://${HOST}`;
 
 export const ENDPOINTS = {
     AUTH: {
@@ -18,6 +18,8 @@ export const ENDPOINTS = {
         PROFILE: `${API_BASE}/users/profile`,
         LOCATION: `${API_BASE}/users/location`,
         VERIFY: `${API_BASE}/users/verify`,
+        VERIFY_PIN: `${API_BASE}/users/verify-pin`,
+        CHANGE_PASSWORD: `${API_BASE}/users/change-password`,
     },
     INVENTORY: {
         MINE: `${API_BASE}/inventory/mine`,

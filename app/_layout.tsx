@@ -8,9 +8,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
+import { ThemeProvider } from "../hooks/ThemeContext";
+import { useColorScheme } from "../hooks/use-color-scheme";
+import { Colors } from "../constants/theme";
 
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <InnerLayout />
+    </ThemeProvider>
+  );
+}
+
+function InnerLayout() {
   const { i18n } = useTranslation();
   const router = useRouter();
   const segments = useSegments();
@@ -43,12 +54,12 @@ export default function RootLayout() {
         }
 
         if (role === "buyer") {
-          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes"];
+          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes", "/farmer-auctions", "/create-auction"];
           const adminOnly = ["/admin-dashboard"];
           if ([...farmerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
         }
         if (role === "farmer") {
-          const buyerOnly = ["/buyer-dashboard"];
+          const buyerOnly = ["/buyer-dashboard", "/buyer-auctions", "/my-bids"];
           const adminOnly = ["/admin-dashboard"];
           if ([...buyerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
         }
@@ -69,19 +80,24 @@ export default function RootLayout() {
     await persistLanguage(lang);
   };
 
+  const colorScheme = useColorScheme();
+  const backgroundColor = Colors[colorScheme ?? 'light'].background;
+
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor }]}>
       {/* Screens */}
       <Stack
         initialRouteName="login"
         screenOptions={{
           headerShown: false,
+          contentStyle: { backgroundColor: "transparent" }
         }}
       >
         <Stack.Screen name="login" />
         <Stack.Screen name="verify" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="marketplace" />
+        <Stack.Screen name="weather" />
       </Stack>
 
       {/* Floating overlay ABOVE everything */}
@@ -113,3 +129,4 @@ const styles = StyleSheet.create({
     elevation: 999999,
   },
 });
+

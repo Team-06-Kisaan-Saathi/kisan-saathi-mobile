@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Nav from "../components/navigation/Nav";
+import NavBuyer from "../components/navigation/NavBuyer";
 
 
 // ─── Filter option lists ───
@@ -110,7 +110,7 @@ export default function LiveAuctionsBuyer() {
     return (
         <SafeAreaView style={s.safe}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavBuyer />
 
 
             <View style={s.root}>
@@ -351,7 +351,7 @@ const tableStyles = StyleSheet.create({
     timeText: { fontSize: 14, fontWeight: "600" },
 
     bidBtn: {
-        backgroundColor: "#2563eb",
+        backgroundColor: "#0EA5E9",
         paddingVertical: 7,
         paddingHorizontal: 14,
         borderRadius: 7,
