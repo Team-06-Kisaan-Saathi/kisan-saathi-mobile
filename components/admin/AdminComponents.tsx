@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ViewStyle, TextStyle, Modal, Pressable } from "react-native";
 import * as Lucide from "lucide-react-native";
 import { useRouter } from "expo-router";
+import NotificationBell from "../notifications/NotificationBell";
 
 export const COLORS = {
     primary: "#1B5E20",
@@ -142,11 +143,14 @@ export const Header = ({ title, subtitle, showBack = false, onBack, onMenu }: { 
                     {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
                 </View>
             </View>
-            <TouchableOpacity style={styles.profileBtn} onPress={() => { router.push("/admin/profile") }}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>A</Text>
-                </View>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <NotificationBell color={COLORS.primary} />
+                <TouchableOpacity style={styles.profileBtn} onPress={() => { router.push("/admin/profile") }}>
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>A</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };

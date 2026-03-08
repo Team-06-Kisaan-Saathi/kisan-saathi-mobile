@@ -16,6 +16,7 @@ import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
+import NotificationBell from "../components/notifications/NotificationBell";
 
 // Helper to format currency
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
@@ -269,10 +270,7 @@ export default function FarmerLiveAuctions() {
                         <Text style={styles.headerTitle}>Live Auction Monitor</Text>
                         <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
                     </View>
-                    <TouchableOpacity style={styles.notificationBtn}>
-                        <Ionicons name="notifications-outline" size={20} color="#0F172A" />
-                        <View style={styles.badge}><Text style={styles.badgeText}>2</Text></View>
-                    </TouchableOpacity>
+                    <NotificationBell color="#0F172A" />
                 </View>
                 <View style={styles.filterRow}>
                     {["All", "Active", "Ended"].map((f) => (

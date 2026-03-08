@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NotificationBell from "../notifications/NotificationBell";
 
 export default function NavBuyer() {
     const router = useRouter();
@@ -46,6 +47,8 @@ export default function NavBuyer() {
                 </TouchableOpacity>
 
                 <View style={{ flex: 1 }} />
+
+                <NotificationBell color="#FFF" />
 
                 {/* Profile */}
                 <TouchableOpacity

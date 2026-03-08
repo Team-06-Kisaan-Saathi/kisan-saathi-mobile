@@ -1,11 +1,17 @@
 import { Platform } from "react-native";
 
 // ─── Single source of truth for backend connection ───
-const HOST = "backend-e337.onrender.com";
+// IMPORTANT: If testing on a physical phone, replace 'localhost' with your computer's IP
+// You can find your IP by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
+const LOCAL_IP = "10.12.252.166"; // <--- Updated to match your current network IP
+const LOCAL_HOST = `${LOCAL_IP}:5001`;
+const RENDER_HOST = "backend-e337.onrender.com";
 
-export const API_BASE = `https://${HOST}/api`;
-export const UPLOADS_URL = `https://${HOST}/uploads/`;
-export const SOCKET_URL = `https://${HOST}`;
+const HOST = LOCAL_HOST; // Change to RENDER_HOST if using the cloud backend
+
+export const API_BASE = HOST.includes("render.com") ? `https://${HOST}/api` : `http://${HOST}/api`;
+export const UPLOADS_URL = HOST.includes("render.com") ? `https://${HOST}/uploads/` : `http://${HOST}/uploads/`;
+export const SOCKET_URL = HOST.includes("render.com") ? `https://${HOST}` : `http://${HOST}`;
 
 export const ENDPOINTS = {
     AUTH: {
@@ -57,5 +63,11 @@ export const ENDPOINTS = {
         MY_BIDS: `${API_BASE}/auctions/bids/mine`,
         DELETE: (id: string) => `${API_BASE}/auctions/${id}`,
         EXTEND: (id: string) => `${API_BASE}/auctions/${id}/extend`,
+    },
+    NOTIFICATIONS: {
+        BASE: `${API_BASE}/notifications`,
+        GET_ALL: `${API_BASE}/notifications`,
+        UNREAD_COUNT: `${API_BASE}/notifications/unread-count`,
+        READ_ALL: `${API_BASE}/notifications/read-all`,
     },
 };
