@@ -1,4 +1,5 @@
 import NavFarmer from "../components/navigation/NavFarmer";
+import { useTheme } from '../hooks/ThemeContext';
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -128,6 +129,7 @@ function titleCase(s: string) {
 }
 
 export default function MarketplaceScreen() {
+  const { highContrast } = useTheme();
   const {
     coords: gpsCoords,
     permission,
@@ -447,11 +449,11 @@ export default function MarketplaceScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <NavFarmer />
 
-      <View style={styles.root}>
+      <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
         <Header
           coordsSource={coordsSource}
           onUpdateLocation={onUpdateLocation}
@@ -563,8 +565,9 @@ function Header({
   coordsSource: CoordsSource;
   onUpdateLocation: () => void;
 }) {
+  const { highContrast } = useTheme();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
       <Text style={styles.headerTitle}>Marketplace</Text>
 
       <Text style={styles.headerSub}>
@@ -614,6 +617,7 @@ function LiveFeed({
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
+  const { highContrast } = useTheme();
   // Trend per crop+mandi (uses 2 most recent in current list)
   const trendMap = useMemo(() => {
     const map = new Map<string, { latest: number; prev?: number }>();
@@ -644,7 +648,7 @@ function LiveFeed({
       }
       contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}
       ListEmptyComponent={
-        <View style={styles.empty}>
+        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>📭 No prices available</Text>
           <Text style={styles.emptySub}>
             Pull down to refresh or check again later
@@ -665,8 +669,8 @@ function LiveFeed({
             <View style={styles.priceCardHeader}>
               <View style={styles.cropInfo}>
                 <View>
-                  <Text style={styles.cropName}>{item.crop}</Text>
-                  <Text style={styles.mandiName}>{item.mandiName}</Text>
+                  <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
+                  <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.mandiName}</Text>
 
                   {diff != null && diff !== 0 && (
                     <View style={styles.trendRow}>
@@ -851,6 +855,7 @@ function CompareTable({
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
+  const { highContrast } = useTheme();
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}>
       <View style={styles.section}>
@@ -873,7 +878,7 @@ function CompareTable({
       </View>
 
       {rows.length === 0 ? (
-        <View style={styles.empty}>
+        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>No data for {crop}</Text>
           <Text style={styles.emptySub}>Try a different crop or refresh</Text>
         </View>
@@ -938,6 +943,7 @@ function Watchlist({
   onRemove: (crop: Crop) => void;
   latestFeed: LiveFeedItem[];
 }) {
+  const { highContrast } = useTheme();
   const latestAvg = useMemo(() => {
     const map = new Map<Crop, { sum: number; count: number }>();
     for (const it of latestFeed) {
@@ -961,7 +967,7 @@ function Watchlist({
       </View>
 
       {watch.length === 0 ? (
-        <View style={styles.empty}>
+        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>No crops in watchlist</Text>
           <Text style={styles.emptySub}>
             Star a crop from "Today" or "Compare prices"

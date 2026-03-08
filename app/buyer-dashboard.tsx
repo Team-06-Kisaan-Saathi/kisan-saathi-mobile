@@ -45,9 +45,27 @@ export default function BuyerDashboard() {
         setUser(res.user);
       }
 
+      // --- DYNAMIC DATA LOGIC ---
+      let cropToLoad = "Wheat";
+      let mandiToLoad = res?.user?.location || "Azadpur Mandi";
+
+      try {
+        const bidRes = await fetch(ENDPOINTS.AUCTIONS.MY_BIDS, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (bidRes.ok) {
+          const myAuctionsWithBids = await bidRes.json();
+          if (myAuctionsWithBids.length > 0) {
+            cropToLoad = myAuctionsWithBids[0].crop;
+          }
+        }
+      } catch (e) {
+        console.log("Error determining dynamic crop for buyer:", e);
+      }
+
       // Load latest price and AI prediction for the main card
       try {
-        const query = `?crop=Wheat&mandi=Azadpur Mandi&days=7`;
+        const query = `?crop=${encodeURIComponent(cropToLoad)}&mandi=${encodeURIComponent(mandiToLoad)}&days=7`;
         const aiRes = await apiFetch<any>(ENDPOINTS.ANALYTICS.FORECAST + query);
 
         if (aiRes.success) {
@@ -59,14 +77,14 @@ export default function BuyerDashboard() {
           const trendPct = ((Math.abs(predicted[predicted.length - 1].price - latest.price) / latest.price) * 100).toFixed(1);
 
           setTopPrice({
-            crop: "Wheat",
-            locationName: "Azadpur Mandi",
+            crop: cropToLoad,
+            locationName: mandiToLoad,
             pricePerQuintal: latest.price,
             trend: `${predicted[predicted.length - 1].price > latest.price ? '+' : '-'}${trendPct}% predicted`,
             isUp: trendDir === "up"
           });
         } else {
-          const resPrices = await fetchMandiPrices({ crop: "Wheat", limit: 1 });
+          const resPrices = await fetchMandiPrices({ crop: cropToLoad, limit: 1 });
           if (resPrices.data && resPrices.data.length > 0) {
             setTopPrice(resPrices.data[0]);
           }
