@@ -1,6 +1,7 @@
-import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { apiFetch } from "../services/http";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -12,75 +13,70 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-const HOST = "10.12.252.131";
-const API = `http://${HOST}:5001/api/auth`;
-
-console.log("API CONST =", API);
-
-type SendOtpResponse = {
-  success?: boolean;
-  message?: string;
-};
+import { ENDPOINTS } from "../services/api";
 
 export default function LoginScreen() {
   const { t } = useTranslation();
 
   const [phone, setPhone] = useState<string>("");
+  const [pin, setPin] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [msg, setMsg] = useState<string>("");
 
-  const handleContinue = async (): Promise<void> => {
+  const handleLogin = async (): Promise<void> => {
     setMsg("");
+    const trimmedPhone = phone.trim();
+    const trimmedPin = pin.trim();
 
-    const trimmed = phone.trim();
-
-    if (!/^\d{10}$/.test(trimmed)) {
-      setMsg(t("auth.invalid_phone"));
+    if (!/^\d{10}$/.test(trimmedPhone)) {
+      setMsg(t("auth.invalid_phone") || "Invalid phone number");
       return;
     }
 
-    const url = `${API}/send-otp`;
-    const body = { phone: trimmed };
-
-    console.log("➡️ SEND OTP URL:", url);
-    console.log("➡️ SEND OTP BODY:", body);
+    if (!/^\d{4,6}$/.test(trimmedPin)) {
+      setMsg("PIN must be 4 to 6 digits");
+      return;
+    }
 
     try {
       setLoading(true);
-
-      const res = await axios.post(url, body, {
-        headers: { "Content-Type": "application/json" },
-        timeout: 10000,
+      const res = await apiFetch<any>(ENDPOINTS.AUTH.LOGIN, {
+        method: "POST",
+        body: JSON.stringify({
+          phone: trimmedPhone,
+          pin: trimmedPin,
+        }),
       });
 
-      console.log("STATUS:", res.status);
-      console.log("DATA:", res.data);
+      const { success, token, user, message } = res;
 
-      if (res.data?.success) {
-        router.push({ pathname: "/verify", params: { phone: trimmed } });
+      if (!success) {
+        setMsg(message || "Login failed");
+        return;
+      }
+
+      if (!token || !user) {
+        setMsg("Invalid server response format");
+        return;
+      }
+
+      // Consistent persistence
+      await AsyncStorage.setItem("token", String(token));
+      await AsyncStorage.setItem("role", user.role);
+      await AsyncStorage.setItem("profile", JSON.stringify(user));
+      await AsyncStorage.setItem("userId", user._id || user.id);
+      if (user.name) await AsyncStorage.setItem("userName", user.name);
+
+      // Dashboard routing
+      if (user.role === "admin") {
+        router.replace("/admin");
+      } else if (user.role === "farmer") {
+        router.replace("/farmer-dashboard");
       } else {
-        setMsg(res.data?.message || t("auth.otp_send_failed"));
+        router.replace("/buyer-dashboard");
       }
     } catch (err: any) {
-      console.log("❌ AXIOS ERROR MESSAGE:", err?.message);
-
-      if (err?.response) {
-        console.log("❌ STATUS:", err.response.status);
-        console.log("❌ DATA:", err.response.data);
-        console.log("❌ HEADERS:", err.response.headers);
-
-        setMsg(
-          err.response.data?.message ||
-            `HTTP ${err.response.status}: request failed`,
-        );
-      } else if (err?.request) {
-        console.log("❌ NO RESPONSE. REQUEST:", err.request);
-        setMsg("No response from server (network / IP / firewall issue).");
-      } else {
-        console.log("❌ UNKNOWN ERROR:", err);
-        setMsg(err?.message || "Unknown error");
-      }
+      setMsg(err.message || "Connection failed. Check backend.");
     } finally {
       setLoading(false);
     }
@@ -127,23 +123,35 @@ export default function LoginScreen() {
               />
             </View>
 
-            <Text style={styles.hint}>{t("auth.otp_hint")}</Text>
+            <Text style={[styles.label, { marginTop: 16, marginBottom: 8 }]}>
+              Enter PIN
+            </Text>
+
+            <View style={styles.phoneInput}>
+              <TextInput
+                style={styles.phoneTextInput}
+                placeholder="****"
+                placeholderTextColor="#777"
+                keyboardType="number-pad"
+                value={pin}
+                maxLength={6}
+                secureTextEntry
+                onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
+              />
+            </View>
 
             {msg ? <Text style={styles.errorMsg}>{msg}</Text> : null}
 
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleContinue}
+              onPress={handleLogin}
               disabled={loading}
               activeOpacity={0.9}
             >
               {loading ? (
                 <View style={styles.loadingRow}>
-                  <ActivityIndicator />
-                  <Text style={styles.buttonText}>
-                    {" "}
-                    {t("auth.sending_otp")}
-                  </Text>
+                  <ActivityIndicator color="#fff" />
+                  <Text style={styles.buttonText}> Logging In...</Text>
                 </View>
               ) : (
                 <Text style={styles.buttonText}>{t("auth.continue")}</Text>
@@ -195,7 +203,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 70,
     height: 70,
-    marginBottom: 64,
+    marginBottom: 12,
   },
 
   appName: {
@@ -215,7 +223,7 @@ const styles = StyleSheet.create({
   welcomeMsg: {
     color: "green",
     fontSize: 20,
-    marginBottom: 48,
+    marginBottom: 16,
     textAlign: "center",
   },
 
@@ -246,13 +254,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
 
-  hint: {
-    fontSize: 12,
-    color: "#555",
-    marginTop: 10,
-    marginBottom: 14,
-  },
-
   errorMsg: {
     color: "#b00020",
     marginBottom: 10,
@@ -261,6 +262,7 @@ const styles = StyleSheet.create({
 
   button: {
     width: "100%",
+    marginTop: 20,
     paddingVertical: 14,
     borderRadius: 999,
     backgroundColor: "rgb(37,95,153)",

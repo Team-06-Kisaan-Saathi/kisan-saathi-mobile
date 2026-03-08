@@ -1,4 +1,7 @@
-// src/screens/MarketplaceScreen.tsx
+import NavFarmer from "../components/navigation/NavFarmer";
+import { useTheme } from '../hooks/ThemeContext';
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BarChart2,
   IndianRupee,
@@ -10,7 +13,7 @@ import {
   TrendingUp,
   Wheat,
 } from "lucide-react-native";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Alert,
   FlatList,
@@ -25,6 +28,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Stack } from "expo-router";
 import { useLocation } from "../hooks/useLocation";
 import {
   Crop,
@@ -34,7 +38,8 @@ import {
   NearbyMandi,
 } from "../services/mandiService";
 import { getToken } from "../services/token";
-import { getMyLocation, updateMyLocation } from "../services/userServices";
+import { getMyLocation, updateLocation } from "../services/userServices";
+import { getWatchlist, addToWatchlist, removeFromWatchlist, WatchlistItem } from "../services/watchlistService";
 
 // Map (optional dependency)
 let MapView: any = null;
@@ -45,14 +50,15 @@ try {
   const maps = require("react-native-maps");
   MapView = maps.default;
   Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE; // use google provider on Android when available
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
 } catch (e) {
   // react-native-maps not installed (optional)
 }
 
 type TabKey = "Live" | "Nearby" | "Compare" | "Watchlist";
+type CoordsSource = "backend" | "gps" | "none";
 
-type WatchItem = { crop: Crop; lastAvgPricePerQuintal?: number };
+type WatchItem = { crop: Crop; mandi?: string; _id?: string; lastAvgPricePerQuintal?: number };
 
 type LiveFeedItem = {
   key: string;
@@ -81,7 +87,49 @@ const ALL_CROPS: Crop[] = [
   "Maize",
 ];
 
+// Robust backend location parser (handles different backend shapes)
+function normalizeCoords(loc: any): { lat: number; lng: number } | null {
+  if (!loc) return null;
+
+  // common: {lat, lng}
+  const lat1 = loc.lat ?? loc.latitude;
+  const lng1 = loc.lng ?? loc.longitude;
+  if (lat1 != null && lng1 != null)
+    return { lat: Number(lat1), lng: Number(lng1) };
+
+  // common: {locationCoordinates: {lat,lng}} or {locationCoordinates: {latitude,longitude}}
+  const lc = loc.locationCoordinates;
+  // plain array: { locationCoordinates: [lng, lat] }
+  if (Array.isArray(lc) && lc.length >= 2) {
+    const [lng, lat] = lc;
+    if (lat != null && lng != null)
+      return { lat: Number(lat), lng: Number(lng) };
+  }
+
+  const lat2 = lc?.lat ?? lc?.latitude;
+  const lng2 = lc?.lng ?? lc?.longitude;
+  if (lat2 != null && lng2 != null)
+    return { lat: Number(lat2), lng: Number(lng2) };
+
+  // geojson: {locationCoordinates: {coordinates: [lng, lat]}} OR {coordinates:[lng,lat]}
+  const coordsA = lc?.coordinates ?? loc.coordinates;
+  if (Array.isArray(coordsA) && coordsA.length >= 2) {
+    const [lng, lat] = coordsA;
+    if (lat != null && lng != null)
+      return { lat: Number(lat), lng: Number(lng) };
+  }
+
+  return null;
+}
+
+function titleCase(s: string) {
+  if (!s) return s;
+  const t = s.toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export default function MarketplaceScreen() {
+  const { highContrast } = useTheme();
   const {
     coords: gpsCoords,
     permission,
@@ -92,9 +140,20 @@ export default function MarketplaceScreen() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [coordsSource, setCoordsSource] = useState<"backend" | "gps" | "none">(
-    "none",
-  );
+  const [coordsSource, setCoordsSource] = useState<CoordsSource>("none");
+  const [role, setRole] = useState<string>("farmer");
+
+  useEffect(() => {
+    AsyncStorage.getItem("role").then(r => r && setRole(r));
+  }, []);
+
+  // ✅ Always keep the latest gps coords in a ref (no “stale state” problem)
+  const gpsRef = useRef<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (gpsCoords) gpsRef.current = gpsCoords;
+  }, [gpsCoords?.lat, gpsCoords?.lng]);
+
+  // ✅ activeCoords uses backend first, then gps
   const activeCoords = backendCoords ?? gpsCoords ?? null;
 
   const [tab, setTab] = useState<TabKey>("Live");
@@ -105,10 +164,8 @@ export default function MarketplaceScreen() {
   const [feed, setFeed] = useState<LiveFeedItem[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
-  const [watch, setWatch] = useState<WatchItem[]>([
-    { crop: "Tomato" },
-    { crop: "Onion" },
-  ]);
+  const [watch, setWatch] = useState<WatchItem[]>([]);
+  const [watchLoading, setWatchLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const selectedCrop: Crop | null = useMemo(() => {
@@ -118,7 +175,18 @@ export default function MarketplaceScreen() {
 
   // ----------------------- Loaders -----------------------
   const loadNearby = async () => {
-    if (!activeCoords) return;
+    if (!activeCoords) {
+      console.log("❌ loadNearby: activeCoords is null");
+      return;
+    }
+
+    console.log("📡 loadNearby -> calling nearby with:", {
+      lat: activeCoords.lat,
+      lng: activeCoords.lng,
+      distKm: 50,
+      limit: 5,
+    });
+
     try {
       const rows = await fetchNearbyMandis({
         lat: activeCoords.lat,
@@ -126,8 +194,13 @@ export default function MarketplaceScreen() {
         distKm: 50,
         limit: 5,
       });
+
+      console.log("✅ nearby rows count:", rows.length);
+      console.log("✅ nearby rows sample:", rows[0]);
+
       setNearbyMandis(rows);
     } catch (e: any) {
+      console.log("❌ loadNearby error:", e?.message, e);
       Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
       setNearbyMandis([]);
     }
@@ -140,7 +213,7 @@ export default function MarketplaceScreen() {
         sort: "latest",
       });
 
-      const items: LiveFeedItem[] = (rows || []).map((p: any, idx: number) => {
+      const items: LiveFeedItem[] = (res.data || []).map((p: any, idx: number) => {
         const price = Number(p.pricePerQuintal || 0);
         const updatedAt = p.updatedAt || p.date || new Date().toISOString();
         return {
@@ -177,12 +250,12 @@ export default function MarketplaceScreen() {
 
   const loadCompare = async () => {
     try {
-      const rows = await fetchMandiPrices({
+      const res = await fetchMandiPrices({
         crop: compareCrop,
         sort: "price_desc",
       });
 
-      const sorted = [...rows].sort(
+      const sorted = [...res.data].sort(
         (a: any, b: any) =>
           Number(b.pricePerQuintal || 0) - Number(a.pricePerQuintal || 0),
       );
@@ -199,32 +272,109 @@ export default function MarketplaceScreen() {
     }
   };
 
+  // ----------------------- Backend fetch helpers -----------------------
+  const refreshBackendLocation = async () => {
+    const token = await getToken();
+    if (!token) return null;
+
+    const loc = await getMyLocation();
+    const parsed = normalizeCoords(loc);
+
+    if (parsed) {
+      setBackendCoords(parsed);
+      setCoordsSource("backend");
+      return parsed;
+    }
+    return null;
+  };
+
+  // ✅ wait for gps coords reliably (fixes the “gpsCoords still null after await” issue)
+  const waitForGps = async (timeoutMs = 6000) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const c = gpsRef.current;
+      if (c?.lat != null && c?.lng != null) return c;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return null;
+  };
+
+  // ----------------------- Watchlist Backend Sync -----------------------
+  const loadWatchlistFromBackend = useCallback(async () => {
+    try {
+      const items = await getWatchlist();
+      const mapped: WatchItem[] = (items || []).map((w: WatchlistItem) => ({
+        _id: w._id,
+        crop: w.crop as Crop,
+        mandi: w.mandi,
+      }));
+      setWatch(mapped);
+    } catch (e: any) {
+      console.log("⚠️ Failed to load watchlist from backend:", e?.message);
+    }
+  }, []);
+
+  const handleToggleWatch = useCallback(async (crop: Crop, mandiHint?: string) => {
+    const existing = watch.find((w) => w.crop === crop);
+    if (existing) {
+      // Remove from backend
+      if (existing._id) {
+        try {
+          setWatchLoading(true);
+          await removeFromWatchlist(existing._id);
+        } catch (e: any) {
+          console.log("⚠️ Failed to remove from watchlist:", e?.message);
+        } finally {
+          setWatchLoading(false);
+        }
+      }
+      setWatch((prev) => prev.filter((w) => w.crop !== crop));
+    } else {
+      // Add to backend
+      const mandi = mandiHint || feed.find((f) => f.crop === crop)?.mandiName || "All Mandis";
+      try {
+        setWatchLoading(true);
+        const res = await addToWatchlist(crop, mandi);
+        const newItem: WatchItem = {
+          _id: res?.data?._id || res?._id,
+          crop,
+          mandi,
+        };
+        setWatch((prev) => [...prev, newItem]);
+      } catch (e: any) {
+        if (e?.message?.includes("already watching")) {
+          // Already exists on backend, refresh list
+          await loadWatchlistFromBackend();
+        } else {
+          console.log("⚠️ Failed to add to watchlist:", e?.message);
+          Alert.alert("Error", e?.message || "Failed to add to watchlist.");
+        }
+      } finally {
+        setWatchLoading(false);
+      }
+    }
+  }, [watch, feed, loadWatchlistFromBackend]);
+
   // ----------------------- Init -----------------------
   useEffect(() => {
     (async () => {
-      let foundBackend = false;
-
       try {
-        const token = await getToken();
-        if (token) {
-          const loc = await getMyLocation(token);
-          if (loc?.lat != null && loc?.lng != null) {
-            foundBackend = true;
-            setBackendCoords({ lat: Number(loc.lat), lng: Number(loc.lng) });
-            setCoordsSource("backend");
+        // 1) try backend first
+        const b = await refreshBackendLocation();
+
+        // 2) if backend not available, get gps
+        if (!b) {
+          if (permission !== "granted") {
+            await requestAndGetLocation();
           }
+          const g = gpsCoords ?? (await waitForGps());
+          if (g) setCoordsSource("gps");
         }
       } catch {
         // ignore
       }
 
-      if (!foundBackend) {
-        if (permission !== "granted") {
-          await requestAndGetLocation();
-        }
-        if (gpsCoords) setCoordsSource("gps");
-      }
-
+      // Load prices on init (watchlist only populates when user explicitly stars a crop)
       await loadPrices("manual");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,27 +410,33 @@ export default function MarketplaceScreen() {
     setRefreshing(false);
   };
 
+  // ✅ FIXED: Update location reliably + save to backend + re-fetch backend to confirm
   const onUpdateLocation = async () => {
     try {
       await requestAndGetLocation();
-      if (!gpsCoords) {
+
+      const g = gpsCoords ?? (await waitForGps());
+      if (!g) {
         Alert.alert("Location", "Could not fetch GPS location. Try again.");
         return;
       }
 
-      // Immediate UI update
-      setBackendCoords({ lat: gpsCoords.lat, lng: gpsCoords.lng });
+      // Immediate UI update (works even if backend save fails)
+      setBackendCoords({ lat: g.lat, lng: g.lng });
       setCoordsSource("gps");
 
       // Save to backend if possible
       try {
         const token = await getToken();
         if (token) {
-          await updateMyLocation(token, {
-            lat: gpsCoords.lat,
-            lng: gpsCoords.lng,
-          });
-          setCoordsSource("backend");
+          await updateLocation({ lat: g.lat, lng: g.lng });
+          // ✅ re-fetch to ensure backend is actually returning what you saved
+          const confirmed = await refreshBackendLocation();
+          if (!confirmed) {
+            // backend didn't return coords in expected shape
+            // still fine, GPS is shown
+            setCoordsSource("gps");
+          }
         }
       } catch {
         // ignore; GPS still works
@@ -293,8 +449,11 @@ export default function MarketplaceScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.root}>
+    <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <NavFarmer />
+
+      <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
         <Header
           coordsSource={coordsSource}
           onUpdateLocation={onUpdateLocation}
@@ -364,7 +523,7 @@ export default function MarketplaceScreen() {
             feed={feed}
             refreshing={refreshing}
             onRefresh={onRefresh}
-            onStarCrop={(crop) => toggleWatchCrop(crop, watch, setWatch)}
+            onStarCrop={(crop) => handleToggleWatch(crop)}
             isCropStarred={(crop) => watch.some((w) => w.crop === crop)}
           />
         )}
@@ -381,7 +540,7 @@ export default function MarketplaceScreen() {
           <CompareTable
             crop={compareCrop}
             rows={compareRows}
-            onStarCrop={(c) => toggleWatchCrop(c, watch, setWatch)}
+            onStarCrop={(c) => handleToggleWatch(c)}
             isCropStarred={(c) => watch.some((w) => w.crop === c)}
           />
         )}
@@ -389,7 +548,7 @@ export default function MarketplaceScreen() {
         {tab === "Watchlist" && (
           <Watchlist
             watch={watch}
-            onRemove={(crop) => toggleWatchCrop(crop, watch, setWatch)}
+            onRemove={(crop) => handleToggleWatch(crop)}
             latestFeed={feed}
           />
         )}
@@ -403,23 +562,19 @@ function Header({
   coordsSource,
   onUpdateLocation,
 }: {
-  coordsSource: "backend" | "gps" | "none";
+  coordsSource: CoordsSource;
   onUpdateLocation: () => void;
 }) {
+  const { highContrast } = useTheme();
   return (
-    <View style={styles.header}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
-        <Text style={styles.headerTitle}>Marketplace</Text>
-      </View>
+    <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
+      <Text style={styles.headerTitle}>Marketplace</Text>
 
       <Text style={styles.headerSub}>
         Today’s mandi prices, nearby markets & comparisons
+      </Text>
+      <Text style={styles.headerHint}>
+        Location source: {coordsSource.toUpperCase()}
       </Text>
     </View>
   );
@@ -462,6 +617,7 @@ function LiveFeed({
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
+  const { highContrast } = useTheme();
   // Trend per crop+mandi (uses 2 most recent in current list)
   const trendMap = useMemo(() => {
     const map = new Map<string, { latest: number; prev?: number }>();
@@ -492,7 +648,7 @@ function LiveFeed({
       }
       contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}
       ListEmptyComponent={
-        <View style={styles.empty}>
+        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>📭 No prices available</Text>
           <Text style={styles.emptySub}>
             Pull down to refresh or check again later
@@ -513,8 +669,8 @@ function LiveFeed({
             <View style={styles.priceCardHeader}>
               <View style={styles.cropInfo}>
                 <View>
-                  <Text style={styles.cropName}>{item.crop}</Text>
-                  <Text style={styles.mandiName}>{item.mandiName}</Text>
+                  <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
+                  <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.mandiName}</Text>
 
                   {diff != null && diff !== 0 && (
                     <View style={styles.trendRow}>
@@ -699,6 +855,7 @@ function CompareTable({
   onStarCrop: (crop: Crop) => void;
   isCropStarred: (crop: Crop) => boolean;
 }) {
+  const { highContrast } = useTheme();
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}>
       <View style={styles.section}>
@@ -721,7 +878,7 @@ function CompareTable({
       </View>
 
       {rows.length === 0 ? (
-        <View style={styles.empty}>
+        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>No data for {crop}</Text>
           <Text style={styles.emptySub}>Try a different crop or refresh</Text>
         </View>
@@ -786,6 +943,7 @@ function Watchlist({
   onRemove: (crop: Crop) => void;
   latestFeed: LiveFeedItem[];
 }) {
+  const { highContrast } = useTheme();
   const latestAvg = useMemo(() => {
     const map = new Map<Crop, { sum: number; count: number }>();
     for (const it of latestFeed) {
@@ -809,7 +967,7 @@ function Watchlist({
       </View>
 
       {watch.length === 0 ? (
-        <View style={styles.empty}>
+        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>No crops in watchlist</Text>
           <Text style={styles.emptySub}>
             Star a crop from "Today" or "Compare prices"
@@ -842,17 +1000,7 @@ function Watchlist({
   );
 }
 
-/** Watchlist helpers */
-function toggleWatchCrop(
-  crop: Crop,
-  watch: WatchItem[],
-  setWatch: React.Dispatch<React.SetStateAction<WatchItem[]>>,
-) {
-  const exists = watch.some((w) => w.crop === crop);
-  setWatch(
-    exists ? watch.filter((w) => w.crop !== crop) : [...watch, { crop }],
-  );
-}
+/** Watchlist helpers (toggleWatchCrop removed — now handled by handleToggleWatch with backend sync) */
 
 function maybeTriggerWatchAlertsQuintal(
   feed: LiveFeedItem[],
@@ -884,7 +1032,9 @@ function maybeTriggerWatchAlertsQuintal(
       if (pct >= 0.1) {
         Alert.alert(
           "Price Alert",
-          `${w.crop} price changed ${(pct * 100).toFixed(0)}% (avg ₹${avg.toFixed(0)} / quintal)`,
+          `${w.crop} price changed ${(pct * 100).toFixed(0)}% (avg ₹${avg.toFixed(
+            0,
+          )} / quintal)`,
         );
       }
     }
@@ -892,12 +1042,6 @@ function maybeTriggerWatchAlertsQuintal(
   });
 
   setWatch(updates);
-}
-
-function titleCase(s: string) {
-  if (!s) return s;
-  const t = s.toLowerCase();
-  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 /** Styles */
@@ -921,9 +1065,9 @@ const styles = StyleSheet.create({
   headerSub: { color: "#6c757d", marginTop: 6, fontSize: 14 },
   headerHint: {
     color: "#94a3b8",
-    marginTop: 4,
+    marginTop: 6,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   locationPill: {

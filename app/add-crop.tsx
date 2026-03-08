@@ -1,13 +1,5 @@
-import { View, Text } from "react-native";
-import { Stack } from "expo-router";
+import { Redirect } from "expo-router";
 
-export default function AddCrop() {
-  return (
-    <>
-      <Stack.Screen options={{ title: "Add Crop" }} />
-      <View style={{ padding: 16 }}>
-        <Text>Add Crop Screen</Text>
-      </View>
-    </>
-  );
+export default function AddCropPage() {
+  return <Redirect href="/not-available" />;
 }

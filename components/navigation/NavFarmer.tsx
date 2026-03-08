@@ -1,168 +1,184 @@
-import React, { useState } from "react";
-import NotificationBell from "../notifications/NotificationBell";
-import {View,Text,TouchableOpacity,StyleSheet,ScrollView,} from "react-native";
-import { router } from "expo-router";
-import { useTranslation } from "react-i18next";
+import React, { useState, useRef, useEffect } from "react";
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    Platform,
+    Animated,
+    Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NotificationBell from "../notifications/NotificationBell";
 
 export default function NavFarmer() {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+    const router = useRouter();
+    const [profileOpen, setProfileOpen] = useState(false);
+    const profileAnim = useRef(new Animated.Value(0)).current;
 
-  return (
-    <View style={styles.navFarmer}>
-      {/* LEFT: Scrollable Navigation */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.navLeftContent}
-      >
-        <NavItem label={t("nav_farmer.dashboard")} onPress={() => router.push("/farmer-dashboard")} />
-        <NavItem label={t("nav_farmer.my_listings")} onPress={() => router.push("/my-listings")} />
-        <NavItem label={t("nav_farmer.add_crop")} onPress={() => router.push("/add-crop")} />
-        <NavItem label={t("nav_farmer.mandi_prices")} onPress={() => router.push("/mandi-prices")} />
-        <NavItem label={t("nav_farmer.ai_insights")} onPress={() => router.push("/ai-insights")} />
-        <NavItem label={t("nav_farmer.live_auctions")} onPress={() => router.push("/live-auctions")} />
-      </ScrollView>
+    useEffect(() => {
+        Animated.spring(profileAnim, {
+            toValue: profileOpen ? 1 : 0,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 7,
+        }).start();
+    }, [profileOpen]);
 
-      {/* RIGHT: Notification + Profile */}
-      <View style={styles.navRight}>
-        <NotificationBell />
+    const handleLogout = async () => {
+        setProfileOpen(false);
+        await AsyncStorage.removeItem("token");
+        router.replace("/login");
+    };
 
-        <TouchableOpacity onPress={() => setOpen(!open)} activeOpacity={0.7}>
-          <Ionicons name="person-circle-outline" size={34} color="#bbf7d0" />
+    return (
+        <View style={styles.container}>
+            <View style={styles.navbar}>
+                {/* App Name — tapping goes to dashboard */}
+                <TouchableOpacity
+                    style={styles.brandBtn}
+                    onPress={() => router.replace("/farmer-dashboard")}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="leaf" size={20} color="#BBF7D0" style={{ marginRight: 8 }} />
+                    <Text style={styles.brandText}>Kisaan Saathi</Text>
+                </TouchableOpacity>
+
+                <View style={{ flex: 1 }} />
+
+                <NotificationBell color="#FFF" />
+
+                {/* Profile */}
+                <TouchableOpacity
+                    style={styles.profileButton}
+                    onPress={() => setProfileOpen(!profileOpen)}
+                >
+                    <View style={styles.avatar}>
+                        <Ionicons name="person" size={18} color="#FFF" />
+                    </View>
+                </TouchableOpacity>
+            </View>
+
+            {/* Profile Dropdown */}
+            {profileOpen && (
+                <>
+                    <Pressable style={styles.backdrop} onPress={() => setProfileOpen(false)} />
+                    <Animated.View style={[styles.dropdown, {
+                        opacity: profileAnim,
+                        transform: [{ scale: profileAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }]
+                    }]}>
+                        <View style={styles.dropdownHeader}>
+                            <Text style={styles.dropdownTitle}>Farmer Account</Text>
+                        </View>
+                        <DropdownItem icon="person-outline" label="Edit Profile" onPress={() => { setProfileOpen(false); router.push("/edit-profile"); }} />
+                        <DropdownItem icon="settings-outline" label="Settings" onPress={() => { setProfileOpen(false); router.push("/settings" as any); }} />
+                        <View style={styles.divider} />
+                        <DropdownItem icon="log-out-outline" label="Logout" danger onPress={handleLogout} />
+                    </Animated.View>
+                </>
+            )}
+        </View>
+    );
+}
+
+function DropdownItem({ icon, label, onPress, danger = false }: any) {
+    return (
+        <TouchableOpacity style={styles.dropdownItem} onPress={onPress}>
+            <Ionicons name={icon} size={18} color={danger ? "#EF4444" : "#374151"} style={{ marginRight: 10 }} />
+            <Text style={[styles.dropdownText, danger && { color: "#EF4444" }]}>{label}</Text>
         </TouchableOpacity>
-
-        {open && (
-          <View style={styles.profileDropdown}>
-            <DropdownItem
-              label={t("nav_farmer.edit_profile")}
-              onPress={() => {
-                setOpen(false);
-                router.push("/edit-profile");
-              }}
-            />
-
-            <DropdownItem
-              label={t("nav_farmer.edit_preferences")}
-              onPress={() => {
-                setOpen(false);
-                router.push("/farmer-preferences");
-              }}
-            />
-
-            <View style={styles.dropdownDivider} />
-
-            <DropdownItem
-              label={t("nav_farmer.logout")}
-              danger
-              onPress={() => {
-                setOpen(false);
-                router.replace("/login");
-              }}
-            />
-          </View>
-        )}
-      </View>
-    </View>
-  );
+    );
 }
 
-/* 🔹 Reusable Nav Item */
-function NavItem({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.navText}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-/* 🔹 Reusable Dropdown Item */
-function DropdownItem({
-  label,
-  onPress,
-  danger = false,
-}: {
-  label: string;
-  onPress: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <TouchableOpacity style={styles.dropdownButton} onPress={onPress}>
-      <Text style={[styles.dropdownText, danger && styles.logoutText]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
+const PRIMARY = "#15803D";
+const PRIMARY_DARK = "#14532D";
 
 const styles = StyleSheet.create({
-  navFarmer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1a4b84",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: "#81c784",
-    elevation: 10,
-    zIndex: 1000,
-  },
-
-  navLeftContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-    paddingRight: 12,
-  },
-
-  navItem: {
-    paddingVertical: 8,
-  },
-
-  navText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#fdf5e6",
-  },
-
-  navRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 8,
-    position: "relative",
-  },
-
-  profileDropdown: {
-    position: "absolute",
-    top: 48,
-    right: 0,
-    width: 220,
-    backgroundColor: "#fdfbf7",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    elevation: 12,
-    zIndex: 2000,
-  },
-
-  dropdownButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-  },
-
-  dropdownText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1a365d",
-  },
-
-  dropdownDivider: {
-    height: 1,
-    backgroundColor: "#cbd5e0",
-  },
-
-  logoutText: {
-    color: "#c53030",
-  },
+    container: {
+        backgroundColor: PRIMARY,
+        zIndex: 1000,
+        paddingTop: Platform.OS === "ios" ? 48 : 4,
+        ...Platform.select({
+            ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6 },
+            android: { elevation: 6 },
+        }),
+    },
+    navbar: {
+        flexDirection: "row",
+        alignItems: "center",
+        height: 54,
+        paddingHorizontal: 16,
+    },
+    brandBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    brandText: {
+        fontSize: 20,
+        fontWeight: "800",
+        color: "#FFF",
+        letterSpacing: 0.3,
+    },
+    profileButton: {},
+    avatar: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: PRIMARY_DARK,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.3)",
+    },
+    backdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "transparent",
+        zIndex: 1500,
+    },
+    dropdown: {
+        position: "absolute",
+        top: Platform.OS === "ios" ? 100 : 62,
+        right: 12,
+        width: 210,
+        backgroundColor: "#FFF",
+        borderRadius: 10,
+        padding: 6,
+        zIndex: 2000,
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+        ...Platform.select({
+            ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 12 },
+            android: { elevation: 10 },
+        }),
+    },
+    dropdownHeader: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F1F5F9",
+    },
+    dropdownTitle: {
+        fontSize: 11,
+        fontWeight: "700",
+        color: "#94A3B8",
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+    },
+    dropdownItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 10,
+        borderRadius: 6,
+    },
+    dropdownText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#334155",
+    },
+    divider: {
+        height: 1,
+        backgroundColor: "#F1F5F9",
+        marginVertical: 4,
+    },
 });

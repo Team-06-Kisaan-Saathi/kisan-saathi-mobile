@@ -1,11 +1,11 @@
 
 import { Ionicons } from "@expo/vector-icons";
-import { Animated, PanResponder } from "react-native";
+import { Animated, PanResponder , ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 
 import { useRouter, type Href } from "expo-router";
 import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+
 import * as Vosk from "react-native-vosk";
 
 type Lang = "en" | "hi" | "te";
@@ -79,7 +79,7 @@ export default function VoiceNavBtn() {
     const key = MODELS[target];
     log("📦 Loading model:", key);
 
-    await (Vosk as any).loadModel(key);
+    await Vosk?.loadModel?.(key);
 
     loadedLangRef.current = target;
     log("✅ Model loaded:", key);
@@ -278,10 +278,10 @@ export default function VoiceNavBtn() {
 
       // Most compatible start: no args first
       try {
-        await (Vosk as any).start?.();
+        await Vosk?.start?.();
       } catch {
         // fallback with options
-        await (Vosk as any).start?.({ grammar: GRAMMAR[lang], timeout: 8000 });
+        await Vosk?.start?.({ grammar: GRAMMAR[lang], timeout: 8000 });
       }
     } catch (e) {
       log("❌ start failed:", e);
