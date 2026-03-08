@@ -5,11 +5,12 @@ import { apiFetch } from "./http";
 
 class NotificationService {
     private socket: Socket | null = null;
+    private chatSocket: Socket | null = null;
     private listeners: ((unreadCount: number) => void)[] = [];
     private unreadCount: number = 0;
 
     async init() {
-        if (this.socket?.connected) return;
+        if (this.socket?.connected || this.chatSocket?.connected) return;
 
         const token = await AsyncStorage.getItem("token");
         const userId = await AsyncStorage.getItem("userId");
@@ -43,6 +44,27 @@ class NotificationService {
             this.notifyListeners();
         });
 
+        // Initialize Chat Socket for global message badges
+        this.chatSocket = io(`${SOCKET_URL}/chat`, {
+            transports: ["websocket"],
+            auth: { token }
+        });
+
+        this.chatSocket.on("connect", () => {
+            console.log("🔔 NotificationService: Chat Socket Connected! ID:", this.chatSocket?.id);
+            // We join a personal room based on userId to receive all new messages meant for us
+            this.chatSocket?.emit("joinUserRoom", userId);
+        });
+
+        this.chatSocket.on("newMessage", (data) => {
+            // Only increment if we aren't the sender
+            if (data.message && data.message.sender !== userId) {
+                console.log("🔔 NotificationService: New Chat Message Received!");
+                this.unreadCount += 1;
+                this.notifyListeners();
+            }
+        });
+
         // Initial fetch
         this.fetchUnreadCount();
     }
@@ -58,6 +80,11 @@ class NotificationService {
         } catch (error) {
             console.error("Error fetching unread count:", error);
         }
+    }
+
+    incrementUnread() {
+        this.unreadCount += 1;
+        this.notifyListeners();
     }
 
     subscribe(callback: (unreadCount: number) => void) {
@@ -76,6 +103,10 @@ class NotificationService {
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
+        }
+        if (this.chatSocket) {
+            this.chatSocket.disconnect();
+            this.chatSocket = null;
         }
     }
 

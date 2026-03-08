@@ -17,6 +17,7 @@ import { getProfile } from "../services/userServices";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import io from "socket.io-client";
 import NavBuyer from "../components/navigation/NavBuyer";
+import { chatService } from "../services/chatService";
 
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 
@@ -119,6 +120,7 @@ export default function AuctionDetail() {
                     totalBids: found.bids?.length || 0,
                     status: found.status,
                     farmer: found.farmerId?.name || "Verified Farmer",
+                    farmerId: found.farmerId?._id || found.farmerId,
                     farmerPhone: found.farmerId?.phone || null,
                     winningBid: found.winningBid || null,
                     bids: formattedBids,
@@ -360,6 +362,24 @@ export default function AuctionDetail() {
                                             <Text style={styles.contactText}>Phone: {auction.farmerPhone}</Text>
                                         </View>
                                     )}
+                                    <TouchableOpacity
+                                        style={styles.msgFarmerBtn}
+                                        onPress={async () => {
+                                            try {
+                                                const res = await chatService.getOrCreateChat(auction.farmerId, auction.id);
+                                                if (res?.success) {
+                                                    router.push(`/chat/${res.chat._id}?dealId=${auction.id}`);
+                                                } else {
+                                                    Alert.alert("Error", "Could not start chat.");
+                                                }
+                                            } catch (err) {
+                                                console.log("Chat init error", err);
+                                                Alert.alert("Error", "Could not start chat.");
+                                            }
+                                        }}>
+                                        <Ionicons name="chatbubble-ellipses" size={14} color="#FFF" />
+                                        <Text style={styles.msgFarmerBtnText}>Message Farmer</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         ) : (
@@ -572,6 +592,18 @@ const styles = StyleSheet.create({
     wonDetail: { fontSize: 14, fontWeight: "600", color: "#92400E", marginBottom: 2 },
     contactRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
     contactText: { fontSize: 13, fontWeight: "600", color: "#92400E" },
+    msgFarmerBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#D97706",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+        marginTop: 12,
+        alignSelf: "flex-start",
+        gap: 6
+    },
+    msgFarmerBtnText: { color: "#FFF", fontSize: 12, fontWeight: "700" },
     lostBanner: {
         flexDirection: "row",
         alignItems: "flex-start",
