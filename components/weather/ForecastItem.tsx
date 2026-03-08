@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from '../../hooks/ThemeContext';
 import * as Lucide from "lucide-react-native";
 
 interface ForecastItemProps {

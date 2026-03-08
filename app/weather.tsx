@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -22,6 +23,7 @@ const DEFAULT_LAT = 17.9689;
 const DEFAULT_LON = 79.5941;
 
 export default function WeatherScreen() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -93,16 +95,16 @@ export default function WeatherScreen() {
 
     if (loading) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#10B981" />
-                <Text style={styles.loadingText}>Fetching farm weather...</Text>
+                <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Fetching farm weather...</Text>
             </View>
         );
     }
 
     if (error) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <Lucide.AlertCircle size={48} color="#EF4444" />
                 <Text style={styles.errorText}>{error}</Text>
                 <TouchableOpacity style={styles.retryBtn} onPress={onRefresh}>
@@ -118,7 +120,7 @@ export default function WeatherScreen() {
     const currentTimeIndex = new Date().getHours();
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <Nav />
 

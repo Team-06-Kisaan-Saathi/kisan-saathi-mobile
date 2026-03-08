@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useRef } from "react";
 import { Animated, PanResponder, Pressable, StyleSheet } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
 
 type Props = {
   onPress: () => void;
 };
 
 export default function AccessibilityFab({ onPress }: Props) {
+
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
   const panResponder = useRef(

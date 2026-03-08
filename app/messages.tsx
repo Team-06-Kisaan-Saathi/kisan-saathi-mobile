@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -25,6 +26,7 @@ type ChatItem = {
 };
 
 export default function MessagesList() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [chats, setChats] = useState<ChatItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -142,16 +144,16 @@ export default function MessagesList() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavAuto />
 
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
                 <View>
-                    <Text style={styles.title}>Messages</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Messages</Text>
+                    <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>
                         {chats.length
                             ? `${chats.length} conversation${chats.length !== 1 ? "s" : ""}`
                             : "Your conversations"}
@@ -170,7 +172,7 @@ export default function MessagesList() {
             {loading ? (
                 <View style={styles.centerBox}>
                     <ActivityIndicator size="large" color="#2563EB" />
-                    <Text style={styles.loadingText}>Loading conversations...</Text>
+                    <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Loading conversations...</Text>
                 </View>
             ) : error ? (
                 <View style={styles.centerBox}>

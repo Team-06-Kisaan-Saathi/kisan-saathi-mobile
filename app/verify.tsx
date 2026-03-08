@@ -1,3 +1,4 @@
+import { useTheme } from '../hooks/ThemeContext';
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +26,8 @@ type VerifyOtpResponse = {
 };
 
 export default function VerifyScreen() {
+  const { highContrast, fontScale } = useTheme();
+
   const { t } = useTranslation();
 
   const params = useLocalSearchParams<{
@@ -103,7 +106,7 @@ export default function VerifyScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.root}>
+      <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
         <ImageBackground
           source={require("../assets/images/f.jpg")}
           style={styles.bg}
@@ -112,7 +115,7 @@ export default function VerifyScreen() {
           <View style={styles.overlay} />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
+            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
           >
             <View style={styles.brandHeader}>
               <Text style={styles.brandTitle}>

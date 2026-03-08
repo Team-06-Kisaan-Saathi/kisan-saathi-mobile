@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useTheme } from '../../hooks/ThemeContext';
 import { Picker } from '@react-native-picker/picker';
 
 interface FilterProps {
@@ -14,16 +15,17 @@ export const FilterBar: React.FC<FilterProps> = ({
     selectedMarket, onMarketChange, markets,
     sortOrder, onSortChange,
 }) => {
+  const { highContrast } = useTheme();
     return (
-        <View style={styles.container}>
-            <View style={styles.row}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000", borderColor: "#333" }]}>
+            <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
                 <View style={styles.flex1}>
-                    <Text style={styles.label}>Market</Text>
-                    <View style={styles.pickerWrap}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Market</Text>
+                    <View style={[styles.pickerWrap, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                         <Picker
                             selectedValue={selectedMarket}
                             onValueChange={(itemValue) => onMarketChange(itemValue)}
-                            style={styles.picker}
+                            style={[styles.picker, highContrast && { color: "#FFF" }]}
                             mode="dropdown"
                             dropdownIconColor="#3B82F6"
                         >
@@ -36,12 +38,12 @@ export const FilterBar: React.FC<FilterProps> = ({
                 </View>
 
                 <View style={styles.flex1}>
-                    <Text style={styles.label}>Sort By</Text>
-                    <View style={styles.pickerWrap}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Sort By</Text>
+                    <View style={[styles.pickerWrap, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                         <Picker
                             selectedValue={sortOrder}
                             onValueChange={(itemValue) => onSortChange(itemValue)}
-                            style={styles.picker}
+                            style={[styles.picker, highContrast && { color: "#FFF" }]}
                             mode="dropdown"
                             dropdownIconColor="#3B82F6"
                         >

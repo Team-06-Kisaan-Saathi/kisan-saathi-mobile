@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { useTheme } from '../../hooks/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { cleanLocation } from '../../utils/formatters';
 import { MandiPriceDoc } from '../../services/mandiService';
 
 interface TableProps {
@@ -14,15 +16,16 @@ interface TableProps {
 export const MarketTable: React.FC<TableProps> = ({
     data, loading, refreshing, onRefresh, error
 }) => {
+  const { highContrast } = useTheme();
     const renderItem = ({ item }: { item: MandiPriceDoc }) => (
-        <View style={styles.row}>
+        <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <View style={styles.cropCol}>
-                <Text style={styles.cropName}>{item.crop}</Text>
-                <Text style={styles.date}>{item.date ? new Date(item.date).toLocaleDateString() : 'Today'}</Text>
+                <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
+                <Text style={[styles.date, highContrast && { color: "#CCC" }]}>{item.date ? new Date(item.date).toLocaleDateString() : 'Today'}</Text>
             </View>
             <View style={styles.mandiCol}>
-                <Text style={styles.mandiName} numberOfLines={1}>
-                    {item.locationName || item.mandi || 'Unknown'}
+                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>
+                    {cleanLocation(item.locationName || item.mandi || 'Unknown')}
                 </Text>
                 <View style={styles.updateRow}>
                     <Ionicons name="time-outline" size={10} color="#94A3B8" />
@@ -33,7 +36,7 @@ export const MarketTable: React.FC<TableProps> = ({
             </View>
             <View style={styles.priceCol}>
                 <View style={styles.priceRow}>
-                    <Text style={styles.price}>₹{item.pricePerQuintal}</Text>
+                    <Text style={[styles.price, highContrast && { color: "#4ADE80" }]}>₹{item.pricePerQuintal}</Text>
                     {/* Simple Trend (Randomized placeholder or logic if available) */}
                     <Ionicons
                         name={item.isBestPrice ? "trending-up" : "trending-down"}
@@ -48,16 +51,16 @@ export const MarketTable: React.FC<TableProps> = ({
 
     if (loading && !refreshing) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#3B82F6" />
-                <Text style={styles.loadingText}>Loading market data...</Text>
+                <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Loading market data...</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000", borderColor: "#333" }]}>
+            <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
                 <Text style={[styles.headerText, styles.cropCol]}>Crop</Text>
                 <Text style={[styles.headerText, styles.mandiCol]}>Market</Text>
                 <Text style={[styles.headerText, styles.priceCol, { textAlign: 'right' }]}>Price</Text>
@@ -70,9 +73,9 @@ export const MarketTable: React.FC<TableProps> = ({
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 contentContainerStyle={{ paddingBottom: 100 }}
                 ListEmptyComponent={
-                    <View style={styles.empty}>
+                    <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
                         <Ionicons name={error ? "alert-circle-outline" : "file-tray-outline"} size={48} color="#CBD5E1" />
-                        <Text style={styles.emptyText}>{error || "No data found for selected filters."}</Text>
+                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{error || "No data found for selected filters."}</Text>
                     </View>
                 }
             />

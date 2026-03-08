@@ -104,7 +104,7 @@ export default function AdminProfile() {
                 <Text style={styles.sectionTitle}>Profile Details</Text>
                 <Card style={styles.card}>
                     <DetailItem icon="Phone" label="Contact" value={user?.phone || "+91-9876543210"} />
-                    <DetailItem icon="Mail" label="Email" value="admin@kisan-saathi.com" />
+                    <DetailItem icon="Mail" label="Email" value="admin@agri-bazaar.com" />
                     <DetailItem icon="Shield" label="Permissions" value="Full Access (Master)" />
                 </Card>
 
@@ -133,7 +133,7 @@ export default function AdminProfile() {
                     <Text style={styles.logoutBtnText}>Logout from System</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.footerText}>© 2026 Kisan Saathi - Secured with End-to-End Encryption</Text>
+                <Text style={styles.footerText}>© 2026 Agri Bazaar - Secured with End-to-End Encryption</Text>
             </ScrollView>
 
             {/* Password Modal */}

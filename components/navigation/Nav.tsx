@@ -66,7 +66,7 @@ export default function NavFarmer() {
 
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top + (Platform.OS === 'android' ? 12 : 6) }]}>
       <View style={styles.navbar}>
         {/* LEFT: App Name */}
         <View style={styles.leftSection}>

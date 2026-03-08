@@ -48,6 +48,7 @@ export const AdminSidebar = ({ visible, onClose }: { visible: boolean; onClose: 
         { label: "Buyers", icon: "ShoppingBag", route: "/admin/buyers" },
         { label: "Products", icon: "Package", route: "/admin/products" },
         { label: "Orders", icon: "ShoppingCart", route: "/admin/orders" },
+        { label: "Support Requests", icon: "Headphones", route: "/admin/support-requests" },
         { label: "Analytics", icon: "PieChart", route: "/admin/analytics" },
         { label: "Profile", icon: "User", route: "/admin/profile" },
     ];

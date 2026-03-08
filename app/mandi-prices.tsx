@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
 import NavAuto from "../components/navigation/NavAuto";
 
 import { FilterBar } from "../components/market/FilterBar";
@@ -9,6 +10,7 @@ import { SummaryCards } from "../components/market/SummaryCards";
 import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
 
 export default function MandiPricesScreen() {
+  const { highContrast } = useTheme();
   // Data State
   const [prices, setPrices] = useState<MandiPriceDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,19 +100,19 @@ export default function MandiPricesScreen() {
   }, [prices]);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
       <Stack.Screen options={{ title: "Market Explorer", headerShown: false }} />
       <NavAuto />
 
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Mandi Prices</Text>
+      <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
+        <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Mandi Prices</Text>
         {lastUpdated && (
-          <Text style={styles.subtitle}>Last synced: {new Date(lastUpdated).toLocaleTimeString()}</Text>
+          <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>Last synced: {new Date(lastUpdated).toLocaleTimeString()}</Text>
         )}
       </View>
 
-      <View style={styles.content}>
+      <View style={[styles.content, highContrast && { backgroundColor: "#000" }]}>
         <SummaryCards
           totalCrops={stats.total}
           highestPrice={stats.high}

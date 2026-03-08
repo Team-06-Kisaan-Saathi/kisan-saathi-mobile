@@ -223,11 +223,8 @@ export default function ProfileLocation() {
 
       const address = geo?.[0]
         ? [
-          geo[0].name,
-          geo[0].district,
-          geo[0].city,
+          geo[0].city || geo[0].district || geo[0].subregion,
           geo[0].region,
-          geo[0].country,
         ]
           .filter(Boolean)
           .join(", ")
