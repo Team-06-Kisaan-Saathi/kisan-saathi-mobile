@@ -1,6 +1,6 @@
 
 import { Ionicons } from "@expo/vector-icons";
-import { Animated, PanResponder , ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { Animated, PanResponder, ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { useTheme } from '../hooks/ThemeContext';
 
 import { useRouter, type Href } from "expo-router";
@@ -8,6 +8,7 @@ import * as Speech from "expo-speech";
 import React, { useEffect, useRef, useState } from "react";
 
 import * as Vosk from "react-native-vosk";
+import { downloadAndSetupModel } from "../services/voskService";
 
 type Lang = "en" | "hi" | "te";
 
@@ -49,6 +50,8 @@ export default function VoiceNavBtn() {
   const [lang, setLang] = useState<Lang>("en");
   const [ready, setReady] = useState(false);
   const [listening, setListening] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const loadedLangRef = useRef<Lang | null>(null);
   const handlersBoundRef = useRef(false);
@@ -78,13 +81,29 @@ export default function VoiceNavBtn() {
     await stop("before-load");
     await unload();
 
-    const key = MODELS[target];
-    log("📦 Loading model:", key);
+    let modelPath = MODELS[target];
 
-    await Vosk?.loadModel?.(key);
+    if (target === "en") {
+      try {
+        setDownloading(true);
+        setDownloadProgress(0);
+        modelPath = await downloadAndSetupModel((p) => {
+          setDownloadProgress(Math.round(p * 100));
+        });
+      } catch (err) {
+        log("❌ Download failed:", err);
+        throw new Error("Failed to download speech model.");
+      } finally {
+        setDownloading(false);
+      }
+    }
+
+    log("📦 Loading model:", modelPath);
+
+    await Vosk?.loadModel?.(modelPath);
 
     loadedLangRef.current = target;
-    log("✅ Model loaded:", key);
+    log("✅ Model loaded:", modelPath);
   };
 
   const routeTo = async (path: Href) => {
@@ -360,6 +379,11 @@ export default function VoiceNavBtn() {
       >
         {listening ? (
           <ActivityIndicator color="#fff" />
+        ) : downloading ? (
+          <View style={{ alignItems: "center" }}>
+            <ActivityIndicator color="#fff" size="small" />
+            <Text style={{ color: "#fff", fontSize: 10, marginTop: 2 }}>{downloadProgress}%</Text>
+          </View>
         ) : !ready ? (
           <ActivityIndicator color="#fff" size="small" />
         ) : (
