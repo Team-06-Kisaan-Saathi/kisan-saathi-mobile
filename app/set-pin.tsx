@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { useTheme } from '../hooks/ThemeContext';
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,6 +24,7 @@ type SignupCompleteResponse = {
 };
 
 export default function SetPinScreen() {
+  const { highContrast } = useTheme();
   const { t } = useTranslation();
 
   const params = useLocalSearchParams<{
@@ -63,7 +65,7 @@ export default function SetPinScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.root}>
+      <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
         <ImageBackground
           source={require("../assets/images/f.jpg")}
           style={styles.bg}
@@ -72,7 +74,7 @@ export default function SetPinScreen() {
           <View style={styles.overlay} />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
+            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
           >
             <View style={styles.brandHeader}>
               <Text style={styles.brandTitle}>
@@ -88,7 +90,7 @@ export default function SetPinScreen() {
                 Establish a secure PIN to protect your account and transactions.
               </Text>
 
-              <Text style={styles.label}>New PIN</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>New PIN</Text>
               <View style={styles.pillInput}>
                 <TextInput
                   style={styles.input}

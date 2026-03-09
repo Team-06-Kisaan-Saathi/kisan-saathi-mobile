@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from '../../hooks/ThemeContext';
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { notificationService } from "../../services/NotificationService";
@@ -8,6 +9,7 @@ import { notificationService } from "../../services/NotificationService";
  * Real-time Notification Bell Component
  */
 export default function NotificationBell({ color = "#1E293B" }: { color?: string }) {
+
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(notificationService.getUnreadCount());
 

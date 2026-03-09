@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "digital-marketplace",
-    "slug": "digital-marketplace",
+    "name": "Agri Bazaar",
+    "slug": "agri-bazaar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "digitalmarketplace",
+    "scheme": "agribazaar",
     "newArchEnabled": true,
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -14,6 +15,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import NavAuto from "../components/navigation/NavAuto";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
+import { apiFetch } from "../services/http";
 
 import { Picker } from "@react-native-picker/picker";
 
@@ -21,6 +23,7 @@ const { width } = Dimensions.get("window");
 
 const SupportScreen = () => {
     const router = useRouter();
+    const { highContrast } = useTheme();
     const [phoneNumber, setPhoneNumber] = useState("");
     const [issueType, setIssueType] = useState("Payment");
 
@@ -28,58 +31,64 @@ const SupportScreen = () => {
         Linking.openURL(`tel:${number.replace(/-/g, "")}`);
     };
 
-    const handleRequestCallback = () => {
+    const handleRequestCallback = async () => {
         if (!phoneNumber || phoneNumber.length < 10) {
             Alert.alert("Invalid Input", "Please enter a valid phone number.");
             return;
         }
 
-        // Simulate API call
-        Alert.alert(
-            "Success",
-            `Your callback request for ${issueType} has been submitted. Our executive will call you back shortly on ${phoneNumber}.`,
-            [{
-                text: "OK", onPress: () => {
-                    setPhoneNumber("");
-                    setIssueType("Payment");
-                }
-            }]
-        );
+        try {
+            const res: any = await apiFetch("/api/support/request", {
+                method: "POST",
+                body: JSON.stringify({ phone: phoneNumber, issueType }),
+            });
+
+            if (res.success) {
+                Alert.alert(
+                    "Success",
+                    `Your callback request for ${issueType} has been submitted. Our executive will call you back shortly on ${phoneNumber}.`,
+                    [{
+                        text: "OK", onPress: () => {
+                            setPhoneNumber("");
+                            setIssueType("Payment");
+                        }
+                    }]
+                );
+            } else {
+                Alert.alert("Error", res.message || "Failed to submit request");
+            }
+        } catch (e) {
+            Alert.alert("Error", "Server connection failed");
+        }
     };
 
     return (
-        <SafeAreaView style={styles.safe}>
+        <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavAuto />
 
-
             {/* Header Section */}
-            <View style={styles.header}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color="#0F172A" />
-                    </TouchableOpacity>
-                </View>
-                <Text style={styles.title}>Support Center</Text>
-                <Text style={styles.subtitle}>We are here to help you</Text>
+            <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
+                <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Support Center</Text>
+                <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>We are here to help you</Text>
             </View>
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
 
                 {/* Call Support Card */}
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <View style={styles.cardHeader}>
                         <View style={[styles.iconContainer, { backgroundColor: "#F59E0B15" }]}>
                             <Ionicons name="call" size={24} color="#F59E0B" />
                         </View>
                         <View style={styles.cardHeaderText}>
-                            <Text style={styles.cardTitle}>Call Support</Text>
-                            <Text style={styles.cardSubtitle}>Talk to our expert team</Text>
+                            <Text style={[styles.cardTitle, highContrast && { color: "#FFF" }]}>Call Support</Text>
+                            <Text style={[styles.cardSubtitle, highContrast && { color: "#CCC" }]}>Talk to our expert team</Text>
                         </View>
                     </View>
-                    <View style={styles.numberContainer}>
-                        <Text style={styles.tollFreeNumber}>1800-123-4567</Text>
-                        <Text style={styles.tollFreeLabel}>Toll-Free Number</Text>
+                    <View style={[styles.numberContainer, highContrast && { backgroundColor: "#222" }]}>
+                        <Text style={[styles.tollFreeNumber, highContrast && { color: "#FFF" }]}>1800-123-4567</Text>
+                        <Text style={[styles.tollFreeLabel, highContrast && { color: "#CCC" }]}>Toll-Free Number</Text>
                     </View>
                     <TouchableOpacity
                         style={styles.callNowBtn}
@@ -91,22 +100,23 @@ const SupportScreen = () => {
                 </View>
 
                 {/* Request Callback Section */}
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <View style={styles.cardHeader}>
                         <View style={[styles.iconContainer, { backgroundColor: "#16A34A15" }]}>
                             <MaterialCommunityIcons name="message-text-clock" size={24} color="#16A34A" />
                         </View>
                         <View style={styles.cardHeaderText}>
-                            <Text style={styles.cardTitle}>Request a Callback</Text>
-                            <Text style={styles.cardSubtitle}>We will reach out to you</Text>
+                            <Text style={[styles.cardTitle, highContrast && { color: "#FFF" }]}>Request a Callback</Text>
+                            <Text style={[styles.cardSubtitle, highContrast && { color: "#CCC" }]}>We will reach out to you</Text>
                         </View>
                     </View>
 
                     <View style={styles.formGroup}>
-                        <Text style={styles.label}>Phone Number</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Phone Number</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, highContrast && { backgroundColor: "#111", borderColor: "#333", color: "#FFF" }]}
                             placeholder="Enter your 10 digit mobile number"
+                            placeholderTextColor="#94A3B8"
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
                             keyboardType="phone-pad"
@@ -115,12 +125,12 @@ const SupportScreen = () => {
                     </View>
 
                     <View style={styles.formGroup}>
-                        <Text style={styles.label}>Issue Type</Text>
-                        <View style={styles.pickerContainer}>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Issue Type</Text>
+                        <View style={[styles.pickerContainer, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                             <Picker
                                 selectedValue={issueType}
                                 onValueChange={(itemValue) => setIssueType(itemValue)}
-                                style={styles.picker}
+                                style={[styles.picker, highContrast && { color: "#FFF" }]}
                             >
                                 <Picker.Item label="Payment Issue" value="Payment" />
                                 <Picker.Item label="Order Issue" value="Order Issue" />
@@ -134,7 +144,6 @@ const SupportScreen = () => {
                         <Text style={styles.requestBtnText}>Request Callback</Text>
                     </TouchableOpacity>
                 </View>
-
 
                 {/* Emergency Helpline */}
                 <View style={[styles.card, styles.emergencyCard]}>
@@ -171,18 +180,6 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         paddingBottom: 20,
         backgroundColor: "#FFF"
-    },
-    headerTop: {
-        height: 48,
-        justifyContent: "center",
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "#F1F5F9",
-        alignItems: "center",
-        justifyContent: "center",
     },
     title: { fontSize: 26, fontWeight: "900", color: "#0F172A", marginTop: 10 },
     subtitle: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
@@ -308,42 +305,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 
-    timingRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#F1F5F9",
-    },
-    timingDay: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#475569",
-    },
-    timingValue: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: "#1E293B",
-    },
-
     emergencyCard: {
         borderColor: "#DC262640",
         borderWidth: 2,
-    },
-
-    faqLink: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: "#F1F5F9",
-    },
-    faqLinkText: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#334155",
-        flex: 1,
     },
 });
 

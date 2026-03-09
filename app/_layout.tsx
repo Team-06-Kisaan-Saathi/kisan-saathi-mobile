@@ -1,128 +1,190 @@
 import { Stack, useRouter, usePathname, useSegments } from "expo-router";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
-// import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
+import VoiceNavButton from "../components/VoiceNavBtn";
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
 import { notificationService } from "../services/NotificationService";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
-import { ThemeProvider } from "../hooks/ThemeContext";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { ThemeProvider, useTheme } from "../hooks/ThemeContext";
 import { Colors } from "../constants/theme";
+
+import { GestureHandlerRootView, GestureDetector, Gesture } from "react-native-gesture-handler";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <InnerLayout />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <InnerLayoutWrapper />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
-function InnerLayout() {
+function InnerLayoutWrapper() {
   const { i18n } = useTranslation();
-  const router = useRouter();
-  const segments = useSegments();
-  const pathname = usePathname();
-
-  const [open, setOpen] = useState(false);
-  const [fontScale, setFontScale] = useState(1);
-  const [highContrast, setHighContrast] = useState(false);
+  const { highContrast, fontScale, zoomEnabled } = useTheme();
   const [language, setLang] = useState(i18n.language || "en");
-
-  // Authentication & Role Guard logic
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = await AsyncStorage.getItem("token");
-      const role = await AsyncStorage.getItem("role");
-
-      const inAuthGroup = (segments[0] as any) === "(auth)" ||
-        pathname === "/login" ||
-        pathname === "/verify" ||
-        pathname === "/signin" ||
-        pathname === "/set-pin" ||
-        pathname === "/profile-setup" ||
-        pathname === "/profile-location";
-
-      if (!token && !inAuthGroup) {
-        // Redirect to login if not authenticated
-        setTimeout(() => router.replace("/login"), 0);
-      } else if (token && role) {
-        // Init notifications
-        notificationService.init();
-
-        // Role based dashboard redirection if on home/index or wrong dashboard
-        if (pathname === "/" || pathname === "/index") {
-          if (role === "admin") {
-            router.replace("/admin-dashboard");
-          } else {
-            router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
-          }
-        }
-
-        if (role === "buyer") {
-          const farmerOnly = ["/farmer-dashboard", "/invoices", "/govt-schemes", "/farmer-auctions", "/create-auction"];
-          const adminOnly = ["/admin-dashboard"];
-          if ([...farmerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/buyer-dashboard");
-        }
-        if (role === "farmer") {
-          const buyerOnly = ["/buyer-dashboard", "/buyer-auctions", "/my-bids"];
-          const adminOnly = ["/admin-dashboard"];
-          if ([...buyerOnly, ...adminOnly].some(p => pathname.startsWith(p))) router.replace("/farmer-dashboard");
-        }
-
-        if (role !== "admin" && pathname.startsWith("/admin-dashboard")) {
-          router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
-        }
-
-
-      }
-    };
-
-    checkAuth();
-  }, [segments, pathname]);
 
   const setLanguage = async (lang: string) => {
     setLang(lang);
     await persistLanguage(lang);
   };
 
-  const colorScheme = useColorScheme();
-  const backgroundColor = Colors[colorScheme ?? 'light'].background;
+  return (
+    <InnerLayout
+      isHighContrast={highContrast}
+      fontScale={fontScale}
+      zoomEnabled={zoomEnabled}
+      language={language}
+      setLanguage={setLanguage}
+    />
+  );
+}
+
+function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLanguage }: any) {
+  const router = useRouter();
+  const segments = useSegments();
+  const pathname = usePathname();
+  const insets = useSafeAreaInsets();
+  const { colorScheme } = useTheme();
+  const highContrast = isHighContrast;
+
+  const [open, setOpen] = useState(false);
+
+  const isAuthPage = (segments[0] as any) === "(auth)" ||
+    pathname === "/login" ||
+    pathname === "/verify" ||
+    pathname === "/signin" ||
+    pathname === "/verification" ||
+    pathname === "/set-pin" ||
+    pathname === "/profile-setup" ||
+    pathname === "/profile-location";
+
+  // Zoom logic
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const pinch = Gesture.Pinch()
+    .enabled(zoomEnabled)
+    .onUpdate((e) => {
+      let newScale = savedScale.value * e.scale;
+      if (newScale > 3) newScale = 3;
+      if (newScale < 0.5) newScale = 0.5;
+      scale.value = newScale;
+    })
+    .onEnd(() => {
+      if (scale.value < 1.1) {
+        scale.value = withSpring(1);
+        savedScale.value = 1;
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      } else {
+        savedScale.value = scale.value;
+      }
+    });
+
+  const pan = Gesture.Pan()
+    .enabled(zoomEnabled)
+    .minPointers(2)
+    .onUpdate((e) => {
+      if (scale.value > 1.0) {
+        translateX.value = savedTranslateX.value + e.translationX;
+        translateY.value = savedTranslateY.value + e.translationY;
+      }
+    })
+    .onEnd(() => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    });
+
+  const composed = Gesture.Simultaneous(pinch, pan);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value }
+    ],
+  }));
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await AsyncStorage.getItem("token");
+      const role = await AsyncStorage.getItem("role");
+
+      const inAuthGroup = isAuthPage;
+
+      if (!token && !inAuthGroup) {
+        setTimeout(() => router.replace("/login"), 0);
+      } else if (token && role && (pathname === "/" || pathname === "/index")) {
+        notificationService.init();
+        if (role === "admin") router.replace("/admin-dashboard");
+        else router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
+      }
+    };
+    checkAuth();
+  }, [segments, pathname, isAuthPage]);
+
+  const themeMode = highContrast ? 'contrast' : (colorScheme || 'light');
+  const backgroundColor = Colors[themeMode as keyof typeof Colors].background;
 
   return (
     <View style={[styles.root, { backgroundColor }]}>
-      {/* Screens */}
-      <Stack
-        initialRouteName="login"
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "transparent" }
-        }}
-      >
-        <Stack.Screen name="login" />
-        <Stack.Screen name="verify" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="marketplace" />
-        <Stack.Screen name="weather" />
-      </Stack>
+      <StatusBar
+        barStyle={highContrast ? "light-content" : (colorScheme === 'dark' ? "light-content" : "dark-content")}
+        backgroundColor="transparent"
+        translucent
+      />
 
-      {/* Floating overlay ABOVE everything */}
+      <GestureDetector gesture={composed}>
+        <Animated.View style={[{ flex: 1, backgroundColor, justifyContent: 'center', alignItems: 'center' }, animatedStyle]}>
+          <View style={{
+            width: fontScale !== 1 ? `${100 / fontScale}%` : '100%',
+            height: fontScale !== 1 ? `${100 / fontScale}%` : '100%',
+            transform: fontScale !== 1 ? [{ scale: fontScale }] : [],
+            backgroundColor: "transparent"
+          }}>
+            <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: "transparent" }}>
+              <Stack
+                initialRouteName="login"
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: "transparent" }
+                }}
+              >
+                <Stack.Screen name="login" />
+                <Stack.Screen name="verify" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="marketplace" />
+              </Stack>
+            </View>
+          </View>
+        </Animated.View>
+      </GestureDetector>
+
+      {/* Floating overlay */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
-        {/* <VoiceNavButton /> */} {/* Disabled - requires native module build */}
+        {!isAuthPage && <VoiceNavButton />}
       </View>
 
-      {/* Sheet */}
       <AccessibilitySheet
         visible={open}
         onClose={() => setOpen(false)}
-        fontScale={fontScale}
-        setFontScale={setFontScale}
-        highContrast={highContrast}
-        setHighContrast={setHighContrast}
         language={language}
         setLanguage={setLanguage}
       />
@@ -138,4 +200,3 @@ const styles = StyleSheet.create({
     elevation: 999999,
   },
 });
-

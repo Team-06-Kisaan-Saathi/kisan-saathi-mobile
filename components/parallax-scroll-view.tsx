@@ -1,3 +1,4 @@
+import { useTheme } from '../hooks/ThemeContext';
 import type { PropsWithChildren, ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -23,6 +24,7 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor,
 }: Props) {
+  const { highContrast } = useTheme();
   const backgroundColor = useThemeColor({}, 'background');
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -57,7 +59,7 @@ export default function ParallaxScrollView({
         ]}>
         {headerImage}
       </Animated.View>
-      <ThemedView style={styles.content}>{children}</ThemedView>
+      <ThemedView style={[styles.content, highContrast && { backgroundColor: "#000" }]}>{children}</ThemedView>
     </Animated.ScrollView>
   );
 }

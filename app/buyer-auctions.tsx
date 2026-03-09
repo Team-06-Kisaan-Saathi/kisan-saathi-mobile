@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import NavBuyer from "../components/navigation/NavBuyer";
 import {
     View,
@@ -68,6 +69,7 @@ const AuctionTimer = ({ createdAt, status }: { createdAt: string, status: string
 };
 
 export default function BuyerAuctions() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [auctions, setAuctions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -137,7 +139,7 @@ export default function BuyerAuctions() {
     });
 
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavBuyer />
 
@@ -169,13 +171,13 @@ export default function BuyerAuctions() {
                 </View>
             </View>
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
                 {loading ? (
                     <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />
                 ) : filteredAuctions.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="search" size={48} color="#CBD5E1" />
-                        <Text style={styles.emptyText}>No auctions found</Text>
+                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No auctions found</Text>
                     </View>
                 ) : filteredAuctions.map((auction, index) => (
                     <TouchableOpacity
@@ -187,7 +189,7 @@ export default function BuyerAuctions() {
                         {/* Card Header */}
                         <View style={styles.cardTopRow}>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.cropName}>{auction.crop}</Text>
+                                <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{auction.crop}</Text>
                                 <Text style={styles.farmerName}>
                                     <Ionicons name="person" size={12} color="#64748B" /> {auction.farmer} ✓
                                 </Text>

@@ -8,44 +8,38 @@ import {
   Switch,
 } from "react-native";
 
-type Props = {
-  visible: boolean;
-  onClose: () => void;
-
-  fontScale: number; // 1, 1.1, 1.2 etc
-  setFontScale: (v: number) => void;
-
-  highContrast: boolean;
-  setHighContrast: (v: boolean) => void;
-
-  // If you want language switching, pass handlers
-  language: string; // "en" | "hi" | ...
-  setLanguage: (lang: string) => void;
-};
+import { useTheme } from "../hooks/ThemeContext";
 
 export default function AccessibilitySheet({
   visible,
   onClose,
-  fontScale,
-  setFontScale,
-  highContrast,
-  setHighContrast,
   language,
   setLanguage,
-}: Props) {
+}: {
+  visible: boolean;
+  onClose: () => void;
+  language: string;
+  setLanguage: (lang: string) => void;
+}) {
+  const {
+    fontScale, setFontScale,
+    highContrast, setHighContrast,
+    zoomEnabled, setZoomEnabled
+  } = useTheme();
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
 
       <View style={styles.sheet} accessibilityRole="summary">
 
-        <Text style={styles.title}>Accessibility</Text>
+        <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Accessibility</Text>
 
         {/* Text size */}
-        <View style={styles.row}>
-          <Text style={styles.label}>Text size</Text>
+        <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
+          <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Text size</Text>
           <View style={styles.pillRow}>
-            {[1, 1.1, 1.2].map((v) => (
+            {[1, 1.15, 1.3].map((v) => (
               <Pressable
                 key={v}
                 onPress={() => setFontScale(v)}
@@ -57,7 +51,7 @@ export default function AccessibilitySheet({
                 accessibilityLabel={`Set text size to ${v}`}
               >
                 <Text style={[styles.pillText, fontScale === v && styles.pillTextActive]}>
-                  {v === 1 ? "A" : v === 1.1 ? "A+" : "A++"}
+                  {v === 1 ? "A" : v === 1.15 ? "A+" : "A++"}
                 </Text>
               </Pressable>
             ))}
@@ -65,14 +59,32 @@ export default function AccessibilitySheet({
         </View>
 
         {/* Contrast */}
-        <View style={styles.row}>
-          <Text style={styles.label}>High contrast</Text>
-          <Switch value={highContrast} onValueChange={setHighContrast} />
+        <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
+          <View style={styles.switchRow}>
+            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>High Contrast</Text>
+            <Switch
+              value={highContrast}
+              onValueChange={setHighContrast}
+              trackColor={{ false: "#767577", true: "#1f5fa6" }}
+            />
+          </View>
+        </View>
+
+        {/* Zoom & Pinch */}
+        <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
+          <View style={styles.switchRow}>
+            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Zoom & Pinch support</Text>
+            <Switch
+              value={zoomEnabled}
+              onValueChange={setZoomEnabled}
+              trackColor={{ false: "#767577", true: "#1f5fa6" }}
+            />
+          </View>
         </View>
 
         {/* Language */}
-        <View style={styles.row}>
-          <Text style={styles.label}>Language</Text>
+        <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
+          <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Language</Text>
           <View style={styles.pillRow}>
             {[
               { k: "en", t: "English" },
@@ -127,14 +139,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     marginBottom: 10,
+    color: "#111827",
   },
   row: {
     marginTop: 12,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   label: {
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+    color: "#111827",
   },
   pillRow: {
     flexDirection: "row",

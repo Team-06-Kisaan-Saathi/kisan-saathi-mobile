@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -27,6 +28,7 @@ const statusColors: Record<BidStatus, { bg: string, text: string }> = {
 };
 
 export default function MyBids() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [bids, setBids] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function MyBids() {
     };
 
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavBuyer />
 
@@ -121,13 +123,13 @@ export default function MyBids() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
                 {loading ? (
                     <ActivityIndicator size="large" color="#7C3AED" style={{ marginTop: 40 }} />
                 ) : bids.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="pricetag-outline" size={48} color="#CBD5E1" />
-                        <Text style={styles.emptyText}>You haven't placed any bids yet</Text>
+                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>You haven't placed any bids yet</Text>
                         <TouchableOpacity
                             style={styles.browseBtn}
                             onPress={() => router.push("/buyer-auctions" as any)}
@@ -151,7 +153,7 @@ export default function MyBids() {
                             {/* Card Top */}
                             <View style={styles.cardTop}>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.cropName}>{bid.crop}</Text>
+                                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{bid.crop}</Text>
                                     <Text style={styles.farmerText}>{bid.quantityKg} kg · {bid.farmer}</Text>
                                 </View>
                                 <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>

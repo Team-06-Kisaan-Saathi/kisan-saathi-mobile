@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -27,6 +28,7 @@ const { width } = Dimensions.get("window");
 type TabKey = "Prices" | "Farmers";
 
 export default function BuyerMarketplace() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const { q } = useLocalSearchParams<{ q?: string }>();
     const [tab, setTab] = useState<TabKey>("Prices");
@@ -111,7 +113,7 @@ export default function BuyerMarketplace() {
     }, [prices, search]);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
             <NavBuyer />
 
@@ -153,7 +155,7 @@ export default function BuyerMarketplace() {
             {loading ? (
                 <View style={styles.loading}>
                     <ActivityIndicator size="large" color="#1e3a8a" />
-                    <Text style={styles.loadingText}>Fetching latest data...</Text>
+                    <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Fetching latest data...</Text>
                 </View>
             ) : (
                 <FlatList
@@ -170,9 +172,9 @@ export default function BuyerMarketplace() {
                             />
                     )}
                     ListEmptyComponent={
-                        <View style={styles.empty}>
+                        <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
                             <Ionicons name="search-outline" size={48} color="#CBD5E1" />
-                            <Text style={styles.emptyText}>No results found for "{search}"</Text>
+                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No results found for "{search}"</Text>
                         </View>
                     }
                 />
@@ -250,6 +252,7 @@ export default function BuyerMarketplace() {
 }
 
 function PriceCard({ item }: any) {
+  const { highContrast } = useTheme();
     return (
         <View style={styles.priceCard}>
             <View style={styles.cardUpper}>
@@ -257,10 +260,10 @@ function PriceCard({ item }: any) {
                     <Ionicons name="leaf" size={20} color="#059669" />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.cropName}>{item.crop}</Text>
+                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
                     <View style={styles.mandiRow}>
                         <Ionicons name="location" size={12} color="#64748B" />
-                        <Text style={styles.mandiName}> {item.locationName || item.mandi}</Text>
+                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}> {item.locationName || item.mandi}</Text>
                     </View>
                 </View>
                 <View style={styles.priceColumn}>
@@ -279,6 +282,7 @@ function PriceCard({ item }: any) {
 }
 
 function FarmerCard({ item, onPress, onContact }: any) {
+  const { highContrast } = useTheme();
     return (
         <TouchableOpacity style={styles.farmerCard} onPress={onPress}>
             <View style={styles.cardUpper}>
@@ -286,10 +290,10 @@ function FarmerCard({ item, onPress, onContact }: any) {
                     <Ionicons name="person" size={20} color="#1d4ed8" />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.cropName}>{item.name}</Text>
+                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.name}</Text>
                     <View style={styles.mandiRow}>
                         <Ionicons name="location-outline" size={14} color="#64748B" />
-                        <Text style={styles.mandiName}>{item.location || "Unknown Location"}</Text>
+                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.location || "Unknown Location"}</Text>
                     </View>
                 </View>
                 {item.verificationStatus === "approved" && (

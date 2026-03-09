@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavFarmer from "../components/navigation/NavFarmer";
+import { cleanLocation } from "../utils/formatters";
 
 import {
   ActivityIndicator,
@@ -109,12 +110,12 @@ function FarmerProfileContent() {
         />
         <Row
           label="Location"
-          value={
+          value={cleanLocation(
             profile?.location?.address ||
             profile?.location?.name ||
             profile?.location ||
             "Not set"
-          }
+          )}
         />
       </View>
 

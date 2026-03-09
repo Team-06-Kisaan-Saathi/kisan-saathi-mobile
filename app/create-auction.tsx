@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -20,6 +21,7 @@ const Ionicons = (props: any) => <View {...props} />;
 const FontAwesome5 = (props: any) => <View {...props} />;
 
 export default function CreateAuction() {
+  const { highContrast } = useTheme();
     const router = useRouter();
 
     // Section A: Crop Details State
@@ -106,22 +108,22 @@ export default function CreateAuction() {
         >
             <Stack.Screen options={{ headerShown: false }} />
             <NavFarmer />
-            <View style={styles.header}>
+            <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color="#0F172A" />
+                    <Ionicons name="arrow-back" size={24} color={highContrast ? "#FFF" : "#0F172A"} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Create Live Auction</Text>
                 <View style={{ width: 40 }} /> {/* Spacer */}
             </View>
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
 
                 {/* SECTION A: CROP DETAILS */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>A. CROP DETAILS</Text>
                 </View>
-                <View style={styles.card}>
-                    <Text style={styles.label}>Crop Name <Text style={styles.required}>*</Text></Text>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Crop Name <Text style={styles.required}>*</Text></Text>
                     <TextInput
                         style={styles.input}
                         placeholder="e.g. Wheat, Basmati Rice"
@@ -130,7 +132,7 @@ export default function CreateAuction() {
                         placeholderTextColor="#94A3B8"
                     />
 
-                    <Text style={styles.label}>Variety (Optional)</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Variety (Optional)</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="e.g. Sharbati, 1121"
@@ -141,7 +143,7 @@ export default function CreateAuction() {
 
                     <View style={[styles.row, { zIndex: 10 }]}>
                         <View style={{ flex: 1, marginRight: 8 }}>
-                            <Text style={styles.label}>Quantity <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Quantity <Text style={styles.required}>*</Text></Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="e.g. 50"
@@ -152,7 +154,7 @@ export default function CreateAuction() {
                             />
                         </View>
                         <View style={{ flex: 1, marginLeft: 8, zIndex: 10 }}>
-                            <Text style={styles.label}>Unit <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Unit <Text style={styles.required}>*</Text></Text>
                             <TouchableOpacity
                                 style={[styles.input, styles.dropdownInput]}
                                 onPress={() => setShowUnitDropdown(!showUnitDropdown)}
@@ -182,7 +184,7 @@ export default function CreateAuction() {
                         </View>
                     </View>
 
-                    <Text style={styles.label}>Quality Grade <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Quality Grade <Text style={styles.required}>*</Text></Text>
                     <View style={styles.radioGroup}>
                         {["A", "B", "C"].map(grade => (
                             <TouchableOpacity
@@ -197,7 +199,7 @@ export default function CreateAuction() {
                         ))}
                     </View>
 
-                    <Text style={styles.label}>Harvest Date <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Harvest Date <Text style={styles.required}>*</Text></Text>
                     {Platform.OS === "web" ? (
                         <View style={styles.input}>
                             {React.createElement('input', {
@@ -225,7 +227,7 @@ export default function CreateAuction() {
                         />
                     )}
 
-                    <Text style={styles.label}>Upload Photos (Optional)</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Upload Photos (Optional)</Text>
                     <TouchableOpacity style={styles.uploadBtn}>
                         <Ionicons name="camera-outline" size={24} color="#16A34A" />
                         <Text style={styles.uploadText}>Tap to add photos</Text>
@@ -236,8 +238,8 @@ export default function CreateAuction() {
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>B. PRICING STRATEGY</Text>
                 </View>
-                <View style={styles.card}>
-                    <Text style={styles.label}>Starting Price (per {unit.toLowerCase()}) <Text style={styles.required}>*</Text></Text>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Starting Price (per {unit.toLowerCase()}) <Text style={styles.required}>*</Text></Text>
                     <View style={styles.inputWrapper}>
                         <Text style={styles.currencyPrefix}>₹</Text>
                         <TextInput
@@ -250,7 +252,7 @@ export default function CreateAuction() {
                         />
                     </View>
 
-                    <Text style={styles.label}>Reserve Price (Optional)</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Reserve Price (Optional)</Text>
                     <Text style={styles.helperText}>Minimum acceptable price. Auction only completes if highest bid ≥ reserve price.</Text>
                     <View style={styles.inputWrapper}>
                         <Text style={styles.currencyPrefix}>₹</Text>
@@ -264,7 +266,7 @@ export default function CreateAuction() {
                         />
                     </View>
 
-                    <Text style={styles.label}>Minimum Bid Increment <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Minimum Bid Increment <Text style={styles.required}>*</Text></Text>
                     <Text style={styles.helperText}>Prevents ₹1 increments.</Text>
                     <View style={styles.inputWrapper}>
                         <Text style={styles.currencyPrefix}>₹</Text>
@@ -283,8 +285,8 @@ export default function CreateAuction() {
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>C. AUCTION TIMING</Text>
                 </View>
-                <View style={styles.card}>
-                    <Text style={styles.label}>Duration <Text style={styles.required}>*</Text></Text>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Duration <Text style={styles.required}>*</Text></Text>
                     <View style={styles.durationGroup}>
                         {[
                             { key: "30m", label: "30 Mins" },
@@ -314,8 +316,8 @@ export default function CreateAuction() {
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>D. LOGISTICS</Text>
                 </View>
-                <View style={styles.card}>
-                    <Text style={styles.label}>Pickup Location (Village/District) <Text style={styles.required}>*</Text></Text>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Pickup Location (Village/District) <Text style={styles.required}>*</Text></Text>
                     <TextInput
                         style={styles.input}
                         placeholder="e.g. Ludhiana, Punjab"
@@ -324,7 +326,7 @@ export default function CreateAuction() {
                         placeholderTextColor="#94A3B8"
                     />
 
-                    <Text style={styles.label}>Delivery Type <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Delivery Type <Text style={styles.required}>*</Text></Text>
                     <View style={styles.radioGroupVertical}>
                         {["Buyer Pickup", "Farmer Delivery"].map(type => (
                             <TouchableOpacity
