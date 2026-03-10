@@ -79,7 +79,7 @@ function FarmerProfileContent() {
           </Text>
           <Text style={{ marginTop: 8, color: "#64748b" }}>
             This page reads from AsyncStorage key:{" "}
-            <Text style={{ fontWeight: "800" }}>"profile"</Text>. If you never
+            <Text style={{ fontWeight: "800" }}>{"\"profile\""}</Text>. If you never
             stored it after login, it will be empty.
           </Text>
 

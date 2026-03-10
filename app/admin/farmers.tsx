@@ -104,15 +104,15 @@ export default function FarmerManagement() {
             <View style={styles.divider} />
 
             <View style={styles.footer}>
-                <View>
+                <View style={{ flex: 1.5 }}>
                     <Text style={styles.label}>Phone</Text>
-                    <Text style={styles.value}>{item.phone}</Text>
+                    <Text style={styles.value} numberOfLines={1}>{item.phone}</Text>
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                     <Text style={styles.label}>Transactions</Text>
                     <Text style={styles.value}>{item.totalTransactions || 0}</Text>
                 </View>
-                <View>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     <Text style={styles.label}>Status</Text>
                     <Badge
                         text={(item.verificationStatus === 'none' || !item.verificationStatus) ? "pending" : item.verificationStatus}
@@ -321,9 +321,9 @@ const styles = StyleSheet.create({
     footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     label: { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
     value: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginTop: 2 },
-    actionRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
-    actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-    btnText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+    actionRow: { flexDirection: 'row', gap: 8, marginTop: 16, flexWrap: 'wrap' },
+    actionBtn: { minWidth: '45%', flexGrow: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+    btnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

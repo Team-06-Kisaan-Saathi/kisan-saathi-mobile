@@ -59,14 +59,14 @@ export default function NavBuyer() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top + (Platform.OS === 'android' ? 12 : 6), backgroundColor: navBg }]}>
+        <View style={[styles.container, { paddingTop: insets.top, backgroundColor: navBg }]}>
             <View style={styles.navbar}>
                 <TouchableOpacity
                     style={styles.brandBtn}
                     onPress={() => router.replace("/buyer-dashboard")}
                     activeOpacity={0.7}
                 >
-                    <Text style={[styles.brandText, { color: textColor }]}>Agri Bazaar</Text>
+                    <Text style={[styles.brandText, { color: textColor }]}>Agri{"\n"}Bazaar</Text>
                 </TouchableOpacity>
 
                 <View style={styles.centerSection}>
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        height: 54,
+        height: 48,
         paddingHorizontal: 16,
     },
     brandBtn: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     },
     pageTitle: {
         color: "#BFDBFE",
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: "700",
         textTransform: "uppercase",
         letterSpacing: 1,
@@ -163,10 +163,12 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     brandText: {
-        fontSize: 20,
-        fontWeight: "800",
+        fontSize: 13,
+        fontWeight: "900",
         color: "#FFF",
-        letterSpacing: 0.3,
+        lineHeight: 14,
+        textAlign: "center",
+        textTransform: "uppercase",
     },
     profileButton: {},
     avatar: {

@@ -1,31 +1,39 @@
-/**
- * Robustly removes jargon, plus codes, sector codes, postcodes, and coordinates 
- * from location strings to keep only the place name.
- */
-export const cleanLocation = (name: string): string => {
-    if (!name) return "";
+export const cleanLocation = (location: string): string => {
+    if (!location) return '';
 
-    let cleaned = name;
+    // 1. Remove coordinates (e.g., "12.3456, 78.9012" or "12.3456")
+    let cleaned = location.replace(/[-+]?\d{1,3}\.\d{4,}/g, '');
 
-    // 1. Remove Plus Codes (e.g., 8GGV+PX Coimbatore, WV4X+RCP, etc.)
-    cleaned = cleaned.replace(/[a-zA-Z0-9]{4,8}\+[a-zA-Z0-9]{2,4}/g, "");
+    // 2. Remove anything in parentheses
+    cleaned = cleaned.replace(/\s*\(.*?\)\s*/g, ' ');
 
-    // 2. Remove Coordinates like (17.4375, 78.4483)
-    cleaned = cleaned.replace(/\(?\-?\d+\.\d+,\s*\-?\d+\.\d+\)?/g, "");
+    // 3. Remove "India" or postal codes
+    cleaned = cleaned.replace(/,\s*India\s*$/i, '');
+    cleaned = cleaned.replace(/\s*\d{6,}\s*/g, '');
 
-    // 3. Remove Postcode/Sector codes (e.g., WV4, NW10, SW1A, E17, 110001)
-    cleaned = cleaned.replace(/\b[A-Z]{1,2}\d{1,2}[A-Z]{0,2}\b/g, "");
-    cleaned = cleaned.replace(/\b\d{5,6}\b/g, "");
+    // 4. Split by comma and clean individual parts
+    let parts = cleaned.split(',')
+        .map(p => p.trim())
+        // Remove administrative suffixes like "WV", "PO", "Ward X" etc.
+        .map(p => p.replace(/\s+(WV|PO|SO|Ward|Pt)\s*\d*$/gi, '').trim())
+        .filter(p => p.length > 0 && !/^[-+\d,.\s]+$/.test(p));
 
-    // 4. Remove technical IDs
-    cleaned = cleaned.replace(/\b(rdp|rcp|wv|nw|se|sw)\b/gi, "");
+    // 5. If we have multiple parts, take 1 or 2 most relevant ones
+    if (parts.length > 2) {
+        cleaned = parts.slice(0, 2).join(', ');
+    } else if (parts.length > 0) {
+        cleaned = parts.join(', ');
+    } else {
+        cleaned = location.split(',')[0].trim().replace(/\s+WV$/i, '');
+    }
 
-    // 5. Cleanup spacing and stray commas/dashes
-    cleaned = cleaned.replace(/^[,\s\-–—]+|[,\s\-–—]+$/g, ""); // Leading/trailing
-    cleaned = cleaned.replace(/\s+/g, " "); // Normalize spaces
-    cleaned = cleaned.replace(/ ,/g, ",");
-    cleaned = cleaned.replace(/,+(\s*,)+/g, ","); // Remove multiple commas
-    cleaned = cleaned.replace(/^,\s*/, ""); // Remove comma at start
+    // 6. Final cleanup 
+    cleaned = cleaned.replace(/^[,\s]+|[,\s]+$/g, '').trim();
 
-    return cleaned.trim() || name;
+    // 7. Max length safety
+    if (cleaned.length > 30) {
+        cleaned = cleaned.substring(0, 27) + '...';
+    }
+
+    return cleaned || 'Unknown Location';
 };

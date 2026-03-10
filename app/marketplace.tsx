@@ -710,9 +710,10 @@ function LiveFeed({
             </View>
 
             <View style={styles.priceRow}>
-              <View>
-                <Text style={styles.priceLabel}>Price (per quintal)</Text>
+              <View style={{ flex: 1.2 }}>
+                <Text style={styles.priceLabel}>Price</Text>
                 <Text style={styles.priceAmount}>{item.displayPrice}</Text>
+                <Text style={styles.priceSubLabel}>₹{(item.pricePerQuintal / 100).toFixed(2)} / kg</Text>
               </View>
 
               <View style={styles.timeBox}>
@@ -1197,6 +1198,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#eef2f7",
   },
   priceLabel: { color: "#6c757d", fontSize: 12, marginBottom: 4 },
+  priceSubLabel: { color: "#2d6a4f", fontSize: 14, fontWeight: "700", opacity: 0.8 },
   priceAmount: { color: "#2d6a4f", fontSize: 28, fontWeight: "900" },
   timeBox: { alignItems: "flex-end" },
   timeLabel: { color: "#6c757d", fontSize: 11, marginBottom: 2 },

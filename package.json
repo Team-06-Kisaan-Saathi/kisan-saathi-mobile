@@ -14,6 +14,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/portal": "^1.0.14",
+    "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -42,6 +43,7 @@
     "expo-web-browser": "~15.0.10",
     "fflate": "^0.8.2",
     "i18next": "^25.8.13",
+    "lottie-react-native": "~7.3.1",
     "lucide-react-native": "^0.563.0",
     "openmeteo": "^1.2.3",
     "react": "19.1.0",
@@ -68,7 +70,11 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "patch-package": "^8.0.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.18",
+    "@vitejs/plugin-react": "^4.3.1",
+    "jsdom": "^24.0.0",
+    "@testing-library/react-native": "^12.4.3"
   },
   "private": true
 }

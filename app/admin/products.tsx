@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Dimensions, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl } from "react-native";
 import { COLORS, Header, Badge, Card, AdminSidebar } from "../../components/admin/AdminComponents";
 import * as Lucide from "lucide-react-native";
 import { adminService } from "../../services/adminService";

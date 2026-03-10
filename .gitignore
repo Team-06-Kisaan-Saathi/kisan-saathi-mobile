@@ -40,3 +40,8 @@ assets/vosk/
 
 expo-env.d.ts
 # @end expo-cli
+
+# Vosk speech models
+assets/model-en-in/
+assets/model-hi/
+assets/model-te/

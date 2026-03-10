@@ -128,7 +128,7 @@ export default function VerifyScreen() {
             <View style={styles.formWrapper}>
               <Text style={styles.cardHeader}>Verify Identity</Text>
               <Text style={styles.instruction}>
-                We've sent a 6-digit code to{" "}
+                {"We've sent a 6-digit code to"}{" "}
                 <Text style={styles.phoneHighlight}>+91 {phone}</Text>
               </Text>
 
@@ -164,7 +164,7 @@ export default function VerifyScreen() {
               </TouchableOpacity>
 
               <View style={styles.footer}>
-                <Text style={styles.footerText}>Haven't received yet?</Text>
+                <Text style={styles.footerText}>{"Haven't received yet?"}</Text>
                 <TouchableOpacity onPress={() => { }} disabled={loading}>
                   <Text style={styles.resendText}>Resend Code</Text>
                 </TouchableOpacity>
