@@ -25,7 +25,7 @@ import NavAuto from "../components/navigation/NavAuto";
 import { setLanguage } from "../i18n/i18n";
 
 export default function SettingsScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const { t, i18n } = useTranslation();
     const router = useRouter();
 
@@ -57,12 +57,38 @@ export default function SettingsScreen() {
             const storedRole = await AsyncStorage.getItem("role");
             setRole(storedRole);
 
-            const profile = await getProfile();
-            if (profile?.success) {
-                const u = profile.user;
-                setUser(u);
-                setTotalLandArea(u.totalLandArea?.toString() || "");
-                setLandUnit(u.totalLandAreaUnit || "acres");
+            const res = await getProfile();
+            if (res?.success) {
+                // --- RACE CONDITION PROTECTION ---
+                // If we just updated the profile in the last 10 seconds, ignore the server's data
+                // because it might still be propagating (stale cache).
+                const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+                const now = Date.now();
+                const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+                if (!isFresh) {
+                    setUser(res.user);
+                    await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                    if (res.user.name) {
+                        await AsyncStorage.setItem("userName", res.user.name);
+                    }
+                    setTotalLandArea(res.user.totalLandArea?.toString() || "");
+                    setLandUnit(res.user.totalLandAreaUnit || "acres");
+                } else {
+                    // If data is fresh, load from local storage if available
+                    const localProfile = await AsyncStorage.getItem("profile");
+                    if (localProfile) {
+                        const u = JSON.parse(localProfile);
+                        setUser(u);
+                        setTotalLandArea(u.totalLandArea?.toString() || "");
+                        setLandUnit(u.totalLandAreaUnit || "acres");
+                    } else {
+                        // Fallback to server data if no local data
+                        setUser(res.user);
+                        setTotalLandArea(res.user.totalLandArea?.toString() || "");
+                        setLandUnit(res.user.totalLandAreaUnit || "acres");
+                    }
+                }
             }
         } catch (error) {
             console.error("Error loading settings:", error);
@@ -197,6 +223,9 @@ export default function SettingsScreen() {
                         <View style={styles.profileInfo}>
                             <Text style={styles.nameText}>{user?.name || "User Name"}</Text>
                             <Text style={styles.phoneText}>{user?.phone || "+91 XXXXXXXXXX"}</Text>
+                            <Text style={styles.locationText}>
+                                <Lucide.MapPin size={12} color="#94A3B8" /> {user?.location || "Location not set"}
+                            </Text>
                         </View>
                         <Lucide.ChevronRight size={20} color="#94A3B8" />
                     </TouchableOpacity>
@@ -386,7 +415,7 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 function SettingRow({ icon, label, value, onPress }: any) {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const isTappable = !!onPress;
     const Container = isTappable ? TouchableOpacity : View;
     return (
@@ -415,6 +444,7 @@ const styles = StyleSheet.create({
     profileInfo: { flex: 1, marginLeft: 16 },
     nameText: { fontSize: 17, fontWeight: "800", color: "#0F172A" },
     phoneText: { fontSize: 13, color: "#94A3B8", marginTop: 2 },
+    locationText: { fontSize: 12, color: "#94A3B8", marginTop: 4, fontStyle: 'italic' },
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 12 },
     rowLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
     iconContainer: { width: 32, height: 32, borderRadius: 8, backgroundColor: "#F8FAFC", alignItems: "center", justifyContent: "center", marginRight: 12 },
