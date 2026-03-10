@@ -5,16 +5,25 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 /**
- * Web version of VoiceNavBtn
- * Uses browser's Native Speech Recognition API (Web Speech API)
+ * Enhanced Web version of VoiceNavBtn
+ * Uses Web Speech API (Recognition + Synthesis)
  */
 export default function VoiceNavBtn() {
     const router = useRouter();
     const [listening, setListening] = useState(false);
     const [supported, setSupported] = useState(false);
 
-    // Web Speech API
     const recognitionRef = useRef<any>(null);
+
+    // Text to Speech for Web
+    const speak = (text: string) => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    };
 
     useEffect(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -26,7 +35,7 @@ export default function VoiceNavBtn() {
             recognitionRef.current.lang = 'en-US';
 
             recognitionRef.current.onresult = (event: any) => {
-                const text = event.results[0][0].transcript.toLowerCase();
+                const text = event.results[0][0].transcript.toLowerCase().trim();
                 console.log("[VOICE WEB] Heard:", text);
                 handleCommand(text);
                 setListening(false);
@@ -34,6 +43,9 @@ export default function VoiceNavBtn() {
 
             recognitionRef.current.onerror = (event: any) => {
                 console.error("[VOICE WEB] Error:", event.error);
+                if (event.error === 'not-allowed') {
+                    alert("Please allow microphone access to use voice navigation.");
+                }
                 setListening(false);
             };
 
@@ -44,18 +56,48 @@ export default function VoiceNavBtn() {
     }, []);
 
     const handleCommand = (text: string) => {
-        if (text.includes("login") || text.includes("sign in")) {
+        // LOGIN / SIGN IN
+        if (text.includes("login") || text.includes("sign in") || text.includes("signin") || text.includes("sign up") || text.includes("account")) {
+            speak("Opening login");
             router.push("/login");
-        } else if (text.includes("market") || text.includes("marketplace")) {
+        }
+        // MARKETPLACE
+        else if (text.includes("market") || text.includes("marketplace") || text.includes("mandi") || text.includes("buy") || text.includes("sell")) {
+            speak("Opening marketplace");
             router.push("/marketplace");
-        } else if (text.includes("home")) {
+        }
+        // DASHBOARD / HOME
+        else if (text.includes("home") || text.includes("dashboard") || text.includes("main")) {
+            speak("Going to dashboard");
             router.push("/");
-        } else if (text.includes("back")) {
-            router.back();
-        } else if (text.includes("notification")) {
-            router.push("/notifications");
-        } else if (text.includes("setting")) {
+        }
+        // SETTINGS
+        else if (text.includes("setting") || text.includes("profile") || text.includes("edit")) {
+            speak("Opening settings");
             router.push("/settings");
+        }
+        // NOTIFICATIONS
+        else if (text.includes("notification") || text.includes("alerts") || text.includes("messages")) {
+            speak("Showing notifications");
+            router.push("/notifications");
+        }
+        // WEATHER
+        else if (text.includes("weather") || text.includes("rain") || text.includes("forecast")) {
+            speak("Opening weather");
+            router.push("/weather");
+        }
+        // MANDI PRICES
+        else if (text.includes("price") || text.includes("rate") || text.includes("mandi prices")) {
+            speak("Opening mandi prices");
+            router.push("/mandi-prices");
+        }
+        // BACK
+        else if (text.includes("back") || text.includes("go back") || text.includes("return")) {
+            speak("Going back");
+            router.back();
+        }
+        else {
+            speak("Command not recognized: " + text);
         }
     };
 
@@ -70,6 +112,7 @@ export default function VoiceNavBtn() {
             setListening(false);
         } else {
             try {
+                speak("Listening");
                 recognitionRef.current?.start();
                 setListening(true);
             } catch (e) {
@@ -94,7 +137,7 @@ export default function VoiceNavBtn() {
                 )}
 
                 <View style={styles.badge}>
-                    <Text style={styles.badgeText}>WEB</Text>
+                    <Text style={styles.badgeText}>VOICE</Text>
                 </View>
             </Pressable>
         </View>
@@ -110,9 +153,9 @@ const styles = StyleSheet.create({
         elevation: 999999,
     },
     fab: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: "#2563eb",
         alignItems: "center",
         justifyContent: "center",
@@ -124,6 +167,7 @@ const styles = StyleSheet.create({
     },
     fabActive: {
         backgroundColor: "#ef4444",
+        transform: [{ scale: 1.1 }],
     },
     badge: {
         position: "absolute",
