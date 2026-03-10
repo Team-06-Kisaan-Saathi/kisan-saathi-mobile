@@ -271,14 +271,6 @@ export default function SettingsScreen() {
                     <>
                         <SectionHeader title={t("settings.farm_details")} />
                         <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                            <SettingRow
-                                icon={<Lucide.MapPin size={18} color="#10B981" />}
-                                label={t("settings.farm_location")}
-                                value={user?.location || "Not Set"}
-                                onPress={() => router.push("/change-location")}
-                            />
-                            <View style={styles.divider} />
-
                             <View style={styles.editRow}>
                                 <View style={styles.rowLeft}>
                                     <View style={styles.iconContainer}>
@@ -286,32 +278,35 @@ export default function SettingsScreen() {
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.labelText}>{t("settings.total_land_area")}</Text>
-                                        <View style={styles.landInputContainer}>
-                                            <TextInput
-                                                style={styles.landInput}
-                                                placeholder="0.0"
-                                                placeholderTextColor="#94A3B8"
-                                                keyboardType="numeric"
-                                                value={totalLandArea}
-                                                onChangeText={setTotalLandArea}
-                                            />
+                                        <View style={styles.landInputWrapper}>
+                                            <View style={styles.landInputRow}>
+                                                <TextInput
+                                                    style={styles.landInput}
+                                                    placeholder="0.0"
+                                                    placeholderTextColor="#94A3B8"
+                                                    keyboardType="numeric"
+                                                    value={totalLandArea}
+                                                    onChangeText={setTotalLandArea}
+                                                />
+                                                <TouchableOpacity
+                                                    style={styles.unitButton}
+                                                    onPress={() => {
+                                                        Alert.alert("Select Unit", "Choose land area unit", [
+                                                            { text: "Acres", onPress: () => setLandUnit("acres") },
+                                                            { text: "Hectares", onPress: () => setLandUnit("hectares") },
+                                                        ]);
+                                                    }}
+                                                >
+                                                    <Text style={styles.unitButtonText}>{t(`settings.${landUnit}`)}</Text>
+                                                </TouchableOpacity>
+                                            </View>
+
                                             <TouchableOpacity
-                                                style={styles.unitButton}
-                                                onPress={() => {
-                                                    Alert.alert("Select Unit", "Choose land area unit", [
-                                                        { text: "Acres", onPress: () => setLandUnit("acres") },
-                                                        { text: "Hectares", onPress: () => setLandUnit("hectares") },
-                                                    ]);
-                                                }}
-                                            >
-                                                <Text style={styles.unitButtonText}>{t(`settings.${landUnit}`)}</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.smallSaveBtn, isSavingLand && { opacity: 0.5 }]}
+                                                style={[styles.fullSaveBtn, isSavingLand && { opacity: 0.5 }]}
                                                 onPress={handleSaveLandArea}
                                                 disabled={isSavingLand}
                                             >
-                                                {isSavingLand ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnText}>{t("settings.save")}</Text>}
+                                                {isSavingLand ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnTextWide}>{t("settings.save")}</Text>}
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -453,12 +448,13 @@ const styles = StyleSheet.create({
     valueText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
     divider: { height: 1, backgroundColor: "#F1F5F9", marginHorizontal: 12 },
     editRow: { padding: 12 },
-    landInputContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
-    landInput: { flex: 1, backgroundColor: "#F8FAFC", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, color: "#0F172A", borderWidth: 1, borderColor: "#E2E8F0" },
-    unitButton: { backgroundColor: "#E2E8F0", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    landInputWrapper: { marginTop: 8, gap: 10 },
+    landInputRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    landInput: { flex: 1, backgroundColor: "#F8FAFC", borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 15, color: "#0F172A", borderWidth: 1, borderColor: "#E2E8F0" },
+    unitButton: { backgroundColor: "#E2E8F0", height: 44, paddingHorizontal: 14, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
     unitButtonText: { fontSize: 13, fontWeight: "700", color: "#475569" },
-    smallSaveBtn: { backgroundColor: "#10B981", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-    saveBtnText: { color: "#FFF", fontWeight: "800", fontSize: 13 },
+    fullSaveBtn: { backgroundColor: "#10B981", height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
+    saveBtnTextWide: { color: "#FFF", fontWeight: "800", fontSize: 14 },
     logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#FFF", marginTop: 20, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: "#FEE2E2" },
     logoutText: { color: "#EF4444", fontSize: 15, fontWeight: "800", marginLeft: 10 },
     footer: { marginTop: 40, alignItems: "center" },
