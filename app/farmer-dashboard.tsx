@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl, Alert, SafeAreaView, Animated, Pressable } from "react-native";
 import LottieView from "lottie-react-native";
 import { useTheme } from "../hooks/ThemeContext";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
 
@@ -100,9 +100,11 @@ export default function FarmerDashboard() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

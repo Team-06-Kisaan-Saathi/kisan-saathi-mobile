@@ -14,7 +14,7 @@ import {
   Pressable,
 } from "react-native";
 import LottieView from "lottie-react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavBuyer from "../components/navigation/NavBuyer";
 import { useTheme } from "../hooks/ThemeContext";
@@ -128,9 +128,11 @@ export default function BuyerDashboard() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
