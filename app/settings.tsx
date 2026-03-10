@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { getProfile, updateProfile, verifyPin, changePassword } from "../services/userServices";
 import NavAuto from "../components/navigation/NavAuto";
 import { setLanguage } from "../i18n/i18n";
+import { notificationService } from "../services/NotificationService";
 
 export default function SettingsScreen() {
     const { highContrast } = useTheme();
@@ -192,6 +193,7 @@ export default function SettingsScreen() {
 
     const handleLogout = async () => {
         setLogoutModal(false);
+        notificationService.disconnect();
         await AsyncStorage.clear();
         router.replace("/login");
     };

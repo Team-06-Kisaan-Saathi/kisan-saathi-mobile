@@ -13,6 +13,7 @@ import { useRouter, usePathname } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationBell from "../notifications/NotificationBell";
+import { notificationService } from "../../services/NotificationService";
 import { useTheme } from "../../hooks/ThemeContext";
 
 export default function NavFarmer() {
@@ -54,6 +55,7 @@ export default function NavFarmer() {
 
     const handleLogout = async () => {
         setProfileOpen(false);
+        notificationService.disconnect();
         await AsyncStorage.clear();
         router.replace("/login");
     };

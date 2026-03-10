@@ -24,8 +24,11 @@ class NotificationService {
 
         // Initialize socket
         this.socket = io(SOCKET_URL, {
-            transports: ["websocket"],
-            auth: { token }
+            transports: ["websocket", "polling"], // Allow polling fallback
+            auth: { token },
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
         });
 
         this.socket.on("connect", () => {
@@ -46,8 +49,11 @@ class NotificationService {
 
         // Initialize Chat Socket for global message badges
         this.chatSocket = io(`${SOCKET_URL}/chat`, {
-            transports: ["websocket"],
-            auth: { token }
+            transports: ["websocket", "polling"],
+            auth: { token },
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
         });
 
         this.chatSocket.on("connect", () => {
