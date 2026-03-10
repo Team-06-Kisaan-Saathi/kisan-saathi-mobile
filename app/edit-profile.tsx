@@ -26,7 +26,7 @@ import NavAuto from "../components/navigation/NavAuto";
 const COLORS = { primary: "#1B5E20" };
 
 export default function EditProfileScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -234,7 +234,7 @@ export default function EditProfileScreen() {
                                 placeholderTextColor="#94A3B8"
                             />
                             <TouchableOpacity onPress={handleSendOTP}>
-                                <Text style={styles.resendText}>Didn't get code? Resend</Text>
+                                <Text style={styles.resendText}>Didn&apos;t get code? Resend</Text>
                             </TouchableOpacity>
                         </View>
                     )}
