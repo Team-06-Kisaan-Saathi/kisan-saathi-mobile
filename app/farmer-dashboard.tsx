@@ -126,7 +126,7 @@ export default function FarmerDashboard() {
           <View style={{ width: '65%', paddingRight: 10 }}>
             <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 24 }]} numberOfLines={1}>Jai Kisan,</Text>
             <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 4 }]} numberOfLines={1}>
-              {user?.name || "Vijay"}
+              {user?.name || "..."}
             </Text>
           </View>
           <View style={{ position: 'absolute', right: 0, top: 20, width: 140, height: 140 }}>

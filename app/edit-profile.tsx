@@ -43,6 +43,7 @@ export default function EditProfileScreen() {
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
     const [verifying, setVerifying] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const languages = [
         { code: "en", label: "English" },
@@ -128,14 +129,11 @@ export default function EditProfileScreen() {
                 }
                 await setLanguageService(language);
 
-                if (Platform.OS === 'web') {
-                    window.alert("Profile updated successfully.");
-                    router.replace(res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard');
-                } else {
-                    Alert.alert("Success", "Profile updated successfully.", [
-                        { text: "OK", onPress: () => router.back() }
-                    ]);
-                }
+                setShowSuccess(true);
+                setTimeout(() => {
+                    const nextRoute = res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
+                    router.replace(nextRoute as any);
+                }, 1500);
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -173,14 +171,11 @@ export default function EditProfileScreen() {
                 }
                 await setLanguageService(language);
 
-                if (Platform.OS === 'web') {
-                    window.alert("Profile updated successfully.");
-                    router.replace(res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard');
-                } else {
-                    Alert.alert("Success", "Profile updated successfully.", [
-                        { text: "OK", onPress: () => router.back() }
-                    ]);
-                }
+                setShowSuccess(true);
+                setTimeout(() => {
+                    const nextRoute = res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
+                    router.replace(nextRoute as any);
+                }, 1500);
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -279,16 +274,24 @@ export default function EditProfileScreen() {
                         </View>
                     </View>
 
+                    {showSuccess && (
+                        <View style={{ backgroundColor: '#DCFCE7', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                            <Text style={{ color: '#166534', textAlign: 'center', fontWeight: 'bold' }}>
+                                ✅ Changes applied successfully!
+                            </Text>
+                        </View>
+                    )}
+
                     <TouchableOpacity
-                        style={[styles.saveBtn, (submitting || verifying) && { opacity: 0.7 }]}
+                        style={[styles.saveBtn, (submitting || verifying || showSuccess) && { opacity: 0.7 }]}
                         onPress={handleSave}
-                        disabled={submitting || verifying}
+                        disabled={submitting || verifying || showSuccess}
                     >
                         {submitting || verifying ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.saveBtnText}>
-                                {otpSent ? "Verify & Save" : (phone !== originalPhone ? "Send OTP" : "Save Changes")}
+                                {showSuccess ? "Success!" : (otpSent ? "Verify & Save" : (phone !== originalPhone ? "Send OTP" : "Save Changes"))}
                             </Text>
                         )}
                     </TouchableOpacity>
