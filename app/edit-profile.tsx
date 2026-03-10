@@ -119,6 +119,9 @@ export default function EditProfileScreen() {
             // 2. Save profile with new phone
             const res = await updateProfile({ name, language, phone } as any);
             if (res?.success) {
+                if (res.user) {
+                    await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                }
                 await setLanguageService(language);
                 Alert.alert("Success", "Profile updated successfully.");
                 router.back();
@@ -153,6 +156,9 @@ export default function EditProfileScreen() {
         try {
             const res = await updateProfile({ name, language });
             if (res?.success) {
+                if (res.user) {
+                    await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                }
                 await setLanguageService(language);
                 Alert.alert("Success", "Profile updated successfully.");
                 router.back();
