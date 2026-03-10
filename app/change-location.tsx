@@ -290,10 +290,13 @@ export default function ChangeLocation() {
         });
         address = geo?.[0]
           ? [
+            geo[0].name !== geo[0].city ? geo[0].name : null,
             geo[0].city || geo[0].district || geo[0].subregion,
             geo[0].region,
           ]
             .filter(Boolean)
+            .filter(p => !/^[-+\d,.\s]+$/.test(p!))
+            .slice(0, 2)
             .join(", ")
           : "Current Location";
       } catch { }

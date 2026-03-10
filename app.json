@@ -56,11 +56,6 @@
       [
         "react-native-vosk",
         {
-          "models": [
-            "assets/vosk-model-small-en-in-0.4",
-            "assets/vosk-model-small-hi-0.22",
-            "assets/vosk-model-small-te-0.42"
-          ],
           "iOSMicrophonePermission": "Allow microphone for voice navigation"
         }
       ],

@@ -223,10 +223,13 @@ export default function ProfileLocation() {
 
       const address = geo?.[0]
         ? [
+          geo[0].name !== geo[0].city ? geo[0].name : null, // E.g. "Azadpur Mandi"
           geo[0].city || geo[0].district || geo[0].subregion,
           geo[0].region,
         ]
           .filter(Boolean)
+          .filter(p => !/^[-+\d,.\s]+$/.test(p!)) // Remove if it's just numbers/coords
+          .slice(0, 2) // Take only first two parts
           .join(", ")
         : "Current Location";
 

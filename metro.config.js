@@ -5,6 +5,9 @@ const path = require("path");
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+// Enable .lottie files
+config.resolver.assetExts.push("lottie");
+
 // Alias native-only packages to web stubs when bundling for web
 config.resolver = config.resolver || {};
 const originalResolveRequest = config.resolver.resolveRequest;

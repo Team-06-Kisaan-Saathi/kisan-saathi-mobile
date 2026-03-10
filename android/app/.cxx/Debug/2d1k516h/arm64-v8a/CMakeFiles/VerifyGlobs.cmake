@@ -68,6 +68,31 @@ if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   file(TOUCH_NOCREATE "C:/mobile/kisan-saathi-mobile/android/app/.cxx/Debug/2d1k516h/arm64-v8a/CMakeFiles/cmake.verify_globs")
 endif()
 
+# react_codegen_SRCS at C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/lottiereactnative-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "C:/mobile/kisan-saathi-mobile/android/app/.cxx/Debug/2d1k516h/arm64-v8a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/*.cpp")
+set(OLD_GLOB
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/ComponentDescriptors.cpp"
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/EventEmitters.cpp"
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/Props.cpp"
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/ShadowNodes.cpp"
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/States.cpp"
+  "C:/mobile/kisan-saathi-mobile/node_modules/lottie-react-native/android/build/generated/source/codegen/jni/react/renderer/components/lottiereactnative/lottiereactnativeJSI-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "C:/mobile/kisan-saathi-mobile/android/app/.cxx/Debug/2d1k516h/arm64-v8a/CMakeFiles/cmake.verify_globs")
+endif()
+
 # react_codegen_SRCS at C:/mobile/kisan-saathi-mobile/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "C:/mobile/kisan-saathi-mobile/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/*.cpp")
 set(OLD_GLOB

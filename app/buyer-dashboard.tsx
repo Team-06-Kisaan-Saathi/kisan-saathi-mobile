@@ -13,6 +13,7 @@ import {
   Animated,
   Pressable,
 } from "react-native";
+import LottieView from "lottie-react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavBuyer from "../components/navigation/NavBuyer";
@@ -146,9 +147,21 @@ export default function BuyerDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Welcome Header */}
-        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-          <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }]} numberOfLines={1}>Welcome, {user?.name || "Buyer"} </Text>
-          <Text style={[styles.subtext, highContrast && { color: "#CCC" }]}>Find the best deals & place your bids</Text>
+        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { paddingTop: 40, marginBottom: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 20 }]}>Welcome,</Text>
+            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 42, marginTop: 2 }]} numberOfLines={1}>
+              {user?.name || "Buyer"}
+            </Text>
+            <Text style={[styles.subtext, highContrast && { color: "#CCC" }, { marginTop: 8 }]}>Find the best deals & place your bids</Text>
+          </View>
+          <LottieView
+            source={require("../assets/images/busin.json")}
+            autoPlay
+            loop
+            style={{ width: 140, height: 140 }}
+            resizeMode="contain"
+          />
         </View>
 
         {/* BID ACTIVITY */}
@@ -226,7 +239,7 @@ export default function BuyerDashboard() {
               title="Live Auctions"
               subtitle="Browse & bid on crops"
               icon="flash"
-              color="#3B83F6"
+              color="#FB923C"
               highContrast={highContrast}
               onPress={() => router.push("/buyer-auctions" as any)}
             />
@@ -234,7 +247,7 @@ export default function BuyerDashboard() {
               title="My Bids"
               subtitle="Track your bids"
               icon="list"
-              color="#7C3AED"
+              color="#FBBF24"
               highContrast={highContrast}
               onPress={() => router.push("/my-bids" as any)}
             />
@@ -244,7 +257,7 @@ export default function BuyerDashboard() {
               title="Sellers"
               subtitle="Verified Directory"
               icon="people"
-              color="#F59E0B"
+              color="#94A3B8"
               highContrast={highContrast}
               onPress={() => router.push("/buyer-marketplace")}
             />
@@ -253,7 +266,7 @@ export default function BuyerDashboard() {
               subtitle="Your negotiations"
               icon="handshake-outline"
               iconFamily="MaterialCommunityIcons"
-              color="#111827"
+              color="#A3A3A3"
               highContrast={highContrast}
               onPress={() => router.push("/not-available")}
             />
@@ -271,14 +284,7 @@ export default function BuyerDashboard() {
             highContrast={highContrast}
             onPress={() => router.push("/messages")}
           />
-          <SupportItem
-            title="Call Support"
-            subtitle="Talk to an expert"
-            icon="call"
-            color="#F59E0B"
-            highContrast={highContrast}
-            onPress={() => router.push("/call-support")}
-          />
+
           <SupportItem
             title="Settings"
             subtitle="Account & preferences"
@@ -352,7 +358,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-  welcomeText: { fontSize: 26, fontWeight: "900", color: "#1E3A8A" },
+  welcomeText: { color: "#0F172A" }, // Dark Navy Blue close to black
   subtext: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
 
   sectionTitle: {
@@ -368,23 +374,21 @@ const styles = StyleSheet.create({
   topPriceCard: {
     backgroundColor: "#FFF",
     marginHorizontal: 20,
-    borderRadius: 4,
-    borderTopWidth: 6,
-    borderTopColor: "#2563EB",
+    borderRadius: 16,
     padding: 24,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8
   },
   priceHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  cropName: { fontSize: 28, fontWeight: "900", color: "#0F172A" },
+  cropName: { fontSize: 22, fontWeight: "900", color: "#0F172A" },
   mandiRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  mandiName: { fontSize: 15, color: "#64748B", marginLeft: 4, fontWeight: "600" },
+  mandiName: { fontSize: 13, color: "#64748B", marginLeft: 4, fontWeight: "600" },
   unitText: { fontSize: 14, color: "#94A3B8", marginTop: 4, fontWeight: "500" },
-  priceVal: { fontSize: 32, fontWeight: "900", color: "#0F172A" },
+  priceVal: { fontSize: 24, fontWeight: "900", color: "#0F172A" },
   trendRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   trendText: { fontSize: 14, color: "#22C55E", fontWeight: "700", marginLeft: 4 },
 
@@ -396,7 +400,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   seeAllText: { color: "#FFF", fontWeight: "800", fontSize: 15 },
   buyNowBtn: {
@@ -406,18 +410,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   buyNowText: { color: "#2563EB", fontWeight: "800", fontSize: 15 },
 
   grid: { paddingHorizontal: 20, gap: 12, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
 
-  marketCard: { flex: 1, padding: 20, borderRadius: 0, justifyContent: "center", minHeight: 120 },
+  marketCard: { flex: 1, padding: 20, borderRadius: 16, justifyContent: "center", minHeight: 120 },
   cardTitle: { color: "#FFF", fontSize: 18, fontWeight: "900", marginTop: 12 },
   cardSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "600", marginTop: 2 },
 
-  buySellCard: { flex: 1, padding: 20, borderRadius: 0, minHeight: 120 },
+  buySellCard: { flex: 1, padding: 20, borderRadius: 16, minHeight: 120 },
 
   supportList: { marginHorizontal: 20, backgroundColor: "#FFF", borderRadius: 12, overflow: "hidden", marginBottom: 40, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   supportItem: {
