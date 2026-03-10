@@ -120,8 +120,8 @@ export default function FarmerDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Jai Kisan Header */}
-        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-          <View style={{ flex: 1 }}>
+        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }]}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
             <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 32 }]} numberOfLines={1}>Jai Kisan,</Text>
             <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 42, marginTop: 4 }]} numberOfLines={1}>
               {user?.name || "Vijay"}
