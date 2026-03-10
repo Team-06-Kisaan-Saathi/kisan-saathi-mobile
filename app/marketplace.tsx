@@ -406,8 +406,14 @@ export default function MarketplaceScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadNearby(), loadPrices("manual")]);
-    setRefreshing(false);
+    try {
+      await Promise.all([loadNearby(), loadPrices("manual")]);
+    } catch (e: any) {
+      console.log("Marketplace refresh error:", e);
+      Alert.alert("Sync Error", "Could not reach the market server. Please check your data connection.");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // ✅ FIXED: Update location reliably + save to backend + re-fetch backend to confirm
@@ -798,7 +804,7 @@ function NearbyMandis({
           ))
         )}
       </View>
-            {MapView && hasCoords && region && (
+      {MapView && hasCoords && region && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Map View</Text>
           <View style={styles.mapWrap}>
