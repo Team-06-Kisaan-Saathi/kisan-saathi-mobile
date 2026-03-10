@@ -41,6 +41,7 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
+    "fflate": "^0.8.2",
     "i18next": "^25.8.13",
     "lottie-react-native": "~7.3.1",
     "lucide-react-native": "^0.563.0",
@@ -60,6 +61,7 @@
     "react-native-vosk": "^2.1.7",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
+    "react-native-zip-archive": "^7.0.2",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {

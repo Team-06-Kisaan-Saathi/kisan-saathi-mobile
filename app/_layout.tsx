@@ -5,13 +5,12 @@ import { StyleSheet, View, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
-// import VoiceNavButton from "../components/VoiceNavBtn"; // Disabled - requires native module build
+import VoiceNavButton from "../components/VoiceNavBtn";
 import AccessibilityFab from "../components/accessibilityBtn";
 import AccessibilitySheet from "../components/accessibilitySheet";
 import { notificationService } from "../services/NotificationService";
 import { setLanguage as persistLanguage } from "../i18n/i18n";
 import { ThemeProvider, useTheme } from "../hooks/ThemeContext";
-import { useColorScheme } from "../hooks/use-color-scheme";
 import { Colors } from "../constants/theme";
 
 import { GestureHandlerRootView, GestureDetector, Gesture } from "react-native-gesture-handler";
@@ -59,6 +58,15 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
   const highContrast = isHighContrast;
 
   const [open, setOpen] = useState(false);
+
+  const isAuthPage = (segments[0] as any) === "(auth)" ||
+    pathname === "/login" ||
+    pathname === "/verify" ||
+    pathname === "/signin" ||
+    pathname === "/verification" ||
+    pathname === "/set-pin" ||
+    pathname === "/profile-setup" ||
+    pathname === "/profile-location";
 
   // Zoom logic
   const scale = useSharedValue(1);
@@ -113,19 +121,12 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
     ],
   }));
 
-  // Authentication & Role Guard (Simplified for brevity in replacement, but keeping core logic)
   useEffect(() => {
     const checkAuth = async () => {
       const token = await AsyncStorage.getItem("token");
       const role = await AsyncStorage.getItem("role");
 
-      const inAuthGroup = (segments[0] as any) === "(auth)" ||
-        pathname === "/login" ||
-        pathname === "/verify" ||
-        pathname === "/signin" ||
-        pathname === "/set-pin" ||
-        pathname === "/profile-setup" ||
-        pathname === "/profile-location";
+      const inAuthGroup = isAuthPage;
 
       if (!token && !inAuthGroup) {
         setTimeout(() => router.replace("/login"), 0);
@@ -136,7 +137,7 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
       }
     };
     checkAuth();
-  }, [segments, pathname, router]);
+  }, [segments, pathname, router, isAuthPage]);
 
   const themeMode = highContrast ? 'contrast' : (colorScheme || 'light');
   const backgroundColor = Colors[themeMode as keyof typeof Colors].background;
@@ -178,6 +179,7 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
       {/* Floating overlay */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
+        {!isAuthPage && <VoiceNavButton />}
       </View>
 
       <AccessibilitySheet
@@ -198,4 +200,3 @@ const styles = StyleSheet.create({
     elevation: 999999,
   },
 });
-

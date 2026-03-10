@@ -181,7 +181,7 @@ export default function FarmerDashboard() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.sellNowBtn}
-              onPress={() => router.push("/not-available")}
+              onPress={() => router.push("/create-auction")}
             >
               <Text style={styles.sellNowText}>Sell Now</Text>
             </TouchableOpacity>
@@ -249,8 +249,8 @@ export default function FarmerDashboard() {
               title="My Listings"
               subtitle="Manage your crops"
               icon="list"
-              color="#F59F3A"
-              onPress={() => router.push("/not-available")}
+              color="#111827"
+              onPress={() => router.push("/my-listings")}
             />
             <BuySellCard
               title="Monitor Auctions"
