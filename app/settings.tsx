@@ -266,56 +266,6 @@ export default function SettingsScreen() {
                     />
                 </View>
 
-                {/* FARM DETAILS SECTION */}
-                {role === "farmer" && (
-                    <>
-                        <SectionHeader title={t("settings.farm_details")} />
-                        <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                            <View style={styles.editRow}>
-                                <View style={styles.rowLeft}>
-                                    <View style={styles.iconContainer}>
-                                        <Lucide.Maximize size={18} color="#10B981" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.labelText}>{t("settings.total_land_area")}</Text>
-                                        <View style={styles.landInputWrapper}>
-                                            <View style={styles.landInputRow}>
-                                                <TextInput
-                                                    style={styles.landInput}
-                                                    placeholder="0.0"
-                                                    placeholderTextColor="#94A3B8"
-                                                    keyboardType="numeric"
-                                                    value={totalLandArea}
-                                                    onChangeText={setTotalLandArea}
-                                                />
-                                                <TouchableOpacity
-                                                    style={styles.unitButton}
-                                                    onPress={() => {
-                                                        Alert.alert("Select Unit", "Choose land area unit", [
-                                                            { text: "Acres", onPress: () => setLandUnit("acres") },
-                                                            { text: "Hectares", onPress: () => setLandUnit("hectares") },
-                                                        ]);
-                                                    }}
-                                                >
-                                                    <Text style={styles.unitButtonText}>{t(`settings.${landUnit}`)}</Text>
-                                                </TouchableOpacity>
-                                            </View>
-
-                                            <TouchableOpacity
-                                                style={[styles.fullSaveBtn, isSavingLand && { opacity: 0.5 }]}
-                                                onPress={handleSaveLandArea}
-                                                disabled={isSavingLand}
-                                            >
-                                                {isSavingLand ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnTextWide}>{t("settings.save")}</Text>}
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-                    </>
-                )}
-
                 {/* SUPPORT SECTION */}
                 <SectionHeader title={t("settings.support")} />
                 <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
