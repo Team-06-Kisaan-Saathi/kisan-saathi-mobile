@@ -11,9 +11,10 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
-    Modal
+    Modal,
+    Keyboard
 } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, usePathname, useSegments } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -153,6 +154,7 @@ export default function EditProfileScreen() {
                 const updatedUser = res.user || { name, language, phone, role: fallbackRole };
                 await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
                 await AsyncStorage.setItem("userName", name);
+                await AsyncStorage.setItem("profile_updated_at", Date.now().toString());
 
                 await setLanguageService(language);
                 setShowSuccess(true);
@@ -173,6 +175,8 @@ export default function EditProfileScreen() {
     };
 
     const handleSave = async () => {
+        Keyboard.dismiss();
+
         if (!name.trim()) {
             Alert.alert("Error", "Name cannot be empty.");
             return;
@@ -203,6 +207,7 @@ export default function EditProfileScreen() {
                 const updatedUser = res.user || { name: name.trim(), language, phone: phone.trim(), role: fallbackRole };
                 await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
                 await AsyncStorage.setItem("userName", name.trim());
+                await AsyncStorage.setItem("profile_updated_at", Date.now().toString());
 
                 await setLanguageService(language);
                 setShowSuccess(true);
@@ -367,6 +372,15 @@ const styles = StyleSheet.create({
     langBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
     langText: { fontSize: 13, fontWeight: "600", color: "#64748B" },
     langTextActive: { color: "#fff" },
-    saveBtn: { height: 54, backgroundColor: COLORS.primary, borderRadius: 12, alignItems: "center", justifyContent: "center", marginTop: 20 },
+    saveBtn: {
+        height: 56,
+        backgroundColor: COLORS.primary,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 20,
+        // Ensure no layout jump
+        minWidth: 150
+    },
     saveBtnText: { color: "#fff", fontSize: 18, fontWeight: "800" },
 });

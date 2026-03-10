@@ -52,10 +52,19 @@ export default function BuyerDashboard() {
       }
       const res = await getProfile();
       if (res?.success) {
-        setUser(res.user);
-        await AsyncStorage.setItem("profile", JSON.stringify(res.user));
-        if (res.user.name) {
-          await AsyncStorage.setItem("userName", res.user.name);
+        // --- RACE CONDITION PROTECTION ---
+        // If we just updated the profile in the last 10 seconds, ignore the server's data
+        // because it might still be propagating (stale cache).
+        const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+        const now = Date.now();
+        const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+        if (!isFresh) {
+          setUser(res.user);
+          await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+          if (res.user.name) {
+            await AsyncStorage.setItem("userName", res.user.name);
+          }
         }
       }
 
