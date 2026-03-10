@@ -153,7 +153,7 @@ export default function BuyerDashboard() {
           <View style={{ width: '65%', paddingRight: 10 }}>
             <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 20 }]} numberOfLines={1}>Welcome,</Text>
             <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 2 }]} numberOfLines={1}>
-              {user?.name || "Buyer"}
+              {user?.name || "..."}
             </Text>
             <Text style={[styles.subtext, highContrast && { color: "#CCC" }, { marginTop: 8 }]} numberOfLines={1}>Find the best deals & place bids</Text>
           </View>
