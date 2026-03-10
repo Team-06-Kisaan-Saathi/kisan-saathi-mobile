@@ -18,9 +18,14 @@ export default function VoiceNavBtn() {
     // Text to Speech for Web
     const speak = (text: string) => {
         if ('speechSynthesis' in window) {
+            // Cancel any ongoing speech to avoid overlap
             window.speechSynthesis.cancel();
+
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.lang = 'en-US';
+
             window.speechSynthesis.speak(utterance);
         }
     };
@@ -32,7 +37,7 @@ export default function VoiceNavBtn() {
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = false;
             recognitionRef.current.interimResults = false;
-            recognitionRef.current.lang = 'en-US';
+            recognitionRef.current.lang = 'en-IN'; // Better for Indian accents
 
             recognitionRef.current.onresult = (event: any) => {
                 const text = event.results[0][0].transcript.toLowerCase().trim();
@@ -44,7 +49,9 @@ export default function VoiceNavBtn() {
             recognitionRef.current.onerror = (event: any) => {
                 console.error("[VOICE WEB] Error:", event.error);
                 if (event.error === 'not-allowed') {
-                    alert("Please allow microphone access to use voice navigation.");
+                    speak("Microphone access denied. Please allow it in browser settings.");
+                } else if (event.error !== 'no-speech') {
+                    speak("Voice error occurred.");
                 }
                 setListening(false);
             };
@@ -58,46 +65,46 @@ export default function VoiceNavBtn() {
     const handleCommand = (text: string) => {
         // LOGIN / SIGN IN
         if (text.includes("login") || text.includes("sign in") || text.includes("signin") || text.includes("sign up") || text.includes("account")) {
-            speak("Opening login");
-            router.push("/login");
+            speak("Navigating to login");
+            setTimeout(() => router.push("/login"), 500);
         }
         // MARKETPLACE
         else if (text.includes("market") || text.includes("marketplace") || text.includes("mandi") || text.includes("buy") || text.includes("sell")) {
-            speak("Opening marketplace");
-            router.push("/marketplace");
+            speak("Navigating to marketplace");
+            setTimeout(() => router.push("/marketplace"), 500);
         }
         // DASHBOARD / HOME
         else if (text.includes("home") || text.includes("dashboard") || text.includes("main")) {
-            speak("Going to dashboard");
-            router.push("/");
+            speak("Navigating to dashboard");
+            setTimeout(() => router.push("/"), 500);
         }
         // SETTINGS
         else if (text.includes("setting") || text.includes("profile") || text.includes("edit")) {
-            speak("Opening settings");
-            router.push("/settings");
+            speak("Navigating to settings");
+            setTimeout(() => router.push("/settings"), 500);
         }
         // NOTIFICATIONS
         else if (text.includes("notification") || text.includes("alerts") || text.includes("messages")) {
-            speak("Showing notifications");
-            router.push("/notifications");
+            speak("Navigating to notifications");
+            setTimeout(() => router.push("/notifications"), 500);
         }
         // WEATHER
         else if (text.includes("weather") || text.includes("rain") || text.includes("forecast")) {
-            speak("Opening weather");
-            router.push("/weather");
+            speak("Navigating to weather");
+            setTimeout(() => router.push("/weather"), 500);
         }
         // MANDI PRICES
         else if (text.includes("price") || text.includes("rate") || text.includes("mandi prices")) {
-            speak("Opening mandi prices");
-            router.push("/mandi-prices");
+            speak("Navigating to mandi prices");
+            setTimeout(() => router.push("/mandi-prices"), 500);
         }
         // BACK
         else if (text.includes("back") || text.includes("go back") || text.includes("return")) {
             speak("Going back");
-            router.back();
+            setTimeout(() => router.back(), 500);
         }
         else {
-            speak("Command not recognized: " + text);
+            speak("Command not recognized. I heard " + text);
         }
     };
 
@@ -112,9 +119,15 @@ export default function VoiceNavBtn() {
             setListening(false);
         } else {
             try {
-                speak("Listening");
-                recognitionRef.current?.start();
-                setListening(true);
+                // We speak first, then start recognition to avoid the browser's "Listening" beep cutting off our speech
+                speak("Listening...");
+
+                // Small delay to ensure the word "Listening" is heard before the mic opens
+                setTimeout(() => {
+                    recognitionRef.current?.start();
+                    setListening(true);
+                }, 800);
+
             } catch (e) {
                 console.error("[VOICE WEB] Start error:", e);
                 setListening(false);
