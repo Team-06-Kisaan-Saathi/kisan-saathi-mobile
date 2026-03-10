@@ -126,9 +126,9 @@ export default function EditProfileScreen() {
             if (res?.success) {
                 // Update local storage immediately with whatever we have
                 const fallbackRole = role || 'farmer';
-                const updatedUser = res.user || { name, language, phone, role: fallbackRole };
+                const updatedUser = res.user || { name: name.trim(), language, phone: phone.trim(), role: fallbackRole };
                 await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
-                await AsyncStorage.setItem("userName", name);
+                await AsyncStorage.setItem("userName", name.trim());
 
                 await setLanguageService(language);
                 setShowSuccess(true);
@@ -171,9 +171,9 @@ export default function EditProfileScreen() {
             if (res?.success) {
                 // Update local storage immediately
                 const fallbackRole = role || 'farmer';
-                const updatedUser = res.user || { name, language, phone, role: fallbackRole };
+                const updatedUser = res.user || { name: name.trim(), language, phone: phone.trim(), role: fallbackRole };
                 await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
-                await AsyncStorage.setItem("userName", name);
+                await AsyncStorage.setItem("userName", name.trim());
 
                 await setLanguageService(language);
                 setShowSuccess(true);
@@ -209,7 +209,10 @@ export default function EditProfileScreen() {
             <Stack.Screen options={{ title: t("profile.edit_title") || "Edit Profile", headerShadowVisible: false }} />
             <NavAuto />
 
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView
+                contentContainerStyle={styles.scroll}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>{name.charAt(0) || "U"}</Text>
