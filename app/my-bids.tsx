@@ -28,7 +28,7 @@ const statusColors: Record<BidStatus, { bg: string, text: string }> = {
 };
 
 export default function MyBids() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const router = useRouter();
     const [bids, setBids] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -129,7 +129,7 @@ export default function MyBids() {
                 ) : bids.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="pricetag-outline" size={48} color="#CBD5E1" />
-                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>You haven't placed any bids yet</Text>
+                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{"You haven't placed any bids yet"}</Text>
                         <TouchableOpacity
                             style={styles.browseBtn}
                             onPress={() => router.push("/buyer-auctions" as any)}
@@ -137,8 +137,8 @@ export default function MyBids() {
                             <Text style={styles.browseBtnText}>Browse Live Auctions</Text>
                         </TouchableOpacity>
                     </View>
-                ) : bids.map((bid) => {
-                    const sc = statusColors[bid.status];
+                ) : bids.map((bid: any) => {
+                    const sc = statusColors[bid.status as BidStatus];
                     return (
                         <TouchableOpacity
                             key={bid.id}

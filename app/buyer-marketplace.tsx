@@ -174,7 +174,7 @@ export default function BuyerMarketplace() {
                     ListEmptyComponent={
                         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
                             <Ionicons name="search-outline" size={48} color="#CBD5E1" />
-                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No results found for &quot;{search}&quot;</Text>
+                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No results found for "{search}"</Text>
                         </View>
                     }
                 />
@@ -310,7 +310,7 @@ function FarmerCard({ item, onPress, onContact }: any) {
                 </View>
                 <TouchableOpacity style={styles.contactBtn} onPress={onContact}>
                     <Ionicons name="mail" size={14} color="#fff" />
-                    <Text style={styles.contactBtnText}>Contract</Text>
+                    <Text style={styles.contactBtnText}>Contact</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
