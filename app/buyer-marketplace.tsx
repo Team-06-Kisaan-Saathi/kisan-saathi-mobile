@@ -28,7 +28,7 @@ const { width } = Dimensions.get("window");
 type TabKey = "Prices" | "Farmers";
 
 export default function BuyerMarketplace() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const router = useRouter();
     const { q } = useLocalSearchParams<{ q?: string }>();
     const [tab, setTab] = useState<TabKey>("Prices");
@@ -252,23 +252,23 @@ export default function BuyerMarketplace() {
 }
 
 function PriceCard({ item }: any) {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     return (
         <View style={styles.priceCard}>
             <View style={styles.cardUpper}>
                 <View style={styles.cropIconBg}>
                     <Ionicons name="leaf" size={20} color="#059669" />
                 </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
+                <View style={{ flex: 1.5 }}>
+                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{item.crop}</Text>
                     <View style={styles.mandiRow}>
                         <Ionicons name="location" size={12} color="#64748B" />
-                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}> {item.locationName || item.mandi}</Text>
+                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}> {item.locationName || item.mandi}</Text>
                     </View>
                 </View>
-                <View style={styles.priceColumn}>
-                    <Text style={styles.priceVal}>₹{item.pricePerQuintal / 100}/kg</Text>
-                    <Text style={styles.priceSub}>₹{item.pricePerQuintal}/q</Text>
+                <View style={[styles.priceColumn, { flex: 1 }]}>
+                    <Text style={styles.priceVal}>₹{(item.pricePerQuintal / 100).toFixed(2)}/kg</Text>
+                    <Text style={styles.priceSub}>₹{Number(item.pricePerQuintal).toFixed(0)}/q</Text>
                 </View>
             </View>
             <View style={styles.cardFooter}>
@@ -282,7 +282,7 @@ function PriceCard({ item }: any) {
 }
 
 function FarmerCard({ item, onPress, onContact }: any) {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     return (
         <TouchableOpacity style={styles.farmerCard} onPress={onPress}>
             <View style={styles.cardUpper}>
@@ -310,7 +310,7 @@ function FarmerCard({ item, onPress, onContact }: any) {
                 </View>
                 <TouchableOpacity style={styles.contactBtn} onPress={onContact}>
                     <Ionicons name="mail" size={14} color="#fff" />
-                    <Text style={styles.contactBtnText}>Contract</Text>
+                    <Text style={styles.contactBtnText}>Contact</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>

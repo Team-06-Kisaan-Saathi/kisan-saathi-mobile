@@ -64,7 +64,7 @@ export default function AdminProfile() {
             } else {
                 Alert.alert("Error", res.message || "Failed to update password");
             }
-        } catch (e) {
+        } catch {
             Alert.alert("Error", "An unexpected error occurred");
         } finally {
             setUpdating(false);

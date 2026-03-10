@@ -23,7 +23,7 @@ import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
  */
 
 export default function MarketInsightsScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const [prices, setPrices] = useState<MandiPriceDoc[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -115,7 +115,7 @@ export default function MarketInsightsScreen() {
                         <View style={styles.emptyContainer}>
                             <Ionicons name="analytics-outline" size={64} color="#e2e8f0" />
                             <Text style={styles.emptyTitle}>No Data Available</Text>
-                            <Text style={styles.emptySub}>We don't have recent prices for this crop yet.</Text>
+                            <Text style={styles.emptySub}>{"We don't have recent prices for this crop yet."}</Text>
                         </View>
                     }
                 />
