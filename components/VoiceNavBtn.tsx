@@ -342,7 +342,7 @@ export default function VoiceNavBtn() {
       {...panResponder.panHandlers}
       style={{
         position: "absolute",
-        bottom: 110,
+        bottom: 20,
         right: 20,
         width: 64,
         height: 64,
