@@ -798,53 +798,45 @@ function NearbyMandis({
           ))
         )}
       </View>
-      {hasCoords && region && (
+            {MapView && hasCoords && region && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Map View</Text>
           <View style={styles.mapWrap}>
-            {Platform.OS === 'web' ? (
-              // @ts-ignore
-              <iframe
-                src={`https://maps.google.com/maps?q=${coords!.lat},${coords!.lng}&z=10&output=embed`}
-                style={{ height: '100%', width: '100%', border: 'none', borderRadius: 12 }}
-                allowFullScreen
-              />
-            ) : MapView ? (
-              <MapView
-                style={{ flex: 1 }}
-                provider={PROVIDER_GOOGLE}
-                region={region}
-              >
-                {Marker && (
-                  <Marker
-                    coordinate={{
-                      latitude: Number(coords!.lat),
-                      longitude: Number(coords!.lng),
-                    }}
-                    title="You"
-                    pinColor="#2d6a4f"
-                  />
-                )}
-                {Marker &&
-                  nearestMandis
-                    .filter(
-                      (m) =>
-                        Number.isFinite((m as any).lat) &&
-                        Number.isFinite((m as any).lng),
-                    )
-                    .map((m, idx) => (
-                      <Marker
-                        key={idx}
-                        coordinate={{
-                          latitude: Number((m as any).lat),
-                          longitude: Number((m as any).lng),
-                        }}
-                        title={m.name}
-                        pinColor="#d62828"
-                      />
-                    ))}
-              </MapView>
-            ) : null}
+            <MapView
+              style={{ flex: 1 }}
+              provider={PROVIDER_GOOGLE}
+              region={region}
+            >
+              {Marker && (
+                <Marker
+                  coordinate={{
+                    latitude: Number(coords!.lat),
+                    longitude: Number(coords!.lng),
+                  }}
+                  title="You"
+                  pinColor="#2d6a4f"
+                />
+              )}
+
+              {Marker &&
+                nearestMandis
+                  .filter(
+                    (m) =>
+                      Number.isFinite((m as any).lat) &&
+                      Number.isFinite((m as any).lng),
+                  )
+                  .map((m, idx) => (
+                    <Marker
+                      key={idx}
+                      coordinate={{
+                        latitude: Number((m as any).lat),
+                        longitude: Number((m as any).lng),
+                      }}
+                      title={m.name}
+                      pinColor="#d62828"
+                    />
+                  ))}
+            </MapView>
           </View>
         </View>
       )}
