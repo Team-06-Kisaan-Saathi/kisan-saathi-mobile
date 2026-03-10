@@ -3,13 +3,13 @@ import { Platform } from "react-native";
 // ─── Single source of truth for backend connection ───
 // IMPORTANT: If testing on a physical phone, replace 'localhost' with your computer's IP
 // You can find your IP by running 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux)
-const LOCAL_IP = "10.12.252.166"; // <--- Updated to match your current network IP
+const LOCAL_IP = "10.12.88.253"; // <--- Updated to match your current network IP
 const LOCAL_HOST = `${LOCAL_IP}:5001`;
 const RENDER_HOST = "backend-e337.onrender.com";
 
 // ─── Smart URL Selector ───
 const IS_PRODUCTION = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
-const HOST = IS_PRODUCTION ? RENDER_HOST : LOCAL_HOST;
+export const HOST = IS_PRODUCTION ? RENDER_HOST : LOCAL_HOST;
 
 
 export const API_BASE = HOST.includes("render.com") ? `https://${HOST}/api` : `http://${HOST}/api`;

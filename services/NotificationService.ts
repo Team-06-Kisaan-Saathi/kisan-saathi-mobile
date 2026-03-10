@@ -71,10 +71,11 @@ class NotificationService {
 
     async fetchUnreadCount() {
         try {
-            const res = await apiFetch<{ success: boolean; count: number }>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT);
-            if (res.success) {
-                console.log("🔔 NotificationService: Unread count updated:", res.count);
-                this.unreadCount = res.count;
+            const res = await apiFetch<any>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT);
+            if (res && (res.success || typeof res.count === 'number')) {
+                const count = typeof res.count === 'number' ? res.count : 0;
+                console.log("🔔 NotificationService: Unread count updated:", count);
+                this.unreadCount = count;
                 this.notifyListeners();
             }
         } catch (error) {
