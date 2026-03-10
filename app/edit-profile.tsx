@@ -39,6 +39,7 @@ export default function EditProfileScreen() {
     const [language, setLanguage] = useState("en");
     const [role, setRole] = useState("");
     const dataLoadedRef = useRef(false);
+    const isDirtyRef = useRef(false);
 
     // OTP states
     const [otpSent, setOtpSent] = useState(false);
@@ -59,19 +60,42 @@ export default function EditProfileScreen() {
     }, []);
 
     const loadData = async () => {
-        if (dataLoadedRef.current) return;
+        // 1. Instant load from Cache for zero-wait pre-fill
         try {
-            const res = await getProfile();
-            if (res?.success) {
-                setName(res.user.name || "");
-                setPhone(res.user.phone || "");
-                setOriginalPhone(res.user.phone || "");
-                setLanguage(res.user.language || "en");
-                setRole(res.user.role || "farmer");
-                dataLoadedRef.current = true;
+            const cached = await AsyncStorage.getItem("profile");
+            if (cached) {
+                const u = JSON.parse(cached);
+                if (!isDirtyRef.current) {
+                    setName(u.name || "");
+                    setPhone(u.phone || "");
+                    setOriginalPhone(u.phone || "");
+                    setLanguage(u.language || "en");
+                    setRole(u.role || "farmer");
+                }
+                setLoading(false); // Stop big spinner if we have cache
             }
         } catch (e) {
-            console.log("EditProfile error:", e);
+            console.log("Cache load error:", e);
+        }
+
+        // 2. Fetch fresh data from server
+        try {
+            const res = await getProfile();
+            if (res?.success && res.user) {
+                if (!isDirtyRef.current) {
+                    setName(res.user.name || "");
+                    setPhone(res.user.phone || "");
+                    setOriginalPhone(res.user.phone || "");
+                    setLanguage(res.user.language || "en");
+                }
+                setRole(res.user.role || "farmer");
+
+                // Sync cache
+                await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                await AsyncStorage.setItem("userName", res.user.name || "");
+            }
+        } catch (e) {
+            console.log("Profile refresh failed:", e);
         } finally {
             setLoading(false);
         }
@@ -165,15 +189,20 @@ export default function EditProfileScreen() {
             return;
         }
 
+        if (name.trim().length < 3) {
+            Alert.alert("Error", "Name must be at least 3 characters.");
+            return;
+        }
+
         setSubmitting(true);
         try {
-            const res = await updateProfile({ name, language });
+            const res = await updateProfile({ name: name.trim(), language });
             if (res?.success) {
                 // Update local storage immediately
                 const fallbackRole = role || 'farmer';
-                const updatedUser = res.user || { name, language, phone, role: fallbackRole };
+                const updatedUser = res.user || { name: name.trim(), language, phone: phone.trim(), role: fallbackRole };
                 await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
-                await AsyncStorage.setItem("userName", name);
+                await AsyncStorage.setItem("userName", name.trim());
 
                 await setLanguageService(language);
                 setShowSuccess(true);
@@ -223,7 +252,10 @@ export default function EditProfileScreen() {
                         <TextInput
                             style={styles.input}
                             value={name}
-                            onChangeText={setName}
+                            onChangeText={(text) => {
+                                setName(text);
+                                isDirtyRef.current = true;
+                            }}
                             placeholder="Enter your name"
                             placeholderTextColor="#94A3B8"
                         />
@@ -236,7 +268,10 @@ export default function EditProfileScreen() {
                             <TextInput
                                 style={[styles.input, { flex: 1, marginBottom: 0 }]}
                                 value={phone}
-                                onChangeText={setPhone}
+                                onChangeText={(text) => {
+                                    setPhone(text);
+                                    isDirtyRef.current = true;
+                                }}
                                 keyboardType="number-pad"
                                 maxLength={10}
                                 placeholder="10-digit mobile number"
