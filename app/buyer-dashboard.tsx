@@ -147,21 +147,23 @@ export default function BuyerDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Welcome Header */}
-        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { paddingTop: 40, marginBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'nowrap' }]}>
-          <View style={{ flex: 1, marginRight: 15, minWidth: 0 }}>
-            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 18 }]} numberOfLines={1}>Welcome,</Text>
-            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 42, marginTop: 2 }]} numberOfLines={1}>
+        <View style={[styles.header, highContrast ? { backgroundColor: "#000", borderBottomColor: "#333" } : { backgroundColor: "transparent" }, { paddingTop: 40, marginBottom: 40, position: 'relative', minHeight: 140, justifyContent: 'center' }]}>
+          <View style={{ width: '65%', paddingRight: 10 }}>
+            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 20 }]} numberOfLines={1}>Welcome,</Text>
+            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 2 }]} numberOfLines={1}>
               {user?.name || "Buyer"}
             </Text>
-            <Text style={[styles.subtext, highContrast && { color: "#CCC" }, { marginTop: 8 }]}>Find the best deals & place your bids</Text>
+            <Text style={[styles.subtext, highContrast && { color: "#CCC" }, { marginTop: 8 }]} numberOfLines={1}>Find the best deals & place bids</Text>
           </View>
-          <LottieView
-            source={require("../assets/images/busin.json")}
-            autoPlay
-            loop
-            style={{ width: 140, height: 140 }}
-            resizeMode="contain"
-          />
+          <View style={{ position: 'absolute', right: 0, top: 20, width: 140, height: 140 }}>
+            <LottieView
+              source={require("../assets/images/busin.json")}
+              autoPlay
+              loop
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* BID ACTIVITY */}
