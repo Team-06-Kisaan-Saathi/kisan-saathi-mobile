@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
@@ -37,6 +37,7 @@ export default function EditProfileScreen() {
     const [originalPhone, setOriginalPhone] = useState("");
     const [language, setLanguage] = useState("en");
     const [role, setRole] = useState("");
+    const dataLoadedRef = useRef(false);
 
     // OTP states
     const [otpSent, setOtpSent] = useState(false);
@@ -56,6 +57,7 @@ export default function EditProfileScreen() {
     }, []);
 
     const loadData = async () => {
+        if (dataLoadedRef.current) return;
         try {
             const res = await getProfile();
             if (res?.success) {
@@ -64,6 +66,7 @@ export default function EditProfileScreen() {
                 setOriginalPhone(res.user.phone || "");
                 setLanguage(res.user.language || "en");
                 setRole(res.user.role || "farmer");
+                dataLoadedRef.current = true;
             }
         } catch (e) {
             console.log("EditProfile error:", e);
@@ -121,10 +124,18 @@ export default function EditProfileScreen() {
             if (res?.success) {
                 if (res.user) {
                     await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                    await AsyncStorage.setItem("userName", res.user.name);
                 }
                 await setLanguageService(language);
-                Alert.alert("Success", "Profile updated successfully.");
-                router.back();
+
+                if (Platform.OS === 'web') {
+                    window.alert("Profile updated successfully.");
+                    router.replace(res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard');
+                } else {
+                    Alert.alert("Success", "Profile updated successfully.", [
+                        { text: "OK", onPress: () => router.back() }
+                    ]);
+                }
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -158,10 +169,18 @@ export default function EditProfileScreen() {
             if (res?.success) {
                 if (res.user) {
                     await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                    await AsyncStorage.setItem("userName", res.user.name);
                 }
                 await setLanguageService(language);
-                Alert.alert("Success", "Profile updated successfully.");
-                router.back();
+
+                if (Platform.OS === 'web') {
+                    window.alert("Profile updated successfully.");
+                    router.replace(res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard');
+                } else {
+                    Alert.alert("Success", "Profile updated successfully.", [
+                        { text: "OK", onPress: () => router.back() }
+                    ]);
+                }
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
