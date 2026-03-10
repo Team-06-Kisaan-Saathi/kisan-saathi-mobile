@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
@@ -10,9 +10,11 @@ import {
     Alert,
     ScrollView,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Modal,
+    Keyboard
 } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, usePathname, useSegments } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -37,11 +39,14 @@ export default function EditProfileScreen() {
     const [originalPhone, setOriginalPhone] = useState("");
     const [language, setLanguage] = useState("en");
     const [role, setRole] = useState("");
+    const dataLoadedRef = useRef(false);
+    const isDirtyRef = useRef(false);
 
     // OTP states
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState("");
     const [verifying, setVerifying] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const languages = [
         { code: "en", label: "English" },
@@ -56,17 +61,42 @@ export default function EditProfileScreen() {
     }, []);
 
     const loadData = async () => {
+        // 1. Instant load from Cache for zero-wait pre-fill
         try {
-            const res = await getProfile();
-            if (res?.success) {
-                setName(res.user.name || "");
-                setPhone(res.user.phone || "");
-                setOriginalPhone(res.user.phone || "");
-                setLanguage(res.user.language || "en");
-                setRole(res.user.role || "farmer");
+            const cached = await AsyncStorage.getItem("profile");
+            if (cached) {
+                const u = JSON.parse(cached);
+                if (!isDirtyRef.current) {
+                    setName(u.name || "");
+                    setPhone(u.phone || "");
+                    setOriginalPhone(u.phone || "");
+                    setLanguage(u.language || "en");
+                    setRole(u.role || "farmer");
+                }
+                setLoading(false); // Stop big spinner if we have cache
             }
         } catch (e) {
-            console.log("EditProfile error:", e);
+            console.log("Cache load error:", e);
+        }
+
+        // 2. Fetch fresh data from server
+        try {
+            const res = await getProfile();
+            if (res?.success && res.user) {
+                if (!isDirtyRef.current) {
+                    setName(res.user.name || "");
+                    setPhone(res.user.phone || "");
+                    setOriginalPhone(res.user.phone || "");
+                    setLanguage(res.user.language || "en");
+                }
+                setRole(res.user.role || "farmer");
+
+                // Sync cache
+                await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                await AsyncStorage.setItem("userName", res.user.name || "");
+            }
+        } catch (e) {
+            console.log("Profile refresh failed:", e);
         } finally {
             setLoading(false);
         }
@@ -119,9 +149,21 @@ export default function EditProfileScreen() {
             // 2. Save profile with new phone
             const res = await updateProfile({ name, language, phone } as any);
             if (res?.success) {
+                // Update local storage immediately with whatever we have
+                const fallbackRole = role || 'farmer';
+                const updatedUser = res.user || { name: name.trim(), language, phone: phone.trim(), role: fallbackRole };
+                await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
+                await AsyncStorage.setItem("userName", name.trim());
+                await AsyncStorage.setItem("profile_updated_at", Date.now().toString());
+
                 await setLanguageService(language);
-                Alert.alert("Success", "Profile updated successfully.");
-                router.back();
+                setShowSuccess(true);
+
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    const nextRoute = updatedUser.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
+                    router.replace(nextRoute as any);
+                }, 2000);
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -133,6 +175,8 @@ export default function EditProfileScreen() {
     };
 
     const handleSave = async () => {
+        Keyboard.dismiss();
+
         if (!name.trim()) {
             Alert.alert("Error", "Name cannot be empty.");
             return;
@@ -149,13 +193,30 @@ export default function EditProfileScreen() {
             return;
         }
 
+        if (name.trim().length < 3) {
+            Alert.alert("Error", "Name must be at least 3 characters.");
+            return;
+        }
+
         setSubmitting(true);
         try {
-            const res = await updateProfile({ name, language });
+            const res = await updateProfile({ name: name.trim(), language });
             if (res?.success) {
+                // Update local storage immediately
+                const fallbackRole = role || 'farmer';
+                const updatedUser = res.user || { name: name.trim(), language, phone: phone.trim(), role: fallbackRole };
+                await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
+                await AsyncStorage.setItem("userName", name.trim());
+                await AsyncStorage.setItem("profile_updated_at", Date.now().toString());
+
                 await setLanguageService(language);
-                Alert.alert("Success", "Profile updated successfully.");
-                router.back();
+                setShowSuccess(true);
+
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    const nextRoute = updatedUser.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
+                    router.replace(nextRoute as any);
+                }, 2000);
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -182,7 +243,10 @@ export default function EditProfileScreen() {
             <Stack.Screen options={{ title: t("profile.edit_title") || "Edit Profile", headerShadowVisible: false }} />
             <NavAuto />
 
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView
+                contentContainerStyle={styles.scroll}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>{name.charAt(0) || "U"}</Text>
@@ -209,7 +273,10 @@ export default function EditProfileScreen() {
                             <TextInput
                                 style={[styles.input, { flex: 1, marginBottom: 0 }]}
                                 value={phone}
-                                onChangeText={setPhone}
+                                onChangeText={(text) => {
+                                    setPhone(text);
+                                    isDirtyRef.current = true;
+                                }}
                                 keyboardType="number-pad"
                                 maxLength={10}
                                 placeholder={t("edit_profile.phone_ph") || "10-digit mobile number"}
@@ -255,9 +322,9 @@ export default function EditProfileScreen() {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.saveBtn, (submitting || verifying) && { opacity: 0.7 }]}
+                        style={[styles.saveBtn, (submitting || verifying || showSuccess) && { opacity: 0.7 }]}
                         onPress={handleSave}
-                        disabled={submitting || verifying}
+                        disabled={submitting || verifying || showSuccess}
                     >
                         {submitting || verifying ? (
                             <ActivityIndicator color="#fff" />
@@ -267,6 +334,16 @@ export default function EditProfileScreen() {
                             </Text>
                         )}
                     </TouchableOpacity>
+
+                    <Modal visible={showSuccess} transparent animationType="fade">
+                        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ backgroundColor: '#FFF', padding: 30, borderRadius: 20, alignItems: 'center', width: '80%' }}>
+                                <Ionicons name="checkmark-circle" size={80} color="#1B5E20" />
+                                <Text style={{ fontSize: 20, fontWeight: 'bold', marginTop: 15, textAlign: 'center' }}>Success!</Text>
+                                <Text style={{ fontSize: 16, color: '#666', marginTop: 5, textAlign: 'center' }}>Profile updated successfully.</Text>
+                            </View>
+                        </View>
+                    </Modal>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -295,6 +372,15 @@ const styles = StyleSheet.create({
     langBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
     langText: { fontSize: 13, fontWeight: "600", color: "#64748B" },
     langTextActive: { color: "#fff" },
-    saveBtn: { height: 54, backgroundColor: COLORS.primary, borderRadius: 12, alignItems: "center", justifyContent: "center", marginTop: 20 },
+    saveBtn: {
+        height: 56,
+        backgroundColor: COLORS.primary,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 20,
+        // Ensure no layout jump
+        minWidth: 150
+    },
     saveBtnText: { color: "#fff", fontSize: 18, fontWeight: "800" },
 });

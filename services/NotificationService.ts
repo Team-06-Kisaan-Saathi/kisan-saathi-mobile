@@ -24,8 +24,11 @@ class NotificationService {
 
         // Initialize socket
         this.socket = io(SOCKET_URL, {
-            transports: ["websocket"],
-            auth: { token }
+            transports: ["websocket", "polling"], // Allow polling fallback
+            auth: { token },
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
         });
 
         this.socket.on("connect", () => {
@@ -46,8 +49,11 @@ class NotificationService {
 
         // Initialize Chat Socket for global message badges
         this.chatSocket = io(`${SOCKET_URL}/chat`, {
-            transports: ["websocket"],
-            auth: { token }
+            transports: ["websocket", "polling"],
+            auth: { token },
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
         });
 
         this.chatSocket.on("connect", () => {
@@ -71,10 +77,11 @@ class NotificationService {
 
     async fetchUnreadCount() {
         try {
-            const res = await apiFetch<{ success: boolean; count: number }>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT);
-            if (res.success) {
-                console.log("🔔 NotificationService: Unread count updated:", res.count);
-                this.unreadCount = res.count;
+            const res = await apiFetch<any>(ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT);
+            if (res && (res.success || typeof res.count === 'number')) {
+                const count = typeof res.count === 'number' ? res.count : 0;
+                console.log("🔔 NotificationService: Unread count updated:", count);
+                this.unreadCount = count;
                 this.notifyListeners();
             }
         } catch (error) {

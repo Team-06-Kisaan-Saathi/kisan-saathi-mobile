@@ -2,6 +2,7 @@
   "buildFiles": [
     "C:\\mobile\\kisan-saathi-mobile\\node_modules\\@react-native-async-storage\\async-storage\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "C:\\mobile\\kisan-saathi-mobile\\node_modules\\@react-native-picker\\picker\\android\\src\\main\\jni\\CMakeLists.txt",
+    "C:\\mobile\\kisan-saathi-mobile\\node_modules\\lottie-react-native\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "C:\\mobile\\kisan-saathi-mobile\\node_modules\\react-native-gesture-handler\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "C:\\mobile\\kisan-saathi-mobile\\node_modules\\react-native-reanimated\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "C:\\mobile\\kisan-saathi-mobile\\node_modules\\react-native-safe-area-context\\android\\src\\main\\jni\\CMakeLists.txt",
@@ -69,6 +70,11 @@
         "C:\\Users\\devik\\.gradle\\caches\\8.14.3\\transforms\\52fba397ee69a489802542663b2a7886\\transformed\\react-android-0.81.5-debug\\prefab\\modules\\jsi\\libs\\android.arm64-v8a\\libjsi.so",
         "C:\\Users\\devik\\.gradle\\caches\\8.14.3\\transforms\\52fba397ee69a489802542663b2a7886\\transformed\\react-android-0.81.5-debug\\prefab\\modules\\reactnative\\libs\\android.arm64-v8a\\libreactnative.so"
       ]
+    },
+    "react_codegen_lottiereactnative::@0fa4dc904d7e359a99fb": {
+      "artifactName": "react_codegen_lottiereactnative",
+      "abi": "arm64-v8a",
+      "runtimeFiles": []
     },
     "react_codegen_VoskSpec::@3df5e1c51fbd037a1198": {
       "artifactName": "react_codegen_VoskSpec",

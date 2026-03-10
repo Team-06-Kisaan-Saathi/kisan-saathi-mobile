@@ -32,17 +32,27 @@ export default function NotificationsScreen() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchNotifications = async () => {
         try {
+            setError(null);
             const res = await apiFetch<any>(ENDPOINTS.NOTIFICATIONS.GET_ALL);
-            if (res.success) {
-                setNotifications(res.data);
+
+            // Handle different response formats (wrapped or direct array)
+            const data = res.success ? res.data : (Array.isArray(res) ? res : []);
+
+            if (Array.isArray(data)) {
+                setNotifications(data);
                 // Sync the global service count
                 notificationService.fetchUnreadCount();
+            } else {
+                console.warn("🔔 Notifications: Data is not an array", res);
+                setNotifications([]);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Fetch Notifications Error:", error);
+            setError(error.message || "Failed to load notifications");
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -51,13 +61,30 @@ export default function NotificationsScreen() {
 
     // Refresh and auto-mark as read when screen is focused
     useEffect(() => {
+        let mounted = true;
         const load = async () => {
             await fetchNotifications();
-            // Clear the badge automatically when viewing the notifications
-            setTimeout(markAllAsRead, 1000);
+            if (mounted) {
+                // Clear the badge automatically when viewing the notifications
+                setTimeout(() => {
+                    if (mounted) markAllAsRead();
+                }, 1000);
+            }
         };
         load();
+        return () => { mounted = false; };
     }, []);
+
+    const safeFormatTime = (dateStr: string) => {
+        try {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "";
+            return formatDistanceToNow(d, { addSuffix: true });
+        } catch (e) {
+            return "";
+        }
+    };
 
     const markAllAsRead = async () => {
         try {
@@ -149,7 +176,7 @@ export default function NotificationsScreen() {
                 <View style={styles.headerRow}>
                     <Text style={[styles.title, !item.read && styles.boldText]}>{item.title}</Text>
                     <Text style={styles.time}>
-                        {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                        {safeFormatTime(item.createdAt)}
                     </Text>
                 </View>
                 <Text style={styles.message} numberOfLines={2}>
@@ -177,11 +204,19 @@ export default function NotificationsScreen() {
 
             {loading ? (
                 <ActivityIndicator size="large" color="#10B981" style={{ marginTop: 40 }} />
+            ) : error ? (
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity style={styles.retryBtn} onPress={fetchNotifications}>
+                        <Text style={styles.retryBtnText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
             ) : (
                 <FlatList
                     data={notifications}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item._id}
+                    keyExtractor={(item) => item?._id || Math.random().toString()}
                     contentContainerStyle={styles.list}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={fetchNotifications} />
@@ -246,4 +281,8 @@ const styles = StyleSheet.create({
     deleteBtn: { padding: 8, marginLeft: 4 },
     empty: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 100 },
     emptyText: { marginTop: 16, fontSize: 16, color: "#94A3B8", fontWeight: "600" },
+    errorContainer: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
+    errorText: { marginTop: 12, fontSize: 14, color: "#64748B", textAlign: "center" },
+    retryBtn: { marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#10B981", borderRadius: 8 },
+    retryBtnText: { color: "#fff", fontWeight: "700" },
 });

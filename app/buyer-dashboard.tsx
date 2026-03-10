@@ -13,7 +13,8 @@ import {
   Animated,
   Pressable,
 } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import LottieView from "lottie-react-native";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import NavBuyer from "../components/navigation/NavBuyer";
@@ -40,6 +41,12 @@ export default function BuyerDashboard() {
 
   const loadData = async () => {
     try {
+      // 1. Try to load cached user first for instant UI
+      const cachedUser = await AsyncStorage.getItem("profile");
+      if (cachedUser) {
+        setUser(JSON.parse(cachedUser));
+      }
+
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         router.replace("/login");
@@ -47,7 +54,20 @@ export default function BuyerDashboard() {
       }
       const res = await getProfile();
       if (res?.success) {
-        setUser(res.user);
+        // --- RACE CONDITION PROTECTION ---
+        // If we just updated the profile in the last 10 seconds, ignore the server's data
+        // because it might still be propagating (stale cache).
+        const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+        const now = Date.now();
+        const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+        if (!isFresh) {
+          setUser(res.user);
+          await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+          if (res.user.name) {
+            await AsyncStorage.setItem("userName", res.user.name);
+          }
+        }
       }
 
       // --- DYNAMIC DATA LOGIC ---
@@ -129,9 +149,11 @@ export default function BuyerDashboard() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -228,7 +250,7 @@ export default function BuyerDashboard() {
               title={t("farmer.live_auctions") || "Live Auctions"}
               subtitle={t("dashboard.browse_bid_crops") || "Browse & bid on crops"}
               icon="flash"
-              color="#3B83F6"
+              color="#FB923C"
               highContrast={highContrast}
               onPress={() => router.push("/buyer-auctions" as any)}
             />
@@ -236,7 +258,7 @@ export default function BuyerDashboard() {
               title={t("dashboard.my_bids") || "My Bids"}
               subtitle={t("dashboard.track_bids") || "Track your bids"}
               icon="list"
-              color="#7C3AED"
+              color="#FBBF24"
               highContrast={highContrast}
               onPress={() => router.push("/my-bids" as any)}
             />
@@ -246,7 +268,7 @@ export default function BuyerDashboard() {
               title={t("dashboard.sellers") || "Sellers"}
               subtitle={t("dashboard.verified_directory") || "Verified Directory"}
               icon="people"
-              color="#F59E0B"
+              color="#94A3B8"
               highContrast={highContrast}
               onPress={() => router.push("/buyer-marketplace")}
             />
@@ -255,7 +277,7 @@ export default function BuyerDashboard() {
               subtitle={t("dashboard.your_negotiations") || "Your negotiations"}
               icon="handshake-outline"
               iconFamily="MaterialCommunityIcons"
-              color="#111827"
+              color="#A3A3A3"
               highContrast={highContrast}
               onPress={() => router.push("/not-available")}
             />
@@ -354,7 +376,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-  welcomeText: { fontSize: 26, fontWeight: "900", color: "#1E3A8A" },
+  welcomeText: { color: "#0F172A" }, // Dark Navy Blue close to black
   subtext: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
 
   sectionTitle: {
@@ -370,23 +392,21 @@ const styles = StyleSheet.create({
   topPriceCard: {
     backgroundColor: "#FFF",
     marginHorizontal: 20,
-    borderRadius: 4,
-    borderTopWidth: 6,
-    borderTopColor: "#2563EB",
+    borderRadius: 16,
     padding: 24,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8
   },
   priceHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  cropName: { fontSize: 28, fontWeight: "900", color: "#0F172A" },
+  cropName: { fontSize: 22, fontWeight: "900", color: "#0F172A" },
   mandiRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  mandiName: { fontSize: 15, color: "#64748B", marginLeft: 4, fontWeight: "600" },
+  mandiName: { fontSize: 13, color: "#64748B", marginLeft: 4, fontWeight: "600" },
   unitText: { fontSize: 14, color: "#94A3B8", marginTop: 4, fontWeight: "500" },
-  priceVal: { fontSize: 32, fontWeight: "900", color: "#0F172A" },
+  priceVal: { fontSize: 24, fontWeight: "900", color: "#0F172A" },
   trendRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   trendText: { fontSize: 14, color: "#22C55E", fontWeight: "700", marginLeft: 4 },
 
@@ -398,7 +418,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   seeAllText: { color: "#FFF", fontWeight: "800", fontSize: 15 },
   buyNowBtn: {
@@ -408,18 +428,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   buyNowText: { color: "#2563EB", fontWeight: "800", fontSize: 15 },
 
   grid: { paddingHorizontal: 20, gap: 12, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
 
-  marketCard: { flex: 1, padding: 20, borderRadius: 0, justifyContent: "center", minHeight: 120 },
+  marketCard: { flex: 1, padding: 20, borderRadius: 16, justifyContent: "center", minHeight: 120 },
   cardTitle: { color: "#FFF", fontSize: 18, fontWeight: "900", marginTop: 12 },
   cardSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "600", marginTop: 2 },
 
-  buySellCard: { flex: 1, padding: 20, borderRadius: 0, minHeight: 120 },
+  buySellCard: { flex: 1, padding: 20, borderRadius: 16, minHeight: 120 },
 
   supportList: { marginHorizontal: 20, backgroundColor: "#FFF", borderRadius: 12, overflow: "hidden", marginBottom: 40, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   supportItem: {

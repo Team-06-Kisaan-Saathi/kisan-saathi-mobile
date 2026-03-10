@@ -717,6 +717,7 @@ function LiveFeed({
               <View>
                 <Text style={styles.priceLabel}>{t("market.price_quintal") || "Price (per quintal)"}</Text>
                 <Text style={styles.priceAmount}>{item.displayPrice}</Text>
+                <Text style={styles.priceSubLabel}>₹{(item.pricePerQuintal / 100).toFixed(2)} / kg</Text>
               </View>
 
               <View style={styles.timeBox}>
@@ -802,8 +803,7 @@ function NearbyMandis({
           ))
         )}
       </View>
-
-      {MapView && hasCoords && region && (
+            {MapView && hasCoords && region && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Map View</Text>
           <View style={styles.mapWrap}>
@@ -845,6 +845,7 @@ function NearbyMandis({
           </View>
         </View>
       )}
+
     </ScrollView>
   );
 }
@@ -1202,6 +1203,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#eef2f7",
   },
   priceLabel: { color: "#6c757d", fontSize: 12, marginBottom: 4 },
+  priceSubLabel: { color: "#2d6a4f", fontSize: 14, fontWeight: "700", opacity: 0.8 },
   priceAmount: { color: "#2d6a4f", fontSize: 28, fontWeight: "900" },
   timeBox: { alignItems: "flex-end" },
   timeLabel: { color: "#6c757d", fontSize: 11, marginBottom: 2 },

@@ -1,20 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  SafeAreaView,
-  Animated,
-  Pressable,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl, Alert, SafeAreaView, Animated, Pressable } from "react-native";
+import LottieView from "lottie-react-native";
 import { useTheme } from "../hooks/ThemeContext";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import NavFarmer from "../components/navigation/NavFarmer";
@@ -40,6 +28,12 @@ export default function FarmerDashboard() {
 
   const loadData = async () => {
     try {
+      // 1. Try to load cached user first for instant UI
+      const cachedUser = await AsyncStorage.getItem("profile");
+      if (cachedUser) {
+        setUser(JSON.parse(cachedUser));
+      }
+
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         router.replace("/login");
@@ -47,7 +41,20 @@ export default function FarmerDashboard() {
       }
       const res = await getProfile();
       if (res?.success) {
-        setUser(res.user);
+        // --- RACE CONDITION PROTECTION ---
+        // If we just updated the profile in the last 10 seconds, ignore the server's data
+        // because it might still be propagating (stale cache).
+        const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+        const now = Date.now();
+        const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+        if (!isFresh) {
+          setUser(res.user);
+          await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+          if (res.user.name) {
+            await AsyncStorage.setItem("userName", res.user.name);
+          }
+        }
       }
 
       // --- DYNAMIC DATA LOGIC ---
@@ -114,9 +121,11 @@ export default function FarmerDashboard() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -155,7 +164,8 @@ export default function FarmerDashboard() {
                 <Text style={[styles.priceVal, highContrast && { color: "#FFF" }]}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
                 <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>{t("dashboard.per_quintal") || "/ quintal"}</Text>
               </View>
-              <View style={styles.trendRow}>
+
+              <View style={[styles.trendRow, { marginTop: 0, flexShrink: 0 }]}>
                 <MaterialCommunityIcons
                   name={topPrice?.isUp !== false ? "trending-up" : "trending-down"}
                   size={16}
@@ -168,7 +178,9 @@ export default function FarmerDashboard() {
             </View>
           </View>
 
-          <View style={styles.priceActions}>
+          <View style={{ height: 1, backgroundColor: highContrast ? '#333' : '#E2E8F0', marginVertical: 16 }} />
+
+          <View style={[styles.priceActions, { marginTop: 0 }]}>
             <TouchableOpacity
               style={styles.seeAllBtn}
               onPress={() => router.push("/mandi-prices")}
@@ -193,14 +205,14 @@ export default function FarmerDashboard() {
               title={t("nav_farmer.mandi_prices") || "Mandi Prices"}
               subtitle={t("dashboard.live_rates_near_you") || "Live rates near you"}
               icon="stats-chart"
-              color="#2563EB"
+              color="#3B82F6"
               onPress={() => router.push("/mandi-prices")}
             />
             <MarketCard
               title={t("nav_farmer.ai_insights") || "AI Insights"}
               subtitle={aiInsight || t("dashboard.smart_crop_advice")}
               icon="bulb"
-              color="#EA580C"
+              color="#4F46E5"
               onPress={() => router.push("/ai-insights")}
             />
           </View>
@@ -209,14 +221,14 @@ export default function FarmerDashboard() {
               title={t("dashboard.weather") || "Weather"}
               subtitle={t("dashboard.forecast") || "7-day forecast"}
               icon="cloudy-night"
-              color="#0EA5E9"
+              color="#38BDF8"
               onPress={() => router.push("/weather" as any)}
             />
             <MarketCard
               title={t("dashboard.govt_schemes") || "Govt Schemes"}
               subtitle={t("dashboard.subsidies_loans") || "Subsidies & loans"}
               icon="ribbon"
-              color="#7C3AED"
+              color="#14B8A6"
               onPress={() => router.push("/govt-schemes")}
             />
           </View>
@@ -230,14 +242,14 @@ export default function FarmerDashboard() {
               title={t("farmer.marketplace") || "Marketplace"}
               subtitle={t("dashboard.buy_inputs") || "Buy inputs & tools"}
               icon="briefcase"
-              color="#16A34A"
+              color="#E4572E"
               onPress={() => router.push("/marketplace")}
             />
             <BuySellCard
               title={t("farmer.live_auctions") || "Live Auctions"}
               subtitle={t("dashboard.host_auction") || "Host an auction"}
               icon="flash"
-              color="#DC2626"
+              color="#F26B38"
               onPress={() => router.push("/create-auction")}
             />
           </View>
@@ -253,7 +265,7 @@ export default function FarmerDashboard() {
               title={t("dashboard.monitor_auctions") || "Monitor Auctions"}
               subtitle={t("dashboard.view_bids_status") || "View bids & status"}
               icon="stats-chart"
-              color="#10B981"
+              color="#F2C14E"
               onPress={() => router.push("/farmer-auctions")}
             />
           </View>
@@ -347,8 +359,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
   scrollContent: { paddingBottom: 100 },
 
-  header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-  welcomeText: { fontSize: 26, fontWeight: "900", color: "#0F172A" },
+  header: { paddingHorizontal: 20, paddingTop: 40, marginBottom: 60 },
+  welcomeText: { color: "#3B2F2F" },
   subtext: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
 
   sectionTitle: {
@@ -363,23 +375,21 @@ const styles = StyleSheet.create({
   topPriceCard: {
     backgroundColor: "#FFF",
     marginHorizontal: 20,
-    borderRadius: 4, // More square as in image
-    borderTopWidth: 6,
-    borderTopColor: "#16A34A",
+    borderRadius: 16,
     padding: 24,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8
   },
   priceHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  cropName: { fontSize: 28, fontWeight: "900", color: "#0F172A" },
+  cropName: { fontSize: 22, fontWeight: "900", color: "#0F172A" },
   mandiRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  mandiName: { fontSize: 15, color: "#64748B", marginLeft: 4, fontWeight: "600" },
+  mandiName: { fontSize: 13, color: "#64748B", marginLeft: 4, fontWeight: "600" },
   unitText: { fontSize: 14, color: "#94A3B8", marginTop: 4, fontWeight: "500" },
-  priceVal: { fontSize: 32, fontWeight: "900", color: "#0F172A" },
+  priceVal: { fontSize: 24, fontWeight: "900", color: "#0F172A" },
   trendRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   trendText: { fontSize: 14, color: "#22C55E", fontWeight: "700", marginLeft: 4 },
 
@@ -391,7 +401,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   seeAllText: { color: "#FFF", fontWeight: "800", fontSize: 15 },
   sellNowBtn: {
@@ -401,18 +411,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   sellNowText: { color: "#0F172A", fontWeight: "800", fontSize: 15 },
 
   grid: { paddingHorizontal: 20, gap: 12, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
 
-  marketCard: { flex: 1, padding: 20, borderRadius: 0, justifyContent: "center", minHeight: 120 },
+  marketCard: { flex: 1, padding: 20, borderRadius: 16, justifyContent: "center", minHeight: 120 },
   cardTitle: { color: "#FFF", fontSize: 18, fontWeight: "900", marginTop: 12 },
   cardSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "600", marginTop: 2 },
 
-  buySellCard: { flex: 1, padding: 20, borderRadius: 0, minHeight: 120 },
+  buySellCard: { flex: 1, padding: 20, borderRadius: 16, minHeight: 120 },
 
   supportList: { marginHorizontal: 20, backgroundColor: "#FFF", borderRadius: 12, overflow: "hidden", marginBottom: 40, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   supportItem: {

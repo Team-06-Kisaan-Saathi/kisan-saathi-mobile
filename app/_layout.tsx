@@ -126,18 +126,20 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
       const token = await AsyncStorage.getItem("token");
       const role = await AsyncStorage.getItem("role");
 
-      const inAuthGroup = isAuthPage;
+      // Initialize notifications as soon as we have a user
+      if (token) {
+        notificationService.init();
+      }
 
-      if (!token && !inAuthGroup) {
+      if (!token && !isAuthPage) {
         setTimeout(() => router.replace("/login"), 0);
       } else if (token && role && (pathname === "/" || pathname === "/index")) {
-        notificationService.init();
         if (role === "admin") router.replace("/admin-dashboard");
         else router.replace(role === "farmer" ? "/farmer-dashboard" : "/buyer-dashboard");
       }
     };
     checkAuth();
-  }, [segments, pathname, isAuthPage]);
+  }, [segments, pathname, router, isAuthPage]);
 
   const themeMode = highContrast ? 'contrast' : (colorScheme || 'light');
   const backgroundColor = Colors[themeMode as keyof typeof Colors].background;

@@ -1,2 +1,2 @@
 // Re-export from the single source of truth
-export { HOST, API_BASE, AUTH_API } from "../services/api";
+export { HOST, API_BASE } from "../services/api";

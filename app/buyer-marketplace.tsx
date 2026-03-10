@@ -266,12 +266,12 @@ function PriceCard({ item }: any) {
                     <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{t(item.crop) || item.crop}</Text>
                     <View style={styles.mandiRow}>
                         <Ionicons name="location" size={12} color="#64748B" />
-                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}> {item.locationName || item.mandi}</Text>
+                        <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}> {item.locationName || item.mandi}</Text>
                     </View>
                 </View>
-                <View style={styles.priceColumn}>
-                    <Text style={styles.priceVal}>₹{item.pricePerQuintal / 100}/kg</Text>
-                    <Text style={styles.priceSub}>₹{item.pricePerQuintal}/q</Text>
+                <View style={[styles.priceColumn, { flex: 1 }]}>
+                    <Text style={styles.priceVal}>₹{(item.pricePerQuintal / 100).toFixed(2)}/kg</Text>
+                    <Text style={styles.priceSub}>₹{Number(item.pricePerQuintal).toFixed(0)}/q</Text>
                 </View>
             </View>
             <View style={styles.cardFooter}>

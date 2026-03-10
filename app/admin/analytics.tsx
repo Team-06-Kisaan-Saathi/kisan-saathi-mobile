@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
 import { COLORS, Header, Card, StatCard, AdminSidebar } from "../../components/admin/AdminComponents";
 import { LineChart, PieChart } from "react-native-chart-kit";
-import * as Lucide from "lucide-react-native";
 import { adminService } from "../../services/adminService";
 import { useRouter } from "expo-router";
 
@@ -15,11 +14,7 @@ export default function AnalyticsScreen() {
     const [data, setData] = useState<any>(null);
     const router = useRouter();
 
-    useEffect(() => {
-        loadAnalytics("6m");
-    }, []);
-
-    const loadAnalytics = async (tf: string = "6m") => {
+    const loadAnalytics = useCallback(async (tf: string = "6m") => {
         try {
             if (!refreshing) setLoading(true);
             const res = await adminService.getAnalytics(tf);
@@ -32,7 +27,11 @@ export default function AnalyticsScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [refreshing]);
+
+    useEffect(() => {
+        loadAnalytics("6m");
+    }, [loadAnalytics]);
 
     if (loading && !refreshing) {
         return (
