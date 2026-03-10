@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Wheat,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Alert,
@@ -130,6 +131,7 @@ function titleCase(s: string) {
 
 export default function MarketplaceScreen() {
   const { highContrast } = useTheme();
+  const { t } = useTranslation();
   const {
     coords: gpsCoords,
     permission,
@@ -463,25 +465,25 @@ export default function MarketplaceScreen() {
         <View style={styles.tabs}>
           <TabButton
             icon={<IndianRupee size={24} color="#1f8f4a" strokeWidth={2} />}
-            label="Today"
+            label={t("market.tab_today") || "Today"}
             active={tab === "Live"}
             onPress={() => setTab("Live")}
           />
           <TabButton
             icon={<MapPin size={24} color="#2563eb" />}
-            label="Mandis near me"
+            label={t("market.tab_nearby") || "Mandis near me"}
             active={tab === "Nearby"}
             onPress={() => setTab("Nearby")}
           />
           <TabButton
             icon={<BarChart2 size={24} color="#7c3aed" />}
-            label="Compare prices"
+            label={t("market.tab_compare") || "Compare prices"}
             active={tab === "Compare"}
             onPress={() => setTab("Compare")}
           />
           <TabButton
             icon={<Wheat size={24} color="#b7791f" />}
-            label="My crops"
+            label={t("market.tab_watchlist") || "My crops"}
             active={tab === "Watchlist"}
             onPress={() => setTab("Watchlist")}
           />
@@ -491,17 +493,17 @@ export default function MarketplaceScreen() {
         {(tab === "Live" || tab === "Compare") && (
           <View style={styles.controls}>
             <View style={styles.searchBox}>
-              <Text style={styles.searchLabel}>Crop name</Text>
+              <Text style={styles.searchLabel}>{t("market.crop_name") || "Crop name"}</Text>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Type crop name (e.g., Wheat)"
+                placeholder={t("market.search_placeholder") || "Type crop name (e.g., Wheat)"}
                 placeholderTextColor="#7a8a99"
                 value={searchCrop}
                 onChangeText={setSearchCrop}
               />
               {!!lastUpdatedAt && (
                 <Text style={styles.lastRefreshed}>
-                  Last refreshed: {formatTime(lastUpdatedAt)}
+                  {t("market.last_refreshed") || "Last refreshed:"} {formatTime(lastUpdatedAt)}
                 </Text>
               )}
             </View>
@@ -566,15 +568,16 @@ function Header({
   onUpdateLocation: () => void;
 }) {
   const { highContrast } = useTheme();
+  const { t } = useTranslation();
   return (
     <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-      <Text style={styles.headerTitle}>Marketplace</Text>
+      <Text style={styles.headerTitle}>{t("market.title") || "Marketplace"}</Text>
 
       <Text style={styles.headerSub}>
-        Today’s mandi prices, nearby markets & comparisons
+        {t("market.sub") || "Today’s mandi prices, nearby markets & comparisons"}
       </Text>
       <Text style={styles.headerHint}>
-        Location source: {coordsSource.toUpperCase()}
+        {t("market.loc_src") || "Location source:"} {coordsSource.toUpperCase()}
       </Text>
     </View>
   );
@@ -618,6 +621,7 @@ function LiveFeed({
   isCropStarred: (crop: Crop) => boolean;
 }) {
   const { highContrast } = useTheme();
+  const { t } = useTranslation();
   // Trend per crop+mandi (uses 2 most recent in current list)
   const trendMap = useMemo(() => {
     const map = new Map<string, { latest: number; prev?: number }>();
@@ -649,16 +653,16 @@ function LiveFeed({
       contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}
       ListEmptyComponent={
         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
-          <Text style={styles.emptyTitle}>📭 No prices available</Text>
+          <Text style={styles.emptyTitle}>📭 {t("market.no_prices") || "No prices available"}</Text>
           <Text style={styles.emptySub}>
-            Pull down to refresh or check again later
+            {t("market.pull_refresh") || "Pull down to refresh or check again later"}
           </Text>
         </View>
       }
       renderItem={({ item }) => {
         const k = `${item.crop}__${item.mandiName}`;
-        const t = trendMap.get(k);
-        const prev = t?.prev;
+        const trend = trendMap.get(k);
+        const prev = trend?.prev;
         const diff = prev != null ? item.pricePerQuintal - prev : null;
 
         const rising = diff != null && diff > 0;
@@ -686,15 +690,15 @@ function LiveFeed({
                         ]}
                       >
                         {rising
-                          ? `₹${Math.abs(diff).toFixed(0)} higher than last update`
-                          : `₹${Math.abs(diff).toFixed(0)} lower than last update`}
+                          ? `₹${Math.abs(diff).toFixed(0)} ${t("market.higher_update") || "higher than last update"}`
+                          : `₹${Math.abs(diff).toFixed(0)} ${t("market.lower_update") || "lower than last update"}`}
                       </Text>
                     </View>
                   )}
 
                   {diff === 0 && prev != null && (
                     <Text style={styles.trendText}>
-                      No change since last update
+                      {t("market.no_change") || "No change since last update"}
                     </Text>
                   )}
                 </View>
@@ -711,12 +715,12 @@ function LiveFeed({
 
             <View style={styles.priceRow}>
               <View>
-                <Text style={styles.priceLabel}>Price (per quintal)</Text>
+                <Text style={styles.priceLabel}>{t("market.price_quintal") || "Price (per quintal)"}</Text>
                 <Text style={styles.priceAmount}>{item.displayPrice}</Text>
               </View>
 
               <View style={styles.timeBox}>
-                <Text style={styles.timeLabel}>Updated</Text>
+                <Text style={styles.timeLabel}>{t("market.updated") || "Updated"}</Text>
                 <Text style={styles.timeText}>
                   {formatTime(item.updatedAt)}
                 </Text>
@@ -739,6 +743,7 @@ function NearbyMandis({
   nearestMandis: NearbyMandi[];
 }) {
   const hasCoords = !!coords;
+  const { t } = useTranslation();
 
   const region = useMemo(() => {
     if (!coords) return null;
@@ -753,23 +758,23 @@ function NearbyMandis({
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nearest Mandis (within 50 km)</Text>
+        <Text style={styles.sectionTitle}>{t("market.nearest_mandis") || "Nearest Mandis (within 50 km)"}</Text>
 
         {!hasCoords && (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyBoxText}>
               {permission === "denied"
-                ? "Location permission denied. Enable it to see nearby mandis."
-                : "Location not available yet. Try updating location."}
+                ? t("market.loc_denied") || "Location permission denied. Enable it to see nearby mandis."
+                : t("market.loc_unavailable") || "Location not available yet. Try updating location."}
             </Text>
           </View>
         )}
 
         {hasCoords && nearestMandis.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyBoxText}>No mandis found nearby</Text>
+            <Text style={styles.emptyBoxText}>{t("market.no_mandis") || "No mandis found nearby"}</Text>
             <Text style={styles.smallTip}>
-              Tip: try refreshing or updating location
+              {t("market.tip_refresh") || "Tip: try refreshing or updating location"}
             </Text>
           </View>
         ) : (
@@ -970,7 +975,7 @@ function Watchlist({
         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
           <Text style={styles.emptyTitle}>No crops in watchlist</Text>
           <Text style={styles.emptySub}>
-            Star a crop from "Today" or "Compare prices"
+            Star a crop from &quot;Today&quot; or &quot;Compare prices&quot;
           </Text>
         </View>
       ) : (

@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import NavBuyer from "../components/navigation/NavBuyer";
 
 import { fetchMandiPrices } from "../services/mandiService";
@@ -28,7 +29,8 @@ const { width } = Dimensions.get("window");
 type TabKey = "Prices" | "Farmers";
 
 export default function BuyerMarketplace() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const { q } = useLocalSearchParams<{ q?: string }>();
     const [tab, setTab] = useState<TabKey>("Prices");
@@ -124,7 +126,7 @@ export default function BuyerMarketplace() {
                     <Ionicons name="search" size={18} color="#94A3B8" />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder={tab === "Prices" ? "Search Crops..." : "Search Farmers..."}
+                        placeholder={tab === "Prices" ? t("buyer_market.search_crops") || "Search Crops..." : t("buyer_market.search_farmers") || "Search Farmers..."}
                         value={search}
                         onChangeText={setSearch}
                     />
@@ -142,20 +144,20 @@ export default function BuyerMarketplace() {
                     style={[styles.tab, tab === "Prices" && styles.tabActive]}
                     onPress={() => setTab("Prices")}
                 >
-                    <Text style={[styles.tabText, tab === "Prices" && styles.tabTextActive]}>Mandi Prices</Text>
+                    <Text style={[styles.tabText, tab === "Prices" && styles.tabTextActive]}>{t("buyer_market.mandi_prices") || "Mandi Prices"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.tab, tab === "Farmers" && styles.tabActive]}
                     onPress={() => setTab("Farmers")}
                 >
-                    <Text style={[styles.tabText, tab === "Farmers" && styles.tabTextActive]}>Farmers Directory</Text>
+                    <Text style={[styles.tabText, tab === "Farmers" && styles.tabTextActive]}>{t("buyer_market.farmers_dir") || "Farmers Directory"}</Text>
                 </TouchableOpacity>
             </View>
 
             {loading ? (
                 <View style={styles.loading}>
                     <ActivityIndicator size="large" color="#1e3a8a" />
-                    <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Fetching latest data...</Text>
+                    <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>{t("buyer_market.fetching") || "Fetching latest data..."}</Text>
                 </View>
             ) : (
                 <FlatList
@@ -174,7 +176,7 @@ export default function BuyerMarketplace() {
                     ListEmptyComponent={
                         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
                             <Ionicons name="search-outline" size={48} color="#CBD5E1" />
-                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No results found for "{search}"</Text>
+                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{t("buyer_market.no_results") || "No results found for"} &quot;{search}&quot;</Text>
                         </View>
                     }
                 />
@@ -190,7 +192,7 @@ export default function BuyerMarketplace() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Farmer Profile</Text>
+                            <Text style={styles.modalTitle}>{t("buyer_market.farmer_profile") || "Farmer Profile"}</Text>
                             <TouchableOpacity onPress={() => setSelectedFarmer(null)}>
                                 <Ionicons name="close" size={24} color="#1E293B" />
                             </TouchableOpacity>
@@ -207,30 +209,30 @@ export default function BuyerMarketplace() {
                                         <View style={styles.badgeRow}>
                                             <View style={[styles.statusBadge, selectedFarmer.verificationStatus === "approved" ? styles.verified : styles.unverified]}>
                                                 <Ionicons name={selectedFarmer.verificationStatus === "approved" ? "checkmark-circle" : "time"} size={12} color="#fff" />
-                                                <Text style={styles.badgeText}>{selectedFarmer.verificationStatus === "approved" ? "Verified Seller" : "Unverified"}</Text>
+                                                <Text style={styles.badgeText}>{selectedFarmer.verificationStatus === "approved" ? t("buyer_market.verified_seller") || "Verified Seller" : t("buyer_market.unverified") || "Unverified"}</Text>
                                             </View>
-                                            <Text style={styles.trustText}>Trust Score: {selectedFarmer.trustScore}/10</Text>
+                                            <Text style={styles.trustText}>{t("buyer_market.trust_score") || "Trust Score:"} {selectedFarmer.trustScore}/10</Text>
                                         </View>
                                     </View>
                                 </View>
 
                                 <View style={styles.statsGrid}>
                                     <View style={styles.statBox}>
-                                        <Text style={styles.statLabel}>Location</Text>
-                                        <Text style={styles.statValue}>{selectedFarmer.location || "Not Set"}</Text>
+                                        <Text style={styles.statLabel}>{t("buyer_market.location") || "Location"}</Text>
+                                        <Text style={styles.statValue}>{selectedFarmer.location || t("buyer_market.not_set") || "Not Set"}</Text>
                                     </View>
                                     <View style={styles.statBox}>
-                                        <Text style={styles.statLabel}>Experience</Text>
-                                        <Text style={styles.statValue}>Standard Partner</Text>
+                                        <Text style={styles.statLabel}>{t("buyer_market.experience") || "Experience"}</Text>
+                                        <Text style={styles.statValue}>{t("buyer_market.standard_partner") || "Standard Partner"}</Text>
                                     </View>
                                 </View>
 
                                 <View style={styles.section}>
-                                    <Text style={styles.sectionTitle}>Available Crops</Text>
+                                    <Text style={styles.sectionTitle}>{t("buyer_market.available_crops") || "Available Crops"}</Text>
                                     <View style={styles.listingInfo}>
                                         <Ionicons name="information-circle" size={20} color="#64748B" />
                                         <Text style={styles.listingText}>
-                                            Crops listed by this farmer will appear here. Contact for availability.
+                                            {t("buyer_market.crops_desc") || "Crops listed by this farmer will appear here. Contact for availability."}
                                         </Text>
                                     </View>
                                 </View>
@@ -240,7 +242,7 @@ export default function BuyerMarketplace() {
                                     onPress={() => handleContactFarmer(selectedFarmer._id)}
                                 >
                                     <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
-                                    <Text style={styles.modalActionText}>Message Farmer</Text>
+                                    <Text style={styles.modalActionText}>{t("buyer_market.msg_farmer") || "Message Farmer"}</Text>
                                 </TouchableOpacity>
                             </ScrollView>
                         )}
@@ -252,7 +254,8 @@ export default function BuyerMarketplace() {
 }
 
 function PriceCard({ item }: any) {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     return (
         <View style={styles.priceCard}>
             <View style={styles.cardUpper}>
@@ -260,7 +263,7 @@ function PriceCard({ item }: any) {
                     <Ionicons name="leaf" size={20} color="#059669" />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{item.crop}</Text>
+                    <Text style={[styles.cropName, highContrast && { color: "#FFF" }]}>{t(item.crop) || item.crop}</Text>
                     <View style={styles.mandiRow}>
                         <Ionicons name="location" size={12} color="#64748B" />
                         <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}> {item.locationName || item.mandi}</Text>
@@ -272,9 +275,9 @@ function PriceCard({ item }: any) {
                 </View>
             </View>
             <View style={styles.cardFooter}>
-                <Text style={styles.footerTime}>Updated {new Date(item.updatedAt || item.date).toLocaleDateString()}</Text>
+                <Text style={styles.footerTime}>{t("market.updated") || "Updated"} {new Date(item.updatedAt || item.date).toLocaleDateString()}</Text>
                 <TouchableOpacity style={styles.insightBtn} onPress={() => Alert.alert("Coming Soon", "Detailed price history is being integrated.")}>
-                    <Text style={styles.insightBtnText}>Trends</Text>
+                    <Text style={styles.insightBtnText}>{t("buyer_market.trends") || "Trends"}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -282,7 +285,8 @@ function PriceCard({ item }: any) {
 }
 
 function FarmerCard({ item, onPress, onContact }: any) {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     return (
         <TouchableOpacity style={styles.farmerCard} onPress={onPress}>
             <View style={styles.cardUpper}>
@@ -306,11 +310,11 @@ function FarmerCard({ item, onPress, onContact }: any) {
             <View style={styles.cardFooter}>
                 <View style={styles.mandiRow}>
                     <Ionicons name="star" size={14} color="#F59E0B" />
-                    <Text style={styles.trustText}> Trust: {item.trustScore}/10</Text>
+                    <Text style={styles.trustText}> {t("buyer_market.trust_score")?.replace(":", "") || "Trust"} {item.trustScore}/10</Text>
                 </View>
                 <TouchableOpacity style={styles.contactBtn} onPress={onContact}>
                     <Ionicons name="mail" size={14} color="#fff" />
-                    <Text style={styles.contactBtnText}>Contract</Text>
+                    <Text style={styles.contactBtnText}>{t("buyer_market.contact") || "Contact"}</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>

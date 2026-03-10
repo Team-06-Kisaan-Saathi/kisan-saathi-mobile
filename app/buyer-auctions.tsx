@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import { Ionicons, Feather } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 
@@ -69,7 +70,8 @@ const AuctionTimer = ({ createdAt, status }: { createdAt: string, status: string
 };
 
 export default function BuyerAuctions() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const [auctions, setAuctions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -150,8 +152,8 @@ export default function BuyerAuctions() {
                         <Ionicons name="arrow-back" size={24} color="#FFF" />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle}>Live Auctions</Text>
-                        <Text style={styles.headerSubtitle}>{auctions.length} auctions available</Text>
+                        <Text style={styles.headerTitle}>{t("b_auction.live") || "Live Auctions"}</Text>
+                        <Text style={styles.headerSubtitle}>{auctions.length} {t("b_auction.available") || "auctions available"}</Text>
                     </View>
                     <TouchableOpacity onPress={loadAuctions}>
                         <Ionicons name="refresh" size={22} color="#FFF" />
@@ -163,7 +165,7 @@ export default function BuyerAuctions() {
                     <Ionicons name="search" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search by crop name..."
+                        placeholder={t("b_auction.search") || "Search by crop name..."}
                         placeholderTextColor="#94A3B8"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -177,7 +179,7 @@ export default function BuyerAuctions() {
                 ) : filteredAuctions.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="search" size={48} color="#CBD5E1" />
-                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No auctions found</Text>
+                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{t("b_auction.no_auctions") || "No auctions found"}</Text>
                     </View>
                 ) : filteredAuctions.map((auction, index) => (
                     <TouchableOpacity
@@ -195,37 +197,37 @@ export default function BuyerAuctions() {
                                 </Text>
                             </View>
                             <View style={styles.liveBadge}>
-                                <Text style={styles.liveBadgeText}>● LIVE</Text>
+                                <Text style={styles.liveBadgeText}>{t("f_auction.live_badge") || "● LIVE"}</Text>
                             </View>
                         </View>
 
                         {/* Stats Grid */}
                         <View style={styles.statsGrid}>
                             <View style={styles.statItem}>
-                                <Text style={styles.statLabel}>QUANTITY</Text>
+                                <Text style={styles.statLabel}>{t("b_auction.qty") || "QUANTITY"}</Text>
                                 <Text style={styles.statValue}>{auction.quantity}</Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Text style={styles.statLabel}>HIGHEST BID</Text>
+                                <Text style={styles.statLabel}>{t("b_auction.high_bid") || "HIGHEST BID"}</Text>
                                 <Text style={[styles.statValue, { color: auction.currentHighBid > 0 ? "#2563EB" : "#94A3B8" }]}>
-                                    {auction.currentHighBid > 0 ? formatCurr(auction.currentHighBid) : "No Bids"}
+                                    {auction.currentHighBid > 0 ? formatCurr(auction.currentHighBid) : (t("b_auction.no_bids") || "No Bids")}
                                 </Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Text style={styles.statLabel}>BIDS</Text>
+                                <Text style={styles.statLabel}>{t("b_auction.bids") || "BIDS"}</Text>
                                 <Text style={styles.statValue}>{auction.totalBids}</Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Text style={styles.statLabel}>TIME LEFT</Text>
+                                <Text style={styles.statLabel}>{t("b_auction.time") || "TIME LEFT"}</Text>
                                 <AuctionTimer createdAt={auction.createdAt} status={auction.status} />
                             </View>
                         </View>
 
                         {/* Base Price + View Button */}
                         <View style={styles.cardFooter}>
-                            <Text style={styles.baseText}>Base: {formatCurr(auction.basePrice)}</Text>
+                            <Text style={styles.baseText}>{t("b_auction.base") || "Base:"} {formatCurr(auction.basePrice)}</Text>
                             <View style={styles.viewBtn}>
-                                <Text style={styles.viewBtnText}>View Auction</Text>
+                                <Text style={styles.viewBtnText}>{t("b_auction.view") || "View Auction"}</Text>
                                 <Ionicons name="arrow-forward" size={14} color="#FFF" />
                             </View>
                         </View>

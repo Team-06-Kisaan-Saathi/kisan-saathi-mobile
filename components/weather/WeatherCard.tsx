@@ -12,6 +12,7 @@ interface WeatherCardProps {
 }
 
 const WeatherCard: React.FC<WeatherCardProps> = ({ label, value, unit, icon, color }) => {
+    // eslint-disable-next-line import/namespace
     const IconComponent = Lucide[icon] as any;
 
     return (

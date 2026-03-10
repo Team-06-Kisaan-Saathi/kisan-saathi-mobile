@@ -9,20 +9,24 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Alert
+    Alert,
+    Image
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ENDPOINTS } from "../services/api";
 import NavFarmer from "../components/navigation/NavFarmer";
+import { useTranslation } from "react-i18next";
 
 // Mocking icons to avoid web text node errors during development
 const Ionicons = (props: any) => <View {...props} />;
 const FontAwesome5 = (props: any) => <View {...props} />;
 
 export default function CreateAuction() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const router = useRouter();
+    const { t } = useTranslation();
 
     // Section A: Crop Details State
     const [cropName, setCropName] = useState("");
@@ -32,6 +36,7 @@ export default function CreateAuction() {
     const [showUnitDropdown, setShowUnitDropdown] = useState(false);
     const [quality, setQuality] = useState("A");
     const [harvestDate, setHarvestDate] = useState("");
+    const [photos, setPhotos] = useState<string[]>([]);
 
     // Section B: Pricing Strategy State
     const [startingPrice, setStartingPrice] = useState("");
@@ -45,10 +50,23 @@ export default function CreateAuction() {
     const [pickupLocation, setPickupLocation] = useState("");
     const [deliveryType, setDeliveryType] = useState("Buyer Pickup");
 
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setPhotos(prev => [...prev, result.assets[0].uri]);
+        }
+    };
+
     const handleStartAuction = async () => {
         // Validate required fields
         if (!cropName || !quantity || !startingPrice || !pickupLocation || !harvestDate || !unit || !quality || !minIncrement || !duration || !deliveryType) {
-            Alert.alert("Missing Details", "Please fill in all required fields.");
+            Alert.alert(t("common.error") || "Missing Details", t("create_auction.missing_fields") || "Please fill in all required fields.");
             return;
         }
 
@@ -74,7 +92,7 @@ export default function CreateAuction() {
         try {
             const token = await AsyncStorage.getItem("token");
             if (!token) {
-                Alert.alert("Auth Error", "You must be logged in to create an auction.");
+                Alert.alert("Auth Error", t("create_auction.auth_err") || "You must be logged in to create an auction.");
                 return;
             }
 
@@ -90,14 +108,14 @@ export default function CreateAuction() {
             const data = await res.json();
 
             if (res.ok) {
-                Alert.alert("Auction Recorded", "Your crop is now live for buyers to bid!");
+                Alert.alert("Auction Recorded", t("create_auction.success") || "Your crop is now live for buyers to bid!");
                 router.replace("/farmer-auctions");
             } else {
-                Alert.alert("Error", data.message || "Could not create auction. Please try again.");
+                Alert.alert("Error", data.message || t("create_auction.err") || "Could not create auction. Please try again.");
             }
         } catch (error) {
             console.error("Auction Creation Error:", error);
-            Alert.alert("Error", "Check your network connection and try again.");
+            Alert.alert("Error", t("create_auction.err") || "Check your network connection and try again.");
         }
     };
 
@@ -112,7 +130,7 @@ export default function CreateAuction() {
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <Ionicons name="arrow-back" size={24} color={highContrast ? "#FFF" : "#0F172A"} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Create Live Auction</Text>
+                <Text style={styles.headerTitle}>{t("create_auction.title") || "Create Live Auction"}</Text>
                 <View style={{ width: 40 }} /> {/* Spacer */}
             </View>
 
@@ -120,22 +138,22 @@ export default function CreateAuction() {
 
                 {/* SECTION A: CROP DETAILS */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>A. CROP DETAILS</Text>
+                    <Text style={styles.sectionTitle}>{t("create_auction.section_a") || "A. CROP DETAILS"}</Text>
                 </View>
                 <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Crop Name <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.crop_name") || "Crop Name"} <Text style={styles.required}>*</Text></Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="e.g. Wheat, Basmati Rice"
+                        placeholder={t("create_auction.crop_ph") || "e.g. Wheat, Basmati Rice"}
                         value={cropName}
                         onChangeText={setCropName}
                         placeholderTextColor="#94A3B8"
                     />
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Variety (Optional)</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.variety") || "Variety (Optional)"}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="e.g. Sharbati, 1121"
+                        placeholder={t("create_auction.variety_ph") || "e.g. Sharbati, 1121"}
                         value={variety}
                         onChangeText={setVariety}
                         placeholderTextColor="#94A3B8"
@@ -143,7 +161,7 @@ export default function CreateAuction() {
 
                     <View style={[styles.row, { zIndex: 10 }]}>
                         <View style={{ flex: 1, marginRight: 8 }}>
-                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Quantity <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.quantity") || "Quantity"} <Text style={styles.required}>*</Text></Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="e.g. 50"
@@ -154,7 +172,7 @@ export default function CreateAuction() {
                             />
                         </View>
                         <View style={{ flex: 1, marginLeft: 8, zIndex: 10 }}>
-                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Unit <Text style={styles.required}>*</Text></Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.unit") || "Unit"} <Text style={styles.required}>*</Text></Text>
                             <TouchableOpacity
                                 style={[styles.input, styles.dropdownInput]}
                                 onPress={() => setShowUnitDropdown(!showUnitDropdown)}
@@ -184,7 +202,7 @@ export default function CreateAuction() {
                         </View>
                     </View>
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Quality Grade <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.quality") || "Quality Grade"} <Text style={styles.required}>*</Text></Text>
                     <View style={styles.radioGroup}>
                         {["A", "B", "C"].map(grade => (
                             <TouchableOpacity
@@ -199,7 +217,7 @@ export default function CreateAuction() {
                         ))}
                     </View>
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Harvest Date <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.harvest_date") || "Harvest Date"} <Text style={styles.required}>*</Text></Text>
                     {Platform.OS === "web" ? (
                         <View style={styles.input}>
                             {React.createElement('input', {
@@ -227,19 +245,28 @@ export default function CreateAuction() {
                         />
                     )}
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Upload Photos (Optional)</Text>
-                    <TouchableOpacity style={styles.uploadBtn}>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.upload_photos") || "Upload Photos (Optional)"}</Text>
+
+                    {photos.length > 0 && (
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 15 }}>
+                            {photos.map((uri, index) => (
+                                <Image key={index} source={{ uri }} style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' }} />
+                            ))}
+                        </View>
+                    )}
+
+                    <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
                         <Ionicons name="camera-outline" size={24} color="#16A34A" />
-                        <Text style={styles.uploadText}>Tap to add photos</Text>
+                        <Text style={styles.uploadText}>{t("create_auction.tap_add_photos") || "Tap to add photos"}</Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* SECTION B: PRICING STRATEGY */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>B. PRICING STRATEGY</Text>
+                    <Text style={styles.sectionTitle}>{t("create_auction.section_b") || "B. PRICING STRATEGY"}</Text>
                 </View>
                 <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Starting Price (per {unit.toLowerCase()}) <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.start_price") || "Starting Price"} ({t("create_auction.per") || "per"} {unit.toLowerCase()}) <Text style={styles.required}>*</Text></Text>
                     <View style={styles.inputWrapper}>
                         <Text style={styles.currencyPrefix}>₹</Text>
                         <TextInput
@@ -252,8 +279,8 @@ export default function CreateAuction() {
                         />
                     </View>
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Reserve Price (Optional)</Text>
-                    <Text style={styles.helperText}>Minimum acceptable price. Auction only completes if highest bid ≥ reserve price.</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.reserve_price") || "Reserve Price (Optional)"}</Text>
+                    <Text style={styles.helperText}>{t("create_auction.reserve_help") || "Minimum acceptable price. Auction only completes if highest bid ≥ reserve price."}</Text>
                     <View style={styles.inputWrapper}>
                         <Text style={styles.currencyPrefix}>₹</Text>
                         <TextInput
@@ -266,8 +293,8 @@ export default function CreateAuction() {
                         />
                     </View>
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Minimum Bid Increment <Text style={styles.required}>*</Text></Text>
-                    <Text style={styles.helperText}>Prevents ₹1 increments.</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.min_increment") || "Minimum Bid Increment"} <Text style={styles.required}>*</Text></Text>
+                    <Text style={styles.helperText}>{t("create_auction.min_help") || "Prevents ₹1 increments."}</Text>
                     <View style={styles.inputWrapper}>
                         <Text style={styles.currencyPrefix}>₹</Text>
                         <TextInput
@@ -283,10 +310,10 @@ export default function CreateAuction() {
 
                 {/* SECTION C: AUCTION TIMING */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>C. AUCTION TIMING</Text>
+                    <Text style={styles.sectionTitle}>{t("create_auction.section_c") || "C. AUCTION TIMING"}</Text>
                 </View>
                 <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Duration <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.duration") || "Duration"} <Text style={styles.required}>*</Text></Text>
                     <View style={styles.durationGroup}>
                         {[
                             { key: "30m", label: "30 Mins" },
@@ -308,16 +335,16 @@ export default function CreateAuction() {
 
                     <View style={styles.warningBox}>
                         <Ionicons name="warning-outline" size={20} color="#F59E0B" style={{ marginRight: 8 }} />
-                        <Text style={styles.warningText}>Warning: Short auctions ({'<'} 1 hour) often attract fewer buyers.</Text>
+                        <Text style={styles.warningText}>{t("create_auction.duration_warn") || "Warning: Short auctions (< 1 hour) often attract fewer buyers."}</Text>
                     </View>
                 </View>
 
                 {/* SECTION D: LOGISTICS */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>D. LOGISTICS</Text>
+                    <Text style={styles.sectionTitle}>{t("create_auction.section_d") || "D. LOGISTICS"}</Text>
                 </View>
                 <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Pickup Location (Village/District) <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.pickup") || "Pickup Location (Village/District)"} <Text style={styles.required}>*</Text></Text>
                     <TextInput
                         style={styles.input}
                         placeholder="e.g. Ludhiana, Punjab"
@@ -326,7 +353,7 @@ export default function CreateAuction() {
                         placeholderTextColor="#94A3B8"
                     />
 
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Delivery Type <Text style={styles.required}>*</Text></Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("create_auction.delivery_type") || "Delivery Type"} <Text style={styles.required}>*</Text></Text>
                     <View style={styles.radioGroupVertical}>
                         {["Buyer Pickup", "Farmer Delivery"].map(type => (
                             <TouchableOpacity
@@ -349,7 +376,7 @@ export default function CreateAuction() {
             <View style={styles.footer}>
                 <TouchableOpacity style={styles.submitBtn} onPress={handleStartAuction}>
                     <Ionicons name="flash" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                    <Text style={styles.submitBtnText}>Start Auction</Text>
+                    <Text style={styles.submitBtnText}>{t("create_auction.start_btn") || "Start Auction"}</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>

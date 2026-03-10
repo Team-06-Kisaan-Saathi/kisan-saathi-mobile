@@ -75,6 +75,7 @@ export const AdminSidebar = ({ visible, onClose }: { visible: boolean; onClose: 
 
                     <ScrollView style={s.menuList}>
                         {menuItems.map((item) => {
+                            // eslint-disable-next-line import/namespace
                             const Icon = Lucide[item.icon as keyof typeof Lucide] as any;
                             return (
                                 <TouchableOpacity key={item.route} style={s.menuItem} onPress={() => navigate(item.route)}>
@@ -97,6 +98,7 @@ export const AdminSidebar = ({ visible, onClose }: { visible: boolean; onClose: 
 
 
 export const StatCard = ({ label, value, icon, color, trend, trendUp }: { label: string; value: string | number; icon: keyof typeof Lucide; color: string; trend?: string; trendUp?: boolean }) => {
+    // eslint-disable-next-line import/namespace
     const IconComponent = Lucide[icon] as any;
     return (
         <Card style={styles.statCard}>

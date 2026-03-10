@@ -44,7 +44,7 @@ export default function DisputeManagement() {
 
             <View style={styles.chatPreview}>
                 <Lucide.MessageSquare size={14} color={COLORS.textLight} />
-                <Text style={styles.previewText} numberOfLines={2}>"{item.preview}"</Text>
+                <Text style={styles.previewText} numberOfLines={2}>&quot;{item.preview}&quot;</Text>
             </View>
 
             <View style={styles.actionRow}>
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     metaItem: { flex: 1, gap: 2 },
     mLabel: { fontSize: 9, fontWeight: '800', color: COLORS.textLight, textTransform: 'uppercase' },
     mValue: { fontSize: 13, fontWeight: '700', color: COLORS.text },
-    metaDivider: { width: 1, height: 20, backgroundColor: COLORS.border, mx: 12 },
+    metaDivider: { width: 1, height: 20, backgroundColor: COLORS.border, marginHorizontal: 12 },
     chatPreview: { flexDirection: 'row', gap: 8, padding: 10, backgroundColor: '#F8FAFC', borderRadius: 8, marginBottom: 16 },
     previewText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic', flex: 1 },
     actionRow: { flexDirection: 'row', gap: 12 },

@@ -46,7 +46,7 @@ export default function ProfileScreen() {
         await AsyncStorage.setItem("profile", JSON.stringify(res.user));
       }
     } catch (e) {
-      setMsg("Failed to load profile");
+      setMsg(t("profile.load_failed") || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
 
   const handleVerify = async () => {
     if (!aadhaar || !pan) {
-      setMsg("Please enter both Aadhaar and PAN numbers");
+      setMsg(t("profile.missing_docs") || "Please enter both Aadhaar and PAN numbers");
       return;
     }
     try {
@@ -66,13 +66,13 @@ export default function ProfileScreen() {
       });
 
       if (res.success) {
-        setMsg("Verification request submitted successfully!");
+        setMsg(t("profile.verify_success") || "Verification request submitted successfully!");
         loadProfile(); // Refresh status
       } else {
-        setMsg(res.message || "Submission failed");
+        setMsg(res.message || t("profile.verify_failed") || "Submission failed");
       }
     } catch (e: any) {
-      setMsg(e.message || "Error submitting verification");
+      setMsg(e.message || t("profile.verify_error") || "Error submitting verification");
     } finally {
       setSubmitting(false);
     }
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
     <ScrollView style={styles.root}>
       <Stack.Screen options={{
         headerShown: false,
-        title: t("profile.title") || "My Profile",
+        title: t("profile.title") || t("profile.my_profile") || "My Profile",
         headerRight: () => (
           <TouchableOpacity onPress={logout} style={{ marginRight: 15 }}>
             <Ionicons name="log-out-outline" size={24} color="#EF4444" />
@@ -118,8 +118,8 @@ export default function ProfileScreen() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user?.name?.charAt(0) || "U"}</Text>
             </View>
-            <Text style={styles.name}>{user?.name || "User"}</Text>
-            <Text style={styles.role}>{user?.role?.toUpperCase() || "FARMER"}</Text>
+            <Text style={styles.name}>{user?.name || t("profile.user")}</Text>
+            <Text style={styles.role}>{user?.role?.toUpperCase() || t("profile.farmer_role")}</Text>
 
             <View style={[styles.badge, { backgroundColor: getStatusColor(vStatus) }]}>
               <Text style={styles.badgeText}>{vStatus.toUpperCase()}</Text>
@@ -127,25 +127,25 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Profile Details</Text>
+            <Text style={styles.sectionTitle}>{t("profile.details_title")}</Text>
             <View style={styles.row}>
-              <Text style={styles.label}>Phone</Text>
+              <Text style={styles.label}>{t("profile.phone_label")}</Text>
               <Text style={styles.value}>+91 {user?.phone || "--"}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Location</Text>
-              <Text style={styles.value}>{user?.location || "Not set"}</Text>
+              <Text style={styles.label}>{t("profile.location_label")}</Text>
+              <Text style={styles.value}>{user?.location || t("profile.not_set")}</Text>
             </View>
           </View>
 
           {vStatus !== "approved" && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Identity Verification</Text>
-              <Text style={styles.hint}>Submit documents to gain trusted status and access live auctions.</Text>
+              <Text style={styles.sectionTitle}>{t("profile.identity_title")}</Text>
+              <Text style={styles.hint}>{t("profile.identity_desc")}</Text>
 
               <TextInput
                 style={styles.input}
-                placeholder="Aadhaar Number (12 digits)"
+                placeholder={t("profile.aadhaar_placeholder")}
                 value={aadhaar}
                 onChangeText={setAadhaar}
                 keyboardType="number-pad"
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="PAN Number"
+                placeholder={t("profile.pan_placeholder")}
                 value={pan}
                 onChangeText={setPan}
                 autoCapitalize="characters"
@@ -169,7 +169,7 @@ export default function ProfileScreen() {
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <Text style={styles.verifyBtnText}>
-                    {vStatus === "pending" ? "Request Pending" : "Submit Documents"}
+                    {vStatus === "pending" ? t("profile.request_pending") : t("profile.submit_docs")}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -184,14 +184,14 @@ export default function ProfileScreen() {
               onPress={() => router.replace(user?.role === "buyer" ? "/buyer-dashboard" : "/farmer-dashboard")}
             >
               <Ionicons name="apps-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
-              <Text style={styles.primaryActionText}>Back to Dashboard</Text>
+              <Text style={styles.primaryActionText}>{t("profile.back_dashboard")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.secondaryAction}
               onPress={() => router.push("/edit-profile")}
             >
-              <Text style={styles.secondaryActionText}>Edit Profile Info</Text>
+              <Text style={styles.secondaryActionText}>{t("profile.edit_info")}</Text>
             </TouchableOpacity>
           </View>
         </>

@@ -26,7 +26,7 @@ import NavAuto from "../components/navigation/NavAuto";
 const COLORS = { primary: "#1B5E20" };
 
 export default function EditProfileScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const [loading, setLoading] = useState(true);
@@ -192,18 +192,18 @@ export default function EditProfileScreen() {
 
                 <View style={styles.form}>
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Full Name</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("edit_profile.full_name") || "Full Name"}</Text>
                         <TextInput
                             style={styles.input}
                             value={name}
                             onChangeText={setName}
-                            placeholder="Enter your name"
+                            placeholder={t("edit_profile.name_ph") || "Enter your name"}
                             placeholderTextColor="#94A3B8"
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Phone Number</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("edit_profile.phone") || "Phone Number"}</Text>
                         <View style={styles.phoneInputRow}>
                             <Text style={styles.prefix}>+91</Text>
                             <TextInput
@@ -212,35 +212,35 @@ export default function EditProfileScreen() {
                                 onChangeText={setPhone}
                                 keyboardType="number-pad"
                                 maxLength={10}
-                                placeholder="10-digit mobile number"
+                                placeholder={t("edit_profile.phone_ph") || "10-digit mobile number"}
                                 placeholderTextColor="#94A3B8"
                             />
                         </View>
                         {phone !== originalPhone && !otpSent && (
-                            <Text style={styles.hint}>Changing phone requires OTP verification</Text>
+                            <Text style={styles.hint}>{t("edit_profile.phone_hint") || "Changing phone requires OTP verification"}</Text>
                         )}
                     </View>
 
                     {otpSent && (
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Enter OTP</Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("edit_profile.enter_otp") || "Enter OTP"}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={otp}
                                 onChangeText={setOtp}
                                 keyboardType="number-pad"
                                 maxLength={6}
-                                placeholder="Enter 6-digit OTP"
+                                placeholder={t("edit_profile.otp_ph") || "Enter 6-digit OTP"}
                                 placeholderTextColor="#94A3B8"
                             />
                             <TouchableOpacity onPress={handleSendOTP}>
-                                <Text style={styles.resendText}>Didn't get code? Resend</Text>
+                                <Text style={styles.resendText}>{t("edit_profile.resend") || "Didn't get code? Resend"}</Text>
                             </TouchableOpacity>
                         </View>
                     )}
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Preferred Language</Text>
+                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("edit_profile.pref_lang") || "Preferred Language"}</Text>
                         <View style={styles.langGrid}>
                             {languages.map(l => (
                                 <TouchableOpacity
@@ -263,7 +263,7 @@ export default function EditProfileScreen() {
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.saveBtnText}>
-                                {otpSent ? "Verify & Save" : (phone !== originalPhone ? "Send OTP" : "Save Changes")}
+                                {otpSent ? (t("edit_profile.btn_verify_save") || "Verify & Save") : (phone !== originalPhone ? (t("edit_profile.btn_send_otp") || "Send OTP") : (t("edit_profile.btn_save") || "Save Changes"))}
                             </Text>
                         )}
                     </TouchableOpacity>

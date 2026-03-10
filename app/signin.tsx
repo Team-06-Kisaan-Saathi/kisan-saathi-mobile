@@ -37,10 +37,10 @@ export default function SigninScreen() {
 
   const roles = useMemo(
     () => [
-      { label: "Farmer / Producer", value: "farmer" as Role },
-      { label: "Buyer / Trader", value: "buyer" as Role },
+      { label: t("signup.farmer_producer") || "Farmer / Producer", value: "farmer" as Role },
+      { label: t("signup.buyer_trader") || "Buyer / Trader", value: "buyer" as Role },
     ],
-    [],
+    [t],
   );
 
   const onContinue = async () => {
@@ -49,7 +49,7 @@ export default function SigninScreen() {
     const trimmedPhone = phone.trim();
 
     if (!trimmedName || !role || !/^\d{10}$/.test(trimmedPhone)) {
-      setMsg("Please provide all details correctly");
+      setMsg(t("signup.provide_all_details") || "Please provide all details correctly");
       return;
     }
 
@@ -63,18 +63,18 @@ export default function SigninScreen() {
       if (res?.success) {
         if (res.otp) {
           console.log("SIMULATED_OTP:", res.otp);
-          Alert.alert("Simulated OTP", `Your verification code is: ${res.otp}`);
+          Alert.alert(t("signup.simulated_otp_title") || "Simulated OTP", `${t("signup.simulated_otp_msg") || "Your verification code is: "}${res.otp}`);
         }
         router.push({
           pathname: "/verify",
           params: { phone: trimmedPhone, name: trimmedName, role },
         });
       } else {
-        setMsg(res?.message || "Failed to send OTP");
+        setMsg(res?.message || t("auth.otp_send_failed") || "Failed to send OTP");
       }
     } catch (err: any) {
       console.error("SIGNIN_ERROR:", err.message);
-      setMsg(err.message || "Connection error. Check if backend is running.");
+      setMsg(err.message || t("auth.connection_failed") || "Connection error. Check if backend is running.");
     } finally {
       setLoading(false);
     }
@@ -107,30 +107,30 @@ export default function SigninScreen() {
                 <Text style={styles.brandGreen}>AGRI</Text>{" "}
                 <Text style={styles.brandBlue}>BAZAAR</Text>
               </Text>
-              <Text style={styles.tagline}>Be Part of the Agri Community</Text>
+              <Text style={styles.tagline}>{t("signup.tagline")}</Text>
             </View>
 
             <View style={styles.formWrapper}>
-              <Text style={styles.formTitle}>Registration</Text>
+              <Text style={styles.formTitle}>{t("signup.registration")}</Text>
 
-              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Full Name</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("signup.full_name")}</Text>
               <View style={styles.pillInput}>
                 <TextInput
                   value={name}
                   onChangeText={setName}
-                  placeholder="Ex: Rajesh Kumar"
+                  placeholder={t("signup.name_placeholder")}
                   placeholderTextColor="#94A3B8"
                   style={styles.textInput}
                 />
               </View>
 
-              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Primary Role</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("signup.primary_role")}</Text>
               <Pressable
                 onPress={() => setRoleOpen(!roleOpen)}
                 style={[styles.pillInput, roleOpen && styles.pillInputActive]}
               >
                 <Text style={[styles.pillInputText, !role && { color: "#777" }]}>
-                  {role ? roles.find(r => r.value === role)?.label : "Select your role"}
+                  {role ? roles.find(r => r.value === role)?.label : t("role.select_role")}
                 </Text>
                 <Ionicons name={roleOpen ? "chevron-up" : "chevron-down"} size={14} color="#666" />
               </Pressable>
@@ -152,13 +152,13 @@ export default function SigninScreen() {
                 </View>
               )}
 
-              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Mobile Number</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("signup.mobile_number")}</Text>
               <View style={styles.pillInput}>
                 <Text style={styles.countryCode}>+91</Text>
                 <TextInput
                   value={phone}
                   onChangeText={(v) => setPhone(v.replace(/\D/g, ""))}
-                  placeholder="10-digit number"
+                  placeholder={t("signup.mobile_placeholder")}
                   placeholderTextColor="#94A3B8"
                   keyboardType="number-pad"
                   maxLength={10}
@@ -177,7 +177,7 @@ export default function SigninScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.btnText}>Proceed to Verify</Text>
+                  <Text style={styles.btnText}>{t("signup.proceed_verify")}</Text>
                 )}
               </TouchableOpacity>
 

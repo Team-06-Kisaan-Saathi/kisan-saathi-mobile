@@ -16,6 +16,7 @@ import {
 import { useTheme } from "../hooks/ThemeContext";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import NavFarmer from "../components/navigation/NavFarmer";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -29,12 +30,13 @@ const { width } = Dimensions.get("window");
 
 export default function FarmerDashboard() {
   const { highContrast, fontScale } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [topPrice, setTopPrice] = useState<any>(null);
-  const [aiInsight, setAiInsight] = useState<string>("Smart crop advice");
+  const [aiInsight, setAiInsight] = useState<string>("");
 
   const loadData = async () => {
     try {
@@ -133,25 +135,25 @@ export default function FarmerDashboard() {
       >
         {/* Jai Kisan Header */}
         <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-          <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }]} numberOfLines={1}>Jai Kisan, {user?.name || "Farmer"} </Text>
-          <Text style={[styles.subtext, highContrast && { color: "#CCC" }]}>Today's prices & market update</Text>
+          <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }]} numberOfLines={1}>{t("dashboard.jai_kisan")}, {user?.name || t("profile.user") || "Farmer"} </Text>
+          <Text style={[styles.subtext, highContrast && { color: "#CCC" }]}>{t("dashboard.farmer_sub")}</Text>
         </View>
 
         {/* TODAY'S TOP PRICE */}
-        <SectionHeader title="TODAY'S TOP PRICE" />
+        <SectionHeader title={t("dashboard.top_price") || "TODAY'S TOP PRICE"} />
         <View style={[styles.topPriceCard, highContrast && { backgroundColor: "#111", borderColor: "#FFF", borderWidth: 1 }]}>
           <View style={styles.priceHeader}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || "Wheat"}</Text>
+              <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || t("dashboard.wheat") || "Wheat"}</Text>
               <View style={styles.mandiRow}>
                 <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>{cleanLocation(topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi")}</Text>
+                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>{cleanLocation(topPrice?.locationName || topPrice?.mandi || t("dashboard.azadpur") || "Azadpur Mandi")}</Text>
               </View>
             </View>
             <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                 <Text style={[styles.priceVal, highContrast && { color: "#FFF" }]}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
-                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>/ quintal</Text>
+                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>{t("dashboard.per_quintal") || "/ quintal"}</Text>
               </View>
               <View style={styles.trendRow}>
                 <MaterialCommunityIcons
@@ -160,7 +162,7 @@ export default function FarmerDashboard() {
                   color={topPrice?.isUp !== false ? "#22C55E" : "#EF4444"}
                 />
                 <Text style={[styles.trendText, topPrice?.isUp === false && { color: '#EF4444' }]}>
-                  {topPrice?.trend || "+4.2% this week"}
+                  {topPrice?.trend || t("dashboard.this_week_trend") || "+4.2% this week"}
                 </Text>
               </View>
             </View>
@@ -172,31 +174,31 @@ export default function FarmerDashboard() {
               onPress={() => router.push("/mandi-prices")}
             >
               <Ionicons name="bar-chart" size={18} color="#FFF" style={{ marginRight: 8 }} />
-              <Text style={styles.seeAllText}>See All Prices</Text>
+              <Text style={styles.seeAllText}>{t("dashboard.see_all_prices") || "See All Prices"}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.sellNowBtn}
               onPress={() => router.push("/create-auction")}
             >
-              <Text style={styles.sellNowText}>Sell Now</Text>
+              <Text style={styles.sellNowText}>{t("dashboard.sell_now") || "Sell Now"}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* MARKET INFO */}
-        <SectionHeader title="MARKET INFO" />
+        <SectionHeader title={t("dashboard.market_info") || "MARKET INFO"} />
         <View style={styles.grid}>
           <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <MarketCard
-              title="Mandi Prices"
-              subtitle="Live rates near you"
+              title={t("nav_farmer.mandi_prices") || "Mandi Prices"}
+              subtitle={t("dashboard.live_rates_near_you") || "Live rates near you"}
               icon="stats-chart"
               color="#2563EB"
               onPress={() => router.push("/mandi-prices")}
             />
             <MarketCard
-              title="AI Insights"
-              subtitle={aiInsight}
+              title={t("nav_farmer.ai_insights") || "AI Insights"}
+              subtitle={aiInsight || t("dashboard.smart_crop_advice")}
               icon="bulb"
               color="#EA580C"
               onPress={() => router.push("/ai-insights")}
@@ -204,15 +206,15 @@ export default function FarmerDashboard() {
           </View>
           <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <MarketCard
-              title="Weather"
-              subtitle="7-day forecast"
+              title={t("dashboard.weather") || "Weather"}
+              subtitle={t("dashboard.forecast") || "7-day forecast"}
               icon="cloudy-night"
               color="#0EA5E9"
               onPress={() => router.push("/weather" as any)}
             />
             <MarketCard
-              title="Govt Schemes"
-              subtitle="Subsidies & loans"
+              title={t("dashboard.govt_schemes") || "Govt Schemes"}
+              subtitle={t("dashboard.subsidies_loans") || "Subsidies & loans"}
               icon="ribbon"
               color="#7C3AED"
               onPress={() => router.push("/govt-schemes")}
@@ -221,19 +223,19 @@ export default function FarmerDashboard() {
         </View>
 
         {/* BUY & SELL */}
-        <SectionHeader title="BUY & SELL" />
+        <SectionHeader title={t("dashboard.buy_sell") || "BUY & SELL"} />
         <View style={styles.grid}>
           <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
-              title="Marketplace"
-              subtitle="Buy inputs & tools"
+              title={t("farmer.marketplace") || "Marketplace"}
+              subtitle={t("dashboard.buy_inputs") || "Buy inputs & tools"}
               icon="briefcase"
               color="#16A34A"
               onPress={() => router.push("/marketplace")}
             />
             <BuySellCard
-              title="Live Auctions"
-              subtitle="Host an auction"
+              title={t("farmer.live_auctions") || "Live Auctions"}
+              subtitle={t("dashboard.host_auction") || "Host an auction"}
               icon="flash"
               color="#DC2626"
               onPress={() => router.push("/create-auction")}
@@ -241,15 +243,15 @@ export default function FarmerDashboard() {
           </View>
           <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
-              title="My Listings"
-              subtitle="Manage your crops"
+              title={t("farmer.my_listings") || "My Listings"}
+              subtitle={t("dashboard.manage_crops") || "Manage your crops"}
               icon="list"
               color="#111827"
               onPress={() => router.push("/my-listings")}
             />
             <BuySellCard
-              title="Monitor Auctions"
-              subtitle="View bids & status"
+              title={t("dashboard.monitor_auctions") || "Monitor Auctions"}
+              subtitle={t("dashboard.view_bids_status") || "View bids & status"}
               icon="stats-chart"
               color="#10B981"
               onPress={() => router.push("/farmer-auctions")}
@@ -258,36 +260,36 @@ export default function FarmerDashboard() {
         </View>
 
         {/* HELP & SUPPORT */}
-        <SectionHeader title="HELP & SUPPORT" />
+        <SectionHeader title={t("dashboard.help_support") || "HELP & SUPPORT"} />
         <View style={styles.supportList}>
           <SupportItem
-            title="Messages"
-            subtitle="Chat with buyers"
+            title={t("farmer.messages") || "Messages"}
+            subtitle={t("dashboard.chat_buyers") || "Chat with buyers"}
             icon="chatbubble-ellipses"
             color="#3B82F6"
             onPress={() => router.push("/messages")}
           />
 
           <SupportItem
-            title="Call Support"
-            subtitle="Talk to an expert"
+            title={t("dashboard.call_support") || "Call Support"}
+            subtitle={t("dashboard.talk_expert") || "Talk to an expert"}
             icon="call"
             color="#F59E0B"
             onPress={() => router.push("/call-support")}
           />
           <SupportItem
-            title="Settings"
-            subtitle="Account & preferences"
+            title={t("dashboard.settings") || "Settings"}
+            subtitle={t("dashboard.account_prefs") || "Account & preferences"}
             icon="settings"
             color="#64748B"
             onPress={() => router.push("/settings")}
           />
           <SupportItem
-            title="Help Center"
-            subtitle="FAQs & guides"
+            title={t("dashboard.help_center") || "Help Center"}
+            subtitle={t("dashboard.faqs_guides") || "FAQs & guides"}
             icon="help-circle"
             color="#A855F7"
-            onPress={() => Alert.alert("Help Center", "Redirecting to help portal...")}
+            onPress={() => Alert.alert(t("dashboard.help_center") || "Help Center", "Redirecting to help portal...")}
           />
         </View>
       </ScrollView>

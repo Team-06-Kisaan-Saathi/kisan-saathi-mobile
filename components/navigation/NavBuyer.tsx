@@ -14,12 +14,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationBell from "../notifications/NotificationBell";
 import { useTheme } from "../../hooks/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 export default function NavBuyer() {
     const router = useRouter();
     const pathname = usePathname();
     const insets = useSafeAreaInsets();
     const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const [profileOpen, setProfileOpen] = useState(false);
     const profileAnim = useRef(new Animated.Value(0)).current;
 
@@ -36,19 +38,19 @@ export default function NavBuyer() {
     }, [profileOpen]);
 
     const getPageTitle = (path: string) => {
-        if (path.includes("farmer-dashboard")) return "Dashboard";
-        if (path.includes("buyer-dashboard")) return "Dashboard";
-        if (path.includes("marketplace")) return "Marketplace";
-        if (path.includes("buyer-marketplace")) return "Marketplace";
-        if (path.includes("mandi-prices")) return "Mandi Prices";
-        if (path.includes("messages")) return "Messages";
-        if (path.includes("edit-profile")) return "Profile";
-        if (path.includes("invoices")) return "Invoices";
-        if (path.includes("govt-schemes")) return "Govt Schemes";
-        if (path.includes("call-support")) return "Support Center";
-        if (path.includes("settings")) return "Settings";
-        if (path.includes("weather")) return "Weather";
-        if (path.includes("notifications")) return "Notifications";
+        if (path.includes("farmer-dashboard")) return "nav_buyer.dashboard";
+        if (path.includes("buyer-dashboard")) return "nav_buyer.dashboard";
+        if (path.includes("marketplace")) return "farmer.marketplace";
+        if (path.includes("buyer-marketplace")) return "farmer.marketplace";
+        if (path.includes("mandi-prices")) return "nav_farmer.mandi_prices";
+        if (path.includes("messages")) return "market.messages";
+        if (path.includes("edit-profile")) return "profile.edit_title";
+        if (path.includes("invoices")) return "nav.invoices";
+        if (path.includes("govt-schemes")) return "dashboard.govt_schemes";
+        if (path.includes("call-support")) return "nav.call_support";
+        if (path.includes("settings")) return "settings.title";
+        if (path.includes("weather")) return "dashboard.weather";
+        if (path.includes("notifications")) return "nav.notifications";
         return "";
     };
 
@@ -66,11 +68,11 @@ export default function NavBuyer() {
                     onPress={() => router.replace("/buyer-dashboard")}
                     activeOpacity={0.7}
                 >
-                    <Text style={[styles.brandText, { color: textColor }]}>Agri Bazaar</Text>
+                    <Text style={[styles.brandText, { color: textColor }]}>{t('nav.brand_agri')}</Text>
                 </TouchableOpacity>
 
                 <View style={styles.centerSection}>
-                    <Text style={[styles.pageTitle, { color: textColor }]}>{getPageTitle(pathname)}</Text>
+                    <Text style={[styles.pageTitle, { color: textColor }]}>{t(getPageTitle(pathname))}</Text>
                 </View>
 
                 <View style={styles.rightSection}>
@@ -97,12 +99,12 @@ export default function NavBuyer() {
                         transform: [{ scale: profileAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }]
                     }]}>
                         <View style={styles.dropdownHeader}>
-                            <Text style={styles.dropdownTitle}>Buyer Account</Text>
+                            <Text style={styles.dropdownTitle}>{t('nav.buyer_acc')}</Text>
                         </View>
-                        <DropdownItem icon="person-outline" label="Edit Profile" onPress={() => { setProfileOpen(false); router.push("/edit-profile"); }} />
-                        <DropdownItem icon="settings-outline" label="Settings" onPress={() => { setProfileOpen(false); router.push("/settings" as any); }} />
+                        <DropdownItem icon="person-outline" label={t("profile.edit_title") || "Edit Profile"} onPress={() => { setProfileOpen(false); router.push("/edit-profile"); }} />
+                        <DropdownItem icon="settings-outline" label={t("settings.title") || "Settings"} onPress={() => { setProfileOpen(false); router.push("/settings" as any); }} />
                         <View style={styles.divider} />
-                        <DropdownItem icon="log-out-outline" label="Logout" danger onPress={handleLogout} />
+                        <DropdownItem icon="log-out-outline" label={t("auth.logout") || "Logout"} danger onPress={handleLogout} />
                     </Animated.View>
                 </>
             )}

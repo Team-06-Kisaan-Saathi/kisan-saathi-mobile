@@ -10,6 +10,7 @@ import {
   View,
   ImageBackground,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const LANGS = [
   { label: "English", value: "en" },
@@ -31,6 +32,7 @@ export default function ProfileSetup() {
   const role = String(params.role ?? "");
   const pin = String(params.pin ?? "");
 
+  const { t } = useTranslation();
   const [lang, setLang] = useState<string>("en");
   const [loading, setLoading] = useState(false);
 
@@ -58,13 +60,13 @@ export default function ProfileSetup() {
               <Text style={s.brandGreen}>KISSAAN</Text>{" "}
               <Text style={s.brandBlue}>SAATHI</Text>
             </Text>
-            <Text style={s.brandTagline}>STEP 1 OF 2</Text>
+            <Text style={s.brandTagline}>{t("setup.step") || "STEP 1 OF 2"}</Text>
           </View>
 
           <View style={s.formWrapper}>
-            <Text style={s.title}>Select Language</Text>
+            <Text style={s.title}>{t("setup.sel_lang") || "Select Language"}</Text>
             <Text style={s.subtitle}>
-              Choose the language you want to use in the app
+              {t("setup.choose_lang") || "Choose the language you want to use in the app"}
             </Text>
 
             <View style={s.options}>
@@ -101,7 +103,7 @@ export default function ProfileSetup() {
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={s.buttonText}>Continue</Text>
+                <Text style={s.buttonText}>{t("setup.continue") || "Continue"}</Text>
               )}
             </Pressable>
           </View>

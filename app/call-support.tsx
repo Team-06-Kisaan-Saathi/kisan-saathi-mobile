@@ -11,6 +11,9 @@ import {
     Alert,
     SafeAreaView,
     Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    ActivityIndicator,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import NavAuto from "../components/navigation/NavAuto";
@@ -18,14 +21,17 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-ico
 import { apiFetch } from "../services/http";
 
 import { Picker } from "@react-native-picker/picker";
+import { useTranslation } from "react-i18next";
 
-const { width } = Dimensions.get("window");
+const { width, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const SupportScreen = () => {
+export default function CallSupportScreen() {
     const router = useRouter();
     const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const [phoneNumber, setPhoneNumber] = useState("");
-    const [issueType, setIssueType] = useState("Payment");
+    const [issueType, setIssueType] = useState("general");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleCall = (number: string) => {
         Linking.openURL(`tel:${number.replace(/-/g, "")}`);
@@ -33,10 +39,11 @@ const SupportScreen = () => {
 
     const handleRequestCallback = async () => {
         if (!phoneNumber || phoneNumber.length < 10) {
-            Alert.alert("Invalid Input", "Please enter a valid phone number.");
+            Alert.alert(t("support.invalid_title") || "Invalid Input", t("support.invalid") || "Please enter a valid phone number.");
             return;
         }
 
+        setIsSubmitting(true);
         try {
             const res: any = await apiFetch("/api/support/request", {
                 method: "POST",
@@ -45,127 +52,140 @@ const SupportScreen = () => {
 
             if (res.success) {
                 Alert.alert(
-                    "Success",
-                    `Your callback request for ${issueType} has been submitted. Our executive will call you back shortly on ${phoneNumber}.`,
+                    t("support.success_title") || "Success",
+                    t("support.success", { issueType: t(`support.iss_${issueType}`), phoneNumber }) || `Your callback request for ${t(`support.iss_${issueType}`)} has been submitted. Our executive will call you back shortly on ${phoneNumber}.`,
                     [{
                         text: "OK", onPress: () => {
                             setPhoneNumber("");
-                            setIssueType("Payment");
+                            setIssueType("general");
                         }
                     }]
                 );
             } else {
-                Alert.alert("Error", res.message || "Failed to submit request");
+                Alert.alert(t("support.error_title") || "Error", res.message || t("support.failed_submit") || "Failed to submit request");
             }
         } catch (e) {
-            Alert.alert("Error", "Server connection failed");
+            Alert.alert(t("support.error_title") || "Error", t("support.server_error") || "Server connection failed");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
-            <Stack.Screen options={{ headerShown: false }} />
+        <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
+            <Stack.Screen options={{
+                title: t("support.title") || "Support Center",
+                headerShadowVisible: false,
+                headerShown: false,
+            }} />
             <NavAuto />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={styles.container}
+            >
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-            {/* Header Section */}
-            <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-                <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Support Center</Text>
-                <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>We are here to help you</Text>
-            </View>
+                    {/* Header Image/Icon Section */}
+                    <View style={styles.headerSection}>
+                        <View style={[styles.iconCircle, highContrast && { backgroundColor: "#222" }]}>
+                            <Ionicons name="headset" size={64} color="#3B82F6" />
+                        </View>
+                        <Text style={[styles.mainTitle, highContrast && { color: "#FFF" }]}>{t("support.title") || "Support Center"}</Text>
+                        <Text style={[styles.subTitle, highContrast && { color: "#CCC" }]}>{t("support.sub") || "We are here to help you"}</Text>
+                    </View>
 
-            <ScrollView style={[styles.container, highContrast && { backgroundColor: "#000" }]} contentContainerStyle={styles.scrollContent}>
-
-                {/* Call Support Card */}
-                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.iconContainer, { backgroundColor: "#F59E0B15" }]}>
+                    {/* Call Support Card */}
+                    <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                        <View style={styles.cardHeader}>
                             <Ionicons name="call" size={24} color="#F59E0B" />
+                            <Text style={[styles.cardTitle, highContrast && { color: "#FFF" }]}>{t("support.call") || "Call Support"}</Text>
                         </View>
-                        <View style={styles.cardHeaderText}>
-                            <Text style={[styles.cardTitle, highContrast && { color: "#FFF" }]}>Call Support</Text>
-                            <Text style={[styles.cardSubtitle, highContrast && { color: "#CCC" }]}>Talk to our expert team</Text>
-                        </View>
-                    </View>
-                    <View style={[styles.numberContainer, highContrast && { backgroundColor: "#222" }]}>
-                        <Text style={[styles.tollFreeNumber, highContrast && { color: "#FFF" }]}>1800-123-4567</Text>
-                        <Text style={[styles.tollFreeLabel, highContrast && { color: "#CCC" }]}>Toll-Free Number</Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.callNowBtn}
-                        onPress={() => handleCall("1800-123-4567")}
-                    >
-                        <Ionicons name="call-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                        <Text style={styles.callNowText}>Call Now</Text>
-                    </TouchableOpacity>
-                </View>
+                        <Text style={[styles.cardDesc, highContrast && { color: "#AAA" }]}>{t("support.talk") || "Talk to our expert team"}</Text>
 
-                {/* Request Callback Section */}
-                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.iconContainer, { backgroundColor: "#16A34A15" }]}>
-                            <MaterialCommunityIcons name="message-text-clock" size={24} color="#16A34A" />
+                        <View style={[styles.numberContainer, highContrast && { backgroundColor: "#222" }]}>
+                            <Text style={[styles.tollFreeNumber, highContrast && { color: "#FFF" }]}>1800-123-4567</Text>
+                            <Text style={[styles.tollFreeLabel, highContrast && { color: "#CCC" }]}>{t("support.toll_free") || "Toll-Free Number"}</Text>
                         </View>
-                        <View style={styles.cardHeaderText}>
-                            <Text style={[styles.cardTitle, highContrast && { color: "#FFF" }]}>Request a Callback</Text>
-                            <Text style={[styles.cardSubtitle, highContrast && { color: "#CCC" }]}>We will reach out to you</Text>
-                        </View>
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: "#F59E0B" }]}
+                            onPress={() => handleCall("1800-123-4567")}
+                        >
+                            <Ionicons name="call-outline" size={20} color="#FFF" />
+                            <Text style={styles.actionBtnText}>{t("support.btn_call") || "Call Now"}</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    <View style={styles.formGroup}>
-                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Phone Number</Text>
+                    {/* Request Callback Section */}
+                    <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                        <View style={styles.cardHeader}>
+                            <Ionicons name="chatbubbles" size={24} color="#3B82F6" />
+                            <Text style={[styles.cardTitle, highContrast && { color: "#FFF" }]}>{t("support.request") || "Request a Callback"}</Text>
+                        </View>
+                        <Text style={[styles.cardDesc, highContrast && { color: "#AAA" }]}>{t("support.reach") || "We will reach out to you"}</Text>
+
+                        <Text style={[styles.inputLabel, highContrast && { color: "#CCC" }]}>{t("support.phone") || "Phone Number"}</Text>
                         <TextInput
-                            style={[styles.input, highContrast && { backgroundColor: "#111", borderColor: "#333", color: "#FFF" }]}
-                            placeholder="Enter your 10 digit mobile number"
+                            style={[styles.input, highContrast && { backgroundColor: "#222", color: "#FFF", borderColor: "#444" }]}
+                            placeholder={t("support.phone_pl") || "Enter your 10 digit mobile number"}
                             placeholderTextColor="#94A3B8"
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
                             keyboardType="phone-pad"
                             maxLength={10}
                         />
-                    </View>
 
-                    <View style={styles.formGroup}>
-                        <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Issue Type</Text>
-                        <View style={[styles.pickerContainer, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
+                        <Text style={[styles.inputLabel, highContrast && { color: "#CCC" }]}>{t("support.issue") || "Issue Type"}</Text>
+                        <View style={[styles.pickerContainer, highContrast && { backgroundColor: "#222", borderColor: "#444" }]}>
                             <Picker
                                 selectedValue={issueType}
                                 onValueChange={(itemValue) => setIssueType(itemValue)}
                                 style={[styles.picker, highContrast && { color: "#FFF" }]}
+                                dropdownIconColor={highContrast ? "#FFF" : "#64748B"}
                             >
-                                <Picker.Item label="Payment Issue" value="Payment" />
-                                <Picker.Item label="Order Issue" value="Order Issue" />
-                                <Picker.Item label="Delivery Issue" value="Delivery Issue" />
-                                <Picker.Item label="Technical Problem" value="Technical Problem" />
+                                <Picker.Item label={t("support.iss_pay") || "Payment Issue"} value="payment" />
+                                <Picker.Item label={t("support.iss_ord") || "Order Issue"} value="order" />
+                                <Picker.Item label={t("support.iss_del") || "Delivery Issue"} value="delivery" />
+                                <Picker.Item label={t("support.iss_tech") || "Technical Problem"} value="technical" />
+                                <Picker.Item label={t("support.iss_gen") || "General Inquiry"} value="general" />
                             </Picker>
                         </View>
+
+                        <TouchableOpacity
+                            style={[styles.actionBtn, { backgroundColor: '#3B82F6' }, isSubmitting && styles.btnDisabled]}
+                            onPress={handleRequestCallback}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <>
+                                    <Ionicons name="send-outline" size={20} color="#fff" />
+                                    <Text style={styles.actionBtnText}>{t("support.btn_req") || "Request Callback"}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity style={styles.requestBtn} onPress={handleRequestCallback}>
-                        <Text style={styles.requestBtnText}>Request Callback</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Emergency Helpline */}
-                <View style={[styles.card, styles.emergencyCard]}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.iconContainer, { backgroundColor: "#DC262615" }]}>
+                    {/* Emergency Helpline */}
+                    <View style={[styles.card, styles.emergencyCard, highContrast && { backgroundColor: "#111", borderColor: "#DC262640" }]}>
+                        <View style={styles.cardHeader}>
                             <Ionicons name="alert-circle" size={24} color="#DC2626" />
+                            <Text style={styles.emergencyTitle}>{t("support.em_help") || "Emergency Helpline"}</Text>
                         </View>
-                        <View style={styles.cardHeaderText}>
-                            <Text style={[styles.cardTitle, { color: "#DC2626" }]}>Farmer Emergency Line</Text>
-                            <Text style={styles.cardSubtitle}>Available 24/7 for urgencies</Text>
-                        </View>
+                        <Text style={styles.emergencyDesc}>
+                            {t("support.em_desc") || "For urgent issues related to payments or fraud, contact our 24/7 dedicated helpline."}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.callNowBtn}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="call" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                            <Text style={styles.callNowText}>{t("support.call_em_now") || "Call Emergency Now"}</Text>
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                        style={[styles.callNowBtn, { backgroundColor: "#DC2626" }]}
-                        onPress={() => handleCall("1800-180-1551")}
-                    >
-                        <Ionicons name="call" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                        <Text style={styles.callNowText}>Call Emergency Now</Text>
-                    </TouchableOpacity>
-                </View>
 
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -181,8 +201,19 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         backgroundColor: "#FFF"
     },
+    headerSection: { alignItems: "center", paddingVertical: 30 },
+    iconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#EEF2FF", alignItems: "center", justifyContent: "center" },
+    mainTitle: { fontSize: 26, fontWeight: "900", color: "#0F172A", marginTop: 16 },
+    subTitle: { fontSize: 16, color: "#64748B", marginTop: 8, fontWeight: "500" },
     title: { fontSize: 26, fontWeight: "900", color: "#0F172A", marginTop: 10 },
     subtitle: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
+    cardDesc: { fontSize: 14, color: "#64748B", marginBottom: 16, lineHeight: 20 },
+    inputLabel: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 8, marginTop: 12 },
+    actionBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 14, borderRadius: 8, marginTop: 16 },
+    actionBtnText: { color: "#FFF", fontWeight: "800", fontSize: 16, marginLeft: 8 },
+    btnDisabled: { opacity: 0.7 },
+    emergencyTitle: { fontSize: 18, fontWeight: "800", color: "#DC2626", marginLeft: 16 },
+    emergencyDesc: { fontSize: 14, color: "#64748B", marginBottom: 16, lineHeight: 20 },
 
     card: {
         backgroundColor: "#FFF",
@@ -310,5 +341,3 @@ const styles = StyleSheet.create({
         borderWidth: 2,
     },
 });
-
-export default SupportScreen;

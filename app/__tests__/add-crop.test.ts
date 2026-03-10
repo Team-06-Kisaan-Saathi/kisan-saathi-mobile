@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**

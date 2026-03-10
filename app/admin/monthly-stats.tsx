@@ -52,7 +52,7 @@ export default function MonthlyStatsScreen() {
                 contentContainerStyle={styles.scroll}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
             >
-                <Text style={styles.sectionTitle}>Daily Revenue (₹'000)</Text>
+                <Text style={styles.sectionTitle}>Daily Revenue (₹&apos;000)</Text>
                 <Card style={styles.chartCard}>
                     {data && (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>

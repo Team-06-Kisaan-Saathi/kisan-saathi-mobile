@@ -16,6 +16,7 @@ import {
     Pressable,
 } from "react-native";
 import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
+import { useTranslation } from "react-i18next";
 
 /**
  * Market Insights Page
@@ -23,7 +24,8 @@ import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
  */
 
 export default function MarketInsightsScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const [prices, setPrices] = useState<MandiPriceDoc[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -59,17 +61,17 @@ export default function MarketInsightsScreen() {
             {index === 0 && (
                 <View style={styles.bestLabel}>
                     <Ionicons name="star" size={10} color="#fff" />
-                    <Text style={styles.bestLabelText}>Best Price</Text>
+                    <Text style={styles.bestLabelText}>{t("market.best") || "Best Price"}</Text>
                 </View>
             )}
             <View style={styles.priceRow}>
                 <View style={styles.mandiInfo}>
-                    <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.mandi || "Local Mandi"}</Text>
-                    <Text style={styles.locationName}>{item.locationName || "Unknown"}</Text>
+                    <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.mandi || (t("market.local") || "Local Mandi")}</Text>
+                    <Text style={styles.locationName}>{item.locationName || (t("market.unknown") || "Unknown")}</Text>
                 </View>
                 <View style={styles.priceInfo}>
                     <Text style={[styles.priceValue, index === 0 && styles.bestPriceValue]}>₹{item.pricePerQuintal}</Text>
-                    <Text style={styles.priceUnit}>per quintal</Text>
+                    <Text style={styles.priceUnit}>{t("market.per_q") || "per quintal"}</Text>
                 </View>
             </View>
         </View>
@@ -78,7 +80,7 @@ export default function MarketInsightsScreen() {
     return (
         <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
-                title: "Price Insights",
+                title: t("market.title") || "Price Insights",
                 headerShadowVisible: false,
                 headerShown: false,
             }} />
@@ -114,8 +116,8 @@ export default function MarketInsightsScreen() {
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Ionicons name="analytics-outline" size={64} color="#e2e8f0" />
-                            <Text style={styles.emptyTitle}>No Data Available</Text>
-                            <Text style={styles.emptySub}>We don't have recent prices for this crop yet.</Text>
+                            <Text style={styles.emptyTitle}>{t("market.no_data") || "No Data Available"}</Text>
+                            <Text style={styles.emptySub}>{t("market.no_recent") || "We don't have recent prices for this crop yet."}</Text>
                         </View>
                     }
                 />

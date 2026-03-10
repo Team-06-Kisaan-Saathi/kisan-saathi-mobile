@@ -15,6 +15,7 @@ import { ENDPOINTS } from "../services/api";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { notificationService } from "../services/NotificationService";
+import NavAuto from "../components/navigation/NavAuto";
 
 type Notification = {
     _id: string;
@@ -163,13 +164,14 @@ export default function NotificationsScreen() {
 
     return (
         <View style={styles.root}>
+            <NavAuto />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="chevron-back" size={24} color="#0F172A" />
+                    <Ionicons name="arrow-back" size={24} color="#0F172A" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Notifications</Text>
+                <Text style={styles.headerTitle}>{t("notifications.title") || "Notifications"}</Text>
                 <TouchableOpacity onPress={markAllAsRead}>
-                    <Text style={styles.readAll}>Mark all read</Text>
+                    <Text style={styles.readAll}>{t("notifications.mark_read") || "Mark all read"}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -187,7 +189,7 @@ export default function NotificationsScreen() {
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <Ionicons name="notifications-off-outline" size={60} color="#CBD5E1" />
-                            <Text style={styles.emptyText}>No notifications yet</Text>
+                            <Text style={styles.emptyText}>{t("notifications.empty") || "No notifications yet"}</Text>
                         </View>
                     }
                 />
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 16,
-        paddingTop: 50,
+        paddingTop: 16,
         paddingBottom: 16,
         backgroundColor: "#fff",
         borderBottomWidth: 1,

@@ -25,7 +25,7 @@ import NavAuto from "../components/navigation/NavAuto";
 import { setLanguage } from "../i18n/i18n";
 
 export default function SettingsScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const { t, i18n } = useTranslation();
     const router = useRouter();
 
@@ -73,7 +73,7 @@ export default function SettingsScreen() {
 
     const handleSaveLandArea = async () => {
         if (!totalLandArea || isNaN(Number(totalLandArea))) {
-            Alert.alert(t("settings.error"), "Please enter a valid numeric value for land area.");
+            Alert.alert(t("settings.error"), t("settings.invalid_land_area") || "Please enter a valid numeric value for land area.");
             return;
         }
 
@@ -84,13 +84,13 @@ export default function SettingsScreen() {
                 totalLandAreaUnit: landUnit
             });
             if (res.success) {
-                Alert.alert(t("settings.success"), "Farm details updated.");
+                Alert.alert(t("settings.success"), t("settings.farm_updated") || "Farm details updated.");
                 setUser({ ...user, totalLandArea: Number(totalLandArea), totalLandAreaUnit: landUnit });
             } else {
-                Alert.alert(t("settings.error"), res.message || "Failed to update profile.");
+                Alert.alert(t("settings.error"), res.message || t("settings.update_failed") || "Failed to update profile.");
             }
         } catch (e) {
-            Alert.alert(t("settings.error"), "Something went wrong.");
+            Alert.alert(t("settings.error"), t("settings.error_generic") || "Something went wrong.");
         } finally {
             setIsSavingLand(false);
         }
@@ -98,7 +98,7 @@ export default function SettingsScreen() {
 
     const handleVerifyPin = async () => {
         if (pin.length < 4) {
-            Alert.alert(t("settings.error"), "Please enter a valid PIN.");
+            Alert.alert(t("settings.error"), t("settings.invalid_pin") || "Please enter a valid PIN.");
             return;
         }
 
@@ -111,10 +111,10 @@ export default function SettingsScreen() {
                 setPin("");
                 setCurrentPassword("");
             } else {
-                Alert.alert(t("settings.error"), "Incorrect PIN.");
+                Alert.alert(t("settings.error"), t("settings.incorrect_pin") || "Incorrect PIN.");
             }
         } catch (e) {
-            Alert.alert(t("settings.error"), "Verification failed.");
+            Alert.alert(t("settings.error"), t("settings.verify_failed") || "Verification failed.");
         } finally {
             setIsVerifying(false);
         }
@@ -122,11 +122,11 @@ export default function SettingsScreen() {
 
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert(t("settings.error"), "All fields are required.");
+            Alert.alert(t("settings.error"), t("settings.missing_fields") || "All fields are required.");
             return;
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert(t("settings.error"), "New passwords do not match.");
+            Alert.alert(t("settings.error"), t("settings.password_mismatch") || "New passwords do not match.");
             return;
         }
 
@@ -137,16 +137,16 @@ export default function SettingsScreen() {
                 newPassword
             });
             if (res.success) {
-                Alert.alert(t("settings.success"), "Password updated successfully.");
+                Alert.alert(t("settings.success"), t("settings.password_success") || "Password updated successfully.");
                 setIsPasswordModalVisible(false);
                 setNewPassword("");
                 setConfirmPassword("");
                 setCurrentPassword("");
             } else {
-                Alert.alert(t("settings.error"), res.message || "Failed to update password.");
+                Alert.alert(t("settings.error"), res.message || t("settings.password_failed") || "Failed to update password.");
             }
         } catch (e) {
-            Alert.alert(t("settings.error"), "Something went wrong.");
+            Alert.alert(t("settings.error"), t("settings.error_generic") || "Something went wrong.");
         } finally {
             setIsVerifying(false);
         }
@@ -195,7 +195,7 @@ export default function SettingsScreen() {
                             <Text style={styles.avatarText}>{user?.name?.charAt(0) || "U"}</Text>
                         </View>
                         <View style={styles.profileInfo}>
-                            <Text style={styles.nameText}>{user?.name || "User Name"}</Text>
+                            <Text style={styles.nameText}>{user?.name || t("profile.user") || "User Name"}</Text>
                             <Text style={styles.phoneText}>{user?.phone || "+91 XXXXXXXXXX"}</Text>
                         </View>
                         <Lucide.ChevronRight size={20} color="#94A3B8" />
@@ -386,7 +386,7 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 function SettingRow({ icon, label, value, onPress }: any) {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
     const isTappable = !!onPress;
     const Container = isTappable ? TouchableOpacity : View;
     return (

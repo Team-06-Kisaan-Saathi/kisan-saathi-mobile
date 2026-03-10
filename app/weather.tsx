@@ -17,19 +17,22 @@ import * as Lucide from "lucide-react-native";
 import * as Location from "expo-location";
 import WeatherCard from "../components/weather/WeatherCard";
 import ForecastItem from "../components/weather/ForecastItem";
-import Nav from "../components/navigation/Nav";
+import NavFarmer from "../components/navigation/NavFarmer";
+import { useTranslation } from "react-i18next";
 
 // Fallback coordinates (Warangal, Telangana) — used only if GPS denied
 const DEFAULT_LAT = 17.9689;
 const DEFAULT_LON = 79.5941;
 
 export default function WeatherScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [weatherData, setWeatherData] = useState<any>(null);
+    // Location string is dynamic
     const [locationName, setLocationName] = useState<string>("Fetching location...");
     const [coords, setCoords] = useState({ lat: DEFAULT_LAT, lon: DEFAULT_LON });
 
@@ -43,11 +46,11 @@ export default function WeatherScreen() {
                 setWeatherData(data);
                 setError(null);
             } else {
-                setError("Failed to fetch weather data.");
+                setError(t("weather.err_fetch") || "Failed to fetch weather data.");
             }
         } catch (err) {
             console.error("Weather Fetch Error:", err);
-            setError("Network error. Please try again.");
+            setError(t("weather.err_net") || "Network error. Please try again.");
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -103,18 +106,18 @@ export default function WeatherScreen() {
 
     const getWeatherCondition = (code: number) => {
         // simplified WMO Weather interpretation codes
-        if (code === 0) return { text: "Clear Sky", icon: "Sun", color: "#F59E0B" };
-        if (code <= 3) return { text: "Partly Cloudy", icon: "Cloud", color: "#64748B" };
-        if (code >= 45 && code <= 48) return { text: "Foggy", icon: "CloudFog", color: "#94A3B8" };
-        if (code >= 51 && code <= 67) return { text: "Rainy", icon: "CloudRain", color: "#3B82F6" };
-        if (code >= 71 && code <= 77) return { text: "Snowy", icon: "Snowflake", color: "#10B981" };
-        if (code >= 80 && code <= 82) return { text: "Showers", icon: "CloudDrizzle", color: "#6366F1" };
-        if (code >= 95) return { text: "Thunderstorm", icon: "CloudLightning", color: "#EF4444" };
-        return { text: "Clear Sky", icon: "Sun", color: "#F59E0B" };
+        if (code === 0) return { text: t("weather.clear") || "Clear Sky", icon: "Sun", color: "#F59E0B" };
+        if (code <= 3) return { text: t("weather.partly") || "Partly Cloudy", icon: "Cloud", color: "#64748B" };
+        if (code >= 45 && code <= 48) return { text: t("weather.foggy") || "Foggy", icon: "CloudFog", color: "#94A3B8" };
+        if (code >= 51 && code <= 67) return { text: t("weather.rainy") || "Rainy", icon: "CloudRain", color: "#3B82F6" };
+        if (code >= 71 && code <= 77) return { text: t("weather.snowy") || "Snowy", icon: "Snowflake", color: "#10B981" };
+        if (code >= 80 && code <= 82) return { text: t("weather.showers") || "Showers", icon: "CloudDrizzle", color: "#6366F1" };
+        if (code >= 95) return { text: t("weather.thunder") || "Thunderstorm", icon: "CloudLightning", color: "#EF4444" };
+        return { text: t("weather.clear") || "Clear Sky", icon: "Sun", color: "#F59E0B" };
     };
 
     const getAgriTip = () => {
-        if (!weatherData) return "Checking conditions for your crops...";
+        if (!weatherData) return t("weather.tip_checking") || "Checking conditions for your crops...";
 
         const current = weatherData.current_weather;
         const hourly = weatherData.hourly;
@@ -125,20 +128,20 @@ export default function WeatherScreen() {
         const humidity = hourly.relativehumidity_2m[currentTimeIndex] || 0;
         const wind = current.windspeed;
 
-        if (rain > 0.5) return "Rain detected. No need to irrigate today.";
-        if (temp > 35) return "High heat! Ensure your crops have extra water.";
-        if (humidity < 35) return "Dry air detected. Good time for irrigation.";
-        if (wind > 25) return "High winds. Be careful with spray-based pesticides.";
-        if (temp < 12 && temp > 0) return "Cool weather. Growth may be slower today.";
+        if (rain > 0.5) return t("weather.tip_rain") || "Rain detected. No need to irrigate today.";
+        if (temp > 35) return t("weather.tip_heat") || "High heat! Ensure your crops have extra water.";
+        if (humidity < 35) return t("weather.tip_dry") || "Dry air detected. Good time for irrigation.";
+        if (wind > 25) return t("weather.tip_wind") || "High winds. Be careful with spray-based pesticides.";
+        if (temp < 12 && temp > 0) return t("weather.tip_cool") || "Cool weather. Growth may be slower today.";
 
-        return "Perfect conditions for irrigation today.";
+        return t("weather.tip_perfect") || "Perfect conditions for irrigation today.";
     };
 
     if (loading) {
         return (
             <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#10B981" />
-                <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Fetching farm weather...</Text>
+                <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>{t("weather.fetching") || "Fetching farm weather..."}</Text>
             </View>
         );
     }
@@ -149,7 +152,7 @@ export default function WeatherScreen() {
                 <Lucide.AlertCircle size={48} color="#EF4444" />
                 <Text style={styles.errorText}>{error}</Text>
                 <TouchableOpacity style={styles.retryBtn} onPress={onRefresh}>
-                    <Text style={styles.retryText}>Retry</Text>
+                    <Text style={styles.retryText}>{t("weather.retry") || "Retry"}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -163,7 +166,7 @@ export default function WeatherScreen() {
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ headerShown: false }} />
-            <Nav />
+            <NavFarmer />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -193,7 +196,7 @@ export default function WeatherScreen() {
                         <Text style={styles.mainTemp}>{Math.round(current.temperature)}°</Text>
                         <View style={styles.tempRight}>
                             <Lucide.CloudSun size={40} color="#FFFFFF" />
-                            <Text style={styles.feelsLike}>Feels like {Math.round(current.temperature - 2)}°</Text>
+                            <Text style={styles.feelsLike}>{t("weather.feels_like") || "Feels like"} {Math.round(current.temperature - 2)}°</Text>
                         </View>
                     </View>
 
@@ -207,33 +210,33 @@ export default function WeatherScreen() {
 
                 {/* WEATHER STATS GRID */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionSubtitle}>Current conditions</Text>
+                    <Text style={styles.sectionSubtitle}>{t("weather.current_cond") || "Current conditions"}</Text>
                 </View>
 
                 <View style={styles.statsGrid}>
                     <WeatherCard
-                        label="Temperature"
+                        label={t("weather.temp") || "Temperature"}
                         value={Math.round(current.temperature).toString()}
                         unit="°C"
                         icon="Thermometer"
                         color="#EF4444"
                     />
                     <WeatherCard
-                        label="Wind Speed"
+                        label={t("weather.wind") || "Wind Speed"}
                         value={current.windspeed.toString()}
                         unit=" km/h"
                         icon="Wind"
                         color="#3B82F6"
                     />
                     <WeatherCard
-                        label="Humidity"
+                        label={t("weather.humidity") || "Humidity"}
                         value={hourly.relativehumidity_2m[currentTimeIndex].toString()}
                         unit="%"
                         icon="Droplets"
                         color="#10B981"
                     />
                     <WeatherCard
-                        label="Precipitation"
+                        label={t("weather.precip") || "Precipitation"}
                         value={hourly.precipitation[currentTimeIndex].toString()}
                         unit=" mm"
                         icon="Umbrella"
@@ -243,8 +246,8 @@ export default function WeatherScreen() {
 
                 {/* FORECAST SECTION */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Next 12 Hours</Text>
-                    <Text style={styles.sectionSubtitle}>Hourly forecast</Text>
+                    <Text style={styles.sectionTitle}>{t("weather.next_12") || "Next 12 Hours"}</Text>
+                    <Text style={styles.sectionSubtitle}>{t("weather.hourly") || "Hourly forecast"}</Text>
                 </View>
 
                 <ScrollView

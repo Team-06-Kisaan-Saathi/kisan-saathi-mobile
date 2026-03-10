@@ -45,15 +45,15 @@ export default function SetPinScreen() {
   const onSave = async () => {
     setMsg("");
     if (!phone || !name) {
-      setMsg("Required session details missing. Please restart.");
+      setMsg(t("auth.session_missing") || "Required session details missing. Please restart.");
       return;
     }
     if (!/^\d{4,6}$/.test(pin)) {
-      setMsg("PIN must be 4 to 6 digits");
+      setMsg(t("auth.pin_length_error") || "PIN must be 4 to 6 digits");
       return;
     }
     if (pin !== confirmPin) {
-      setMsg("PINs do not match");
+      setMsg(t("auth.pin_mismatch") || "PINs do not match");
       return;
     }
 
@@ -81,16 +81,16 @@ export default function SetPinScreen() {
                 <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
                 <Text style={styles.brandBlue}>SAATHI</Text>
               </Text>
-              <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
+              <Text style={styles.brandTagline}>{t("auth.security_config")}</Text>
             </View>
 
             <View style={styles.formWrapper}>
-              <Text style={styles.cardHeader}>Create Access PIN</Text>
+              <Text style={styles.cardHeader}>{t("auth.create_pin_title")}</Text>
               <Text style={styles.instruction}>
-                Establish a secure PIN to protect your account and transactions.
+                {t("auth.create_pin_desc")}
               </Text>
 
-              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>New PIN</Text>
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("auth.new_pin")}</Text>
               <View style={styles.pillInput}>
                 <TextInput
                   style={styles.input}
@@ -105,7 +105,7 @@ export default function SetPinScreen() {
                 />
               </View>
 
-              <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
+              <Text style={[styles.label, { marginTop: 16 }]}>{t("auth.verify_pin_label")}</Text>
               <View style={styles.pillInput}>
                 <TextInput
                   style={styles.input}
@@ -131,7 +131,7 @@ export default function SetPinScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.saveBtnText}>Secure Account</Text>
+                  <Text style={styles.saveBtnText}>{t("auth.secure_account")}</Text>
                 )}
               </TouchableOpacity>
             </View>

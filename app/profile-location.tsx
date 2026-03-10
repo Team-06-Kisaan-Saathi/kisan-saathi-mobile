@@ -17,6 +17,7 @@ import {
 import { registerUser } from "../services/userServices";
 import { ENDPOINTS } from "../services/api";
 import { apiFetch } from "../services/http";
+import { useTranslation } from "react-i18next";
 
 type Place = {
   id: string;
@@ -37,6 +38,8 @@ export default function ProfileLocation() {
   const name = String(params.name ?? "");
   const role = String(params.role ?? "farmer");
   const pin = String(params.pin ?? "");
+
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -185,7 +188,7 @@ export default function ProfileLocation() {
       }
     } catch (e: any) {
       console.log("Registration error:", e?.message || e);
-      setMsg(e?.message || "Registration failed. Try again.");
+      setMsg(e?.message || (t("location.error") || "Registration failed. Try again."));
     } finally {
       setLoading(false);
     }
@@ -200,7 +203,7 @@ export default function ProfileLocation() {
       console.log("📍 Requesting GPS permissions...");
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        setMsg("Location permission denied. Choose from list instead.");
+        setMsg(t("location.no_perms") || "Location permission denied. Choose from list instead.");
         return;
       }
 
@@ -233,7 +236,7 @@ export default function ProfileLocation() {
       await saveLatLng(lat, lng, address);
     } catch (e: any) {
       console.log("GPS error:", e?.message || e);
-      setMsg("Could not get location. Choose from list instead.");
+      setMsg(t("location.no_gps") || "Could not get location. Choose from list instead.");
     } finally {
       setLoading(false);
     }
@@ -276,12 +279,12 @@ export default function ProfileLocation() {
                 <Text style={s.brandGreen}>KISSAAN</Text>{" "}
                 <Text style={s.brandBlue}>SAATHI</Text>
               </Text>
-              <Text style={s.brandTagline}>STEP 2 OF 2</Text>
+              <Text style={s.brandTagline}>{t("location.step2") || "STEP 2 OF 2"}</Text>
             </View>
 
             <View style={s.formWrapper}>
-              <Text style={s.title}>Set Location</Text>
-              <Text style={s.subtitle}>This helps us show nearby mandis</Text>
+              <Text style={s.title}>{t("location.set_loc") || "Set Location"}</Text>
+              <Text style={s.subtitle}>{t("location.help_mandi") || "This helps us show nearby mandis"}</Text>
 
               <View style={s.actions}>
                 <Pressable
@@ -296,13 +299,13 @@ export default function ProfileLocation() {
                   {loading ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={s.primaryActionText}>Use Current GPS</Text>
+                    <Text style={s.primaryActionText}>{t("location.use_gps") || "Use Current GPS"}</Text>
                   )}
                 </Pressable>
 
                 <View style={s.divider}>
                   <View style={s.dividerLine} />
-                  <Text style={s.dividerText}>or</Text>
+                  <Text style={s.dividerText}>{t("location.or") || "or"}</Text>
                   <View style={s.dividerLine} />
                 </View>
 
@@ -321,7 +324,7 @@ export default function ProfileLocation() {
                         editing && s.dropdownHeaderTextActive,
                       ]}
                     >
-                      Choose manually
+                      {t("location.choose_manually") || "Choose manually"}
                     </Text>
                     <Text
                       style={[s.dropdownChevron, editing && s.dropdownChevronActive]}
@@ -332,12 +335,12 @@ export default function ProfileLocation() {
 
                   {editing && (
                     <View style={s.dropdownContent}>
-                      <Text style={s.label}>Search mandis/places</Text>
+                      <Text style={s.label}>{t("location.search_mandi") || "Search mandis/places"}</Text>
                       <View style={s.pillInput}>
                         <TextInput
                           value={searchQuery}
                           onChangeText={setSearchQuery}
-                          placeholder="Type city or market"
+                          placeholder={t("location.type_city") || "Type city or market"}
                           placeholderTextColor="#9CA3AF"
                           style={s.inputStyle}
                           editable={!loading}
@@ -348,7 +351,7 @@ export default function ProfileLocation() {
                       <View style={{ maxHeight: 220 }}>
                         {filteredPlaces.length === 0 ? (
                           <Text style={s.emptyText}>
-                            {places.length === 0 ? "Loading places..." : "No matches"}
+                            {places.length === 0 ? (t("location.loading_places") || "Loading places...") : (t("location.no_matches") || "No matches")}
                           </Text>
                         ) : (
                           <ScrollView
@@ -382,7 +385,7 @@ export default function ProfileLocation() {
                   {selectedPlace ? (
                     <View style={s.selectedBox}>
                       <Text style={s.selectedText}>
-                        Selected: {selectedPlace.name}
+                        {t("location.selected") || "Selected:"} {selectedPlace.name}
                       </Text>
                     </View>
                   ) : null}
