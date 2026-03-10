@@ -10,7 +10,8 @@ import {
     Alert,
     ScrollView,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Modal
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -123,17 +124,20 @@ export default function EditProfileScreen() {
             // 2. Save profile with new phone
             const res = await updateProfile({ name, language, phone } as any);
             if (res?.success) {
-                if (res.user) {
-                    await AsyncStorage.setItem("profile", JSON.stringify(res.user));
-                    await AsyncStorage.setItem("userName", res.user.name);
-                }
-                await setLanguageService(language);
+                // Update local storage immediately with whatever we have
+                const fallbackRole = role || 'farmer';
+                const updatedUser = res.user || { name, language, phone, role: fallbackRole };
+                await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
+                await AsyncStorage.setItem("userName", name);
 
+                await setLanguageService(language);
                 setShowSuccess(true);
+
                 setTimeout(() => {
-                    const nextRoute = res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
+                    setShowSuccess(false);
+                    const nextRoute = updatedUser.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
                     router.replace(nextRoute as any);
-                }, 1500);
+                }, 2000);
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -165,17 +169,20 @@ export default function EditProfileScreen() {
         try {
             const res = await updateProfile({ name, language });
             if (res?.success) {
-                if (res.user) {
-                    await AsyncStorage.setItem("profile", JSON.stringify(res.user));
-                    await AsyncStorage.setItem("userName", res.user.name);
-                }
-                await setLanguageService(language);
+                // Update local storage immediately
+                const fallbackRole = role || 'farmer';
+                const updatedUser = res.user || { name, language, phone, role: fallbackRole };
+                await AsyncStorage.setItem("profile", JSON.stringify(updatedUser));
+                await AsyncStorage.setItem("userName", name);
 
+                await setLanguageService(language);
                 setShowSuccess(true);
+
                 setTimeout(() => {
-                    const nextRoute = res.user?.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
+                    setShowSuccess(false);
+                    const nextRoute = updatedUser.role === 'farmer' ? '/farmer-dashboard' : '/buyer-dashboard';
                     router.replace(nextRoute as any);
-                }, 1500);
+                }, 2000);
             } else {
                 Alert.alert("Error", res?.message || "Update failed.");
             }
@@ -274,14 +281,6 @@ export default function EditProfileScreen() {
                         </View>
                     </View>
 
-                    {showSuccess && (
-                        <View style={{ backgroundColor: '#DCFCE7', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-                            <Text style={{ color: '#166534', textAlign: 'center', fontWeight: 'bold' }}>
-                                ✅ Changes applied successfully!
-                            </Text>
-                        </View>
-                    )}
-
                     <TouchableOpacity
                         style={[styles.saveBtn, (submitting || verifying || showSuccess) && { opacity: 0.7 }]}
                         onPress={handleSave}
@@ -291,10 +290,20 @@ export default function EditProfileScreen() {
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.saveBtnText}>
-                                {showSuccess ? "Success!" : (otpSent ? "Verify & Save" : (phone !== originalPhone ? "Send OTP" : "Save Changes"))}
+                                {otpSent ? "Verify & Save" : (phone !== originalPhone ? "Send OTP" : "Save Changes")}
                             </Text>
                         )}
                     </TouchableOpacity>
+
+                    <Modal visible={showSuccess} transparent animationType="fade">
+                        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ backgroundColor: '#FFF', padding: 30, borderRadius: 20, alignItems: 'center', width: '80%' }}>
+                                <Ionicons name="checkmark-circle" size={80} color="#1B5E20" />
+                                <Text style={{ fontSize: 20, fontWeight: 'bold', marginTop: 15, textAlign: 'center' }}>Success!</Text>
+                                <Text style={{ fontSize: 16, color: '#666', marginTop: 5, textAlign: 'center' }}>Profile updated successfully.</Text>
+                            </View>
+                        </View>
+                    </Modal>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>

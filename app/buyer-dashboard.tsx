@@ -39,6 +39,12 @@ export default function BuyerDashboard() {
 
   const loadData = async () => {
     try {
+      // 1. Try to load cached user first for instant UI
+      const cachedUser = await AsyncStorage.getItem("profile");
+      if (cachedUser) {
+        setUser(JSON.parse(cachedUser));
+      }
+
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         router.replace("/login");
@@ -47,6 +53,10 @@ export default function BuyerDashboard() {
       const res = await getProfile();
       if (res?.success) {
         setUser(res.user);
+        await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+        if (res.user.name) {
+          await AsyncStorage.setItem("userName", res.user.name);
+        }
       }
 
       // --- DYNAMIC DATA LOGIC ---
