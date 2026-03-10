@@ -147,9 +147,9 @@ export default function BuyerDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Welcome Header */}
-        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { paddingTop: 40, marginBottom: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }]}>
-          <View style={{ flex: 1, marginRight: 10 }}>
-            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 20 }]}>Welcome,</Text>
+        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { paddingTop: 40, marginBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'nowrap' }]}>
+          <View style={{ flex: 1, marginRight: 15, minWidth: 0 }}>
+            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 18 }]} numberOfLines={1}>Welcome,</Text>
             <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 42, marginTop: 2 }]} numberOfLines={1}>
               {user?.name || "Buyer"}
             </Text>
