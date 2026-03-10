@@ -136,7 +136,7 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
       }
     };
     checkAuth();
-  }, [segments, pathname]);
+  }, [segments, pathname, router]);
 
   const themeMode = highContrast ? 'contrast' : (colorScheme || 'light');
   const backgroundColor = Colors[themeMode as keyof typeof Colors].background;

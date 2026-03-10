@@ -33,7 +33,7 @@ export default function SupportRequestsScreen() {
             if (res.success) {
                 setRequests(prev => prev.map(r => r._id === id ? { ...r, status } : r));
             }
-        } catch (e) {
+        } catch (_) {
             Alert.alert("Error", "Failed to update status");
         }
     };

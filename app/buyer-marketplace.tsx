@@ -174,7 +174,7 @@ export default function BuyerMarketplace() {
                     ListEmptyComponent={
                         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
                             <Ionicons name="search-outline" size={48} color="#CBD5E1" />
-                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No results found for "{search}"</Text>
+                            <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No results found for &quot;{search}&quot;</Text>
                         </View>
                     }
                 />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
 import { COLORS, Header, Card, StatCard, AdminSidebar } from "../../components/admin/AdminComponents";
 import { BarChart } from "react-native-chart-kit";
@@ -14,11 +14,7 @@ export default function MonthlyStatsScreen() {
     const [data, setData] = useState<any>(null);
     const router = useRouter();
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             if (!refreshing) setLoading(true);
             const res = await adminService.getMonthlyDetail();
@@ -31,7 +27,11 @@ export default function MonthlyStatsScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [refreshing]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     if (loading && !refreshing) {
         return (
@@ -52,7 +52,7 @@ export default function MonthlyStatsScreen() {
                 contentContainerStyle={styles.scroll}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
             >
-                <Text style={styles.sectionTitle}>Daily Revenue (₹'000)</Text>
+                <Text style={styles.sectionTitle}>Daily Revenue (₹&apos;000)</Text>
                 <Card style={styles.chartCard}>
                     {data && (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
