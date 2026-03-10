@@ -120,20 +120,22 @@ export default function FarmerDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Jai Kisan Header */}
-        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'nowrap', paddingTop: 40, marginBottom: 40 }]}>
-          <View style={{ flex: 1, paddingRight: 15, minWidth: 0 }}>
-            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 24 }]}>Jai Kisan,</Text>
-            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 42, marginTop: 4 }]} numberOfLines={1}>
+        <View style={[styles.header, highContrast ? { backgroundColor: "#000", borderBottomColor: "#333" } : { backgroundColor: "transparent" }, { paddingTop: 40, marginBottom: 40, position: 'relative', minHeight: 140, justifyContent: 'center' }]}>
+          <View style={{ width: '65%', paddingRight: 10 }}>
+            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 24 }]} numberOfLines={1}>Jai Kisan,</Text>
+            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 4 }]} numberOfLines={1}>
               {user?.name || "Vijay"}
             </Text>
           </View>
-          <LottieView
-            source={require("../assets/images/farm.json")}
-            autoPlay
-            loop
-            style={{ width: 140, height: 140 }}
-            resizeMode="contain"
-          />
+          <View style={{ position: 'absolute', right: 0, top: 20, width: 140, height: 140 }}>
+            <LottieView
+              source={require("../assets/images/farm.json")}
+              autoPlay
+              loop
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* TODAY'S TOP PRICE */}
