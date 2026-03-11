@@ -45,15 +45,15 @@ export default function SetPinScreen() {
   const onSave = async () => {
     setMsg("");
     if (!phone || !name) {
-      setMsg("Required session details missing. Please restart.");
+      setMsg(t("auth.session_missing") || "Required session details missing. Please restart.");
       return;
     }
     if (!/^\d{4,6}$/.test(pin)) {
-      setMsg("PIN must be 4 to 6 digits");
+      setMsg(t("auth.pin_length_error") || "PIN must be 4 to 6 digits");
       return;
     }
     if (pin !== confirmPin) {
-      setMsg("PINs do not match");
+      setMsg(t("auth.pin_mismatch") || "PINs do not match");
       return;
     }
 
@@ -147,7 +147,7 @@ export default function SetPinScreen() {
                 <Text style={styles.brandGreen}>KISSAAN</Text> {" "}
                 <Text style={styles.brandBlue}>SAATHI</Text>
               </Text>
-              <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
+              <Text style={styles.brandTagline}>{t("auth.security_config")}</Text>
             </View>
             {renderForm()}
           </KeyboardAvoidingView>
@@ -156,13 +156,60 @@ export default function SetPinScreen() {
     </View>
   );
 
-  if (Platform.OS === 'web') {
-    return renderContent();
-  }
+            <View style={styles.formWrapper}>
+              <Text style={styles.cardHeader}>{t("auth.create_pin_title")}</Text>
+              <Text style={styles.instruction}>
+                {t("auth.create_pin_desc")}
+              </Text>
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      {renderContent()}
+              <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("auth.new_pin")}</Text>
+              <View style={styles.pillInput}>
+                <TextInput
+                  style={styles.input}
+                  value={pin}
+                  onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
+                  placeholder="••••"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={6}
+                  editable={!loading}
+                />
+              </View>
+
+              <Text style={[styles.label, { marginTop: 16 }]}>{t("auth.verify_pin_label")}</Text>
+              <View style={styles.pillInput}>
+                <TextInput
+                  style={styles.input}
+                  value={confirmPin}
+                  onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
+                  placeholder="••••"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={6}
+                  editable={!loading}
+                />
+              </View>
+
+              {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+
+              <TouchableOpacity
+                style={[styles.saveBtn, loading && styles.btnDisabled]}
+                onPress={onSave}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.saveBtnText}>{t("auth.secure_account")}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </ImageBackground>
+      </View>
     </TouchableWithoutFeedback>
   );
 }

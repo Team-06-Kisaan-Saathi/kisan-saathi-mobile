@@ -16,6 +16,7 @@ import {
 import LottieView from "lottie-react-native";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import NavBuyer from "../components/navigation/NavBuyer";
 import { useTheme } from "../hooks/ThemeContext";
 
@@ -30,6 +31,7 @@ const { width } = Dimensions.get("window");
 
 export default function BuyerDashboard() {
   const { highContrast } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -168,61 +170,47 @@ export default function BuyerDashboard() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Welcome Header */}
-        <View style={[styles.header, highContrast ? { backgroundColor: "#000", borderBottomColor: "#333" } : { backgroundColor: "transparent" }, { paddingTop: 40, marginBottom: 40, position: 'relative', minHeight: 140, justifyContent: 'center' }]}>
-          <View style={{ width: '65%', paddingRight: 10 }}>
-            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 20 }]} numberOfLines={1}>Welcome,</Text>
-            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 2 }]} numberOfLines={1}>
-              {user?.name || "..."}
-            </Text>
-            <Text style={[styles.subtext, highContrast && { color: "#CCC" }, { marginTop: 8 }]} numberOfLines={1}>Find the best deals & place bids</Text>
-          </View>
-          <View style={{ position: 'absolute', right: 0, top: 20, width: 140, height: 140 }}>
-            <LottieView
-              source={require("../assets/images/busin.json")}
-              autoPlay
-              loop
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="contain"
-            />
-          </View>
+        <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
+          <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }]} numberOfLines={1}>{t("dashboard.welcome") || "Welcome"}, {user?.name || t("profile.user") || "Buyer"} </Text>
+          <Text style={[styles.subtext, highContrast && { color: "#CCC" }]}>{t("dashboard.buyer_sub") || "Find the best deals & place your bids"}</Text>
         </View>
 
         {/* BID ACTIVITY */}
         {bidStats.active > 0 && (
           <>
-            <SectionHeader title="BID ACTIVITY" highContrast={highContrast} />
+            <SectionHeader title={t("dashboard.bid_activity") || "BID ACTIVITY"} highContrast={highContrast} />
             <View style={styles.statsRow}>
               <View style={[styles.statCard, { borderLeftColor: '#2563EB' }, highContrast && { backgroundColor: "#111", borderTopColor: "#333", borderRightColor: "#333", borderBottomColor: "#333", borderWidth: 1 }]}>
                 <Text style={styles.statNum}>{bidStats.active}</Text>
-                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>Active Bids</Text>
+                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>{t("dashboard.active_bids") || "Active Bids"}</Text>
               </View>
               <View style={[styles.statCard, { borderLeftColor: '#10B981' }, highContrast && { backgroundColor: "#111", borderTopColor: "#333", borderRightColor: "#333", borderBottomColor: "#333", borderWidth: 1 }]}>
                 <Text style={[styles.statNum, { color: '#10B981' }]}>{bidStats.leading}</Text>
-                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>Leading</Text>
+                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>{t("dashboard.leading") || "Leading"}</Text>
               </View>
               <View style={[styles.statCard, { borderLeftColor: '#D97706' }, highContrast && { backgroundColor: "#111", borderTopColor: "#333", borderRightColor: "#333", borderBottomColor: "#333", borderWidth: 1 }]}>
                 <Text style={[styles.statNum, { color: '#D97706' }]}>{bidStats.won}</Text>
-                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>Won</Text>
+                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>{t("dashboard.won") || "Won"}</Text>
               </View>
             </View>
           </>
         )}
 
         {/* TODAY'S TOP PRICE */}
-        <SectionHeader title="TODAY'S TOP PRICE" highContrast={highContrast} />
+        <SectionHeader title={t("dashboard.top_price") || "TODAY'S TOP PRICE"} highContrast={highContrast} />
         <View style={[styles.topPriceCard, highContrast && { backgroundColor: "#111", borderColor: "#FFF", borderWidth: 1 }]}>
           <View style={styles.priceHeader}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || "Wheat"}</Text>
+              <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || t("dashboard.wheat") || "Wheat"}</Text>
               <View style={styles.mandiRow}>
                 <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>{cleanLocation(topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi")}</Text>
+                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>{cleanLocation(topPrice?.locationName || topPrice?.mandi || t("dashboard.azadpur") || "Azadpur Mandi")}</Text>
               </View>
             </View>
             <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                 <Text style={[styles.priceVal, highContrast && { color: "#FFF" }]}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
-                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>/ quintal</Text>
+                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>{t("dashboard.per_quintal") || "/ quintal"}</Text>
               </View>
               <View style={styles.trendRow}>
                 <MaterialCommunityIcons
@@ -231,7 +219,7 @@ export default function BuyerDashboard() {
                   color={topPrice?.isUp !== false ? "#22C55E" : "#EF4444"}
                 />
                 <Text style={[styles.trendText, topPrice?.isUp === false && { color: '#EF4444' }]}>
-                  {topPrice?.trend || "+4.2% this week"}
+                  {topPrice?.trend || t("dashboard.this_week_trend") || "+4.2% this week"}
                 </Text>
               </View>
             </View>
@@ -243,32 +231,32 @@ export default function BuyerDashboard() {
               onPress={() => router.push("/mandi-prices")}
             >
               <Ionicons name="bar-chart" size={18} color="#FFF" style={{ marginRight: 8 }} />
-              <Text style={styles.seeAllText}>See All Prices</Text>
+              <Text style={styles.seeAllText}>{t("dashboard.see_all_prices") || "See All Prices"}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.buyNowBtn}
               onPress={() => router.push("/buyer-auctions" as any)}
             >
-              <Text style={styles.buyNowText}>Browse Auctions</Text>
+              <Text style={styles.buyNowText}>{t("dashboard.browse_auctions") || "Browse Auctions"}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* BUY & BID */}
-        <SectionHeader title="BUY & BID" highContrast={highContrast} />
+        <SectionHeader title={t("dashboard.buy_bid") || "BUY & BID"} highContrast={highContrast} />
         <View style={styles.grid}>
           <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
-              title="Live Auctions"
-              subtitle="Browse & bid on crops"
+              title={t("farmer.live_auctions") || "Live Auctions"}
+              subtitle={t("dashboard.browse_bid_crops") || "Browse & bid on crops"}
               icon="flash"
               color="#FB923C"
               highContrast={highContrast}
               onPress={() => router.push("/buyer-auctions" as any)}
             />
             <BuySellCard
-              title="My Bids"
-              subtitle="Track your bids"
+              title={t("dashboard.my_bids") || "My Bids"}
+              subtitle={t("dashboard.track_bids") || "Track your bids"}
               icon="list"
               color="#FBBF24"
               highContrast={highContrast}
@@ -277,16 +265,16 @@ export default function BuyerDashboard() {
           </View>
           <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
-              title="Sellers"
-              subtitle="Verified Directory"
+              title={t("dashboard.sellers") || "Sellers"}
+              subtitle={t("dashboard.verified_directory") || "Verified Directory"}
               icon="people"
               color="#94A3B8"
               highContrast={highContrast}
               onPress={() => router.push("/buyer-marketplace")}
             />
             <BuySellCard
-              title="Deals"
-              subtitle="Your negotiations"
+              title={t("dashboard.deals") || "Deals"}
+              subtitle={t("dashboard.your_negotiations") || "Your negotiations"}
               icon="handshake-outline"
               iconFamily="MaterialCommunityIcons"
               color="#A3A3A3"
@@ -297,32 +285,39 @@ export default function BuyerDashboard() {
         </View>
 
         {/* HELP & SUPPORT */}
-        <SectionHeader title="HELP & SUPPORT" highContrast={highContrast} />
+        <SectionHeader title={t("dashboard.help_support") || "HELP & SUPPORT"} highContrast={highContrast} />
         <View style={styles.supportList}>
           <SupportItem
-            title="Messages"
-            subtitle="Chat with farmers"
+            title={t("farmer.messages") || "Messages"}
+            subtitle={t("dashboard.chat_farmers") || "Chat with farmers"}
             icon="chatbubble-ellipses"
             color="#3B82F6"
             highContrast={highContrast}
             onPress={() => router.push("/messages")}
           />
-
           <SupportItem
-            title="Settings"
-            subtitle="Account & preferences"
+            title={t("dashboard.call_support") || "Call Support"}
+            subtitle={t("dashboard.talk_expert") || "Talk to an expert"}
+            icon="call"
+            color="#F59E0B"
+            highContrast={highContrast}
+            onPress={() => router.push("/call-support")}
+          />
+          <SupportItem
+            title={t("dashboard.settings") || "Settings"}
+            subtitle={t("dashboard.account_prefs") || "Account & preferences"}
             icon="settings"
             color="#64748B"
             highContrast={highContrast}
             onPress={() => router.push("/settings")}
           />
           <SupportItem
-            title="Help Center"
-            subtitle="FAQs & guides"
+            title={t("dashboard.help_center") || "Help Center"}
+            subtitle={t("dashboard.faqs_guides") || "FAQs & guides"}
             icon="help-circle"
             color="#A855F7"
             highContrast={highContrast}
-            onPress={() => Alert.alert("Help Center", "Redirecting to help portal...")}
+            onPress={() => Alert.alert(t("dashboard.help_center") || "Help Center", "Redirecting to help portal...")}
           />
         </View>
       </ScrollView>

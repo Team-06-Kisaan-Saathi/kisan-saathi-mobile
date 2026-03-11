@@ -3,29 +3,31 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from '../hooks/ThemeContext';
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import NavAuto from "../components/navigation/NavAuto";
 
 
 export default function NotAvailableScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
 
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
-            <Stack.Screen options={{ title: "Not Available", headerShown: false }} />
+            <Stack.Screen options={{ title: t("not_avail.title") || "Not Available", headerShown: false }} />
             <NavAuto />
 
             <View style={[styles.content, highContrast && { backgroundColor: "#000" }]}>
                 <Ionicons name="construct-outline" size={80} color="#CBD5E1" />
-                <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Feature Not Available</Text>
+                <Text style={[styles.title, highContrast && { color: "#FFF" }]}>{t("not_avail.title") || "Feature Not Available"}</Text>
                 <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>
-                    This feature is not available in the current build of Agri Bazaar.
+                    {t("not_avail.sub") || "This feature is not available in the current build of Agri Bazaar."}
                 </Text>
                 <TouchableOpacity
                     style={styles.button}
                     onPress={() => router.back()}
                 >
-                    <Text style={styles.buttonText}>Go Back</Text>
+                    <Text style={styles.buttonText}>{t("not_avail.back") || "Go Back"}</Text>
                 </TouchableOpacity>
             </View>
         </View>

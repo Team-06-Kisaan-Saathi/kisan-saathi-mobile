@@ -2,11 +2,13 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 import NavAuto from "../components/navigation/NavAuto";
 
 
 export default function Alerts() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
@@ -14,9 +16,9 @@ export default function Alerts() {
                 <NavAuto />
 
                 <View style={[styles.content, highContrast && { backgroundColor: "#000" }]}>
-                    <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Alerts</Text>
+                    <Text style={[styles.title, highContrast && { color: "#FFF" }]}>{t("alerts.title") || "Alerts"}</Text>
                     <Text style={styles.placeholder}>
-                        Important notifications and market alerts will be shown here.
+                        {t("alerts.placeholder") || "Important notifications and market alerts will be shown here."}
                     </Text>
                 </View>
             </View>

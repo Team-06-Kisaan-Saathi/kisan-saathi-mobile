@@ -7,15 +7,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
-  Alert
+  Alert,
+  Dimensions,
+  SafeAreaView
 } from "react-native";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NavAuto from "../components/navigation/NavAuto";
 import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import NavFarmer from "../components/navigation/NavFarmer";
 import { chatService } from "../services/chatService";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../hooks/ThemeContext";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 
@@ -23,11 +29,12 @@ const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 const ListingTimer = ({ createdAt, status }: { createdAt: string, status: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isEnded, setIsEnded] = useState(status === "CLOSED");
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (status === "CLOSED") {
       setIsEnded(true);
-      setTimeLeft("Ended");
+      setTimeLeft(t("list.ended") || "Ended");
       return;
     }
 
@@ -57,7 +64,7 @@ const ListingTimer = ({ createdAt, status }: { createdAt: string, status: string
     updateTimer();
     const interval = setInterval(updateTimer, 60000); // update every minute
     return () => clearInterval(interval);
-  }, [createdAt, status]);
+  }, [createdAt, status, t]);
 
   if (status === "CLOSED") {
     return <Text style={styles.timeValueEnded}>{timeLeft}</Text>;
@@ -70,10 +77,13 @@ const ListingTimer = ({ createdAt, status }: { createdAt: string, status: string
   );
 };
 
-export default function MyListings() {
+export default function MyListingsScreen() {
+  const { highContrast } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const [auctions, setAuctions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<"All" | "Active" | "Ended" | "Sold">("All");
   const [user, setUser] = useState<any>(null);
 
@@ -150,7 +160,7 @@ export default function MyListings() {
       setAuctions(formatted);
     } catch (e) {
       console.log("Error fetching my auctions", e);
-      Alert.alert("Error", "Could not load listings");
+      Alert.alert("Error", t("list.error_load") || "Could not load listings");
     } finally {
       setLoading(false);
     }
@@ -167,11 +177,11 @@ export default function MyListings() {
 
         if (res.ok) {
           await loadAuctions();
-          if (Platform.OS === 'web') window.alert("Auction ended!");
-          else Alert.alert("Success", "Auction ended.");
+          if (Platform.OS === 'web') window.alert(t("list.auction_ended") || "Auction ended!");
+          else Alert.alert(t("common.success") || "Success", t("list.auction_ended") || "Auction ended.");
         } else {
-          if (Platform.OS === 'web') window.alert("Failed to end auction.");
-          else Alert.alert("Error", "Failed to end auction.");
+          if (Platform.OS === 'web') window.alert(t("list.failed_end") || "Failed to end auction.");
+          else Alert.alert(t("common.error") || "Error", t("list.failed_end") || "Failed to end auction.");
         }
       } catch (e) {
         console.log("Error ending auction:", e);
@@ -179,11 +189,11 @@ export default function MyListings() {
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm(`Are you sure you want to end the auction for ${auction.crop}?`)) doClose();
+      if (window.confirm(t("list.confirm_end", { crop: auction.crop }) || `Are you sure you want to end the auction for ${auction.crop}?`)) doClose();
     } else {
-      Alert.alert("End Auction?", `Are you sure you want to end the auction for ${auction.crop}?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "End Auction", style: "destructive", onPress: doClose }
+      Alert.alert(t("list.end_auction_q") || "End Auction?", t("list.confirm_end", { crop: auction.crop }) || `Are you sure you want to end the auction for ${auction.crop}?`, [
+        { text: t("common.cancel") || "Cancel", style: "cancel" },
+        { text: t("list.end_auction_btn") || "End Auction", style: "destructive", onPress: doClose }
       ]);
     }
   };
@@ -194,6 +204,13 @@ export default function MyListings() {
   const totalBidsToday = auctions.reduce((sum, a) => sum + a.todayBidsCount, 0);
   const wonCount = auctions.filter(a => a.status === "CLOSED" && a.winningAmount > 0).length;
 
+  const stats = {
+    active: activeCount,
+    endingSoon: endingSoonCount,
+    bidsReceived: totalBidsToday,
+    sold: wonCount,
+  };
+
   const filteredAuctions = auctions.filter(a => {
     if (filter === "All") return true;
     if (filter === "Active") return a.status === "OPEN";
@@ -203,35 +220,43 @@ export default function MyListings() {
   });
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <NavFarmer />
-
+    <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
+      <Stack.Screen options={{
+        title: t("list.title") || "My Listings",
+        headerShadowVisible: false,
+        headerShown: false,
+      }} />
+      <NavAuto />
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Header Actions */}
         <View style={styles.header}>
-          <Text style={styles.title}>My Listings</Text>
-          <Text style={styles.subtitle}>Manage your crop auctions</Text>
+          <View>
+            <Text style={[styles.pageTitle, highContrast && { color: "#FFF" }]}>{t("list.title") || "My Listings"}</Text>
+            <Text style={[styles.pageSubtitle, highContrast && { color: "#AAA" }]}>{t("list.sub") || "Manage your crop auctions"}</Text>
+          </View>
+          <TouchableOpacity style={styles.createBtn} onPress={() => router.push("/create-auction")}>
+            <Ionicons name="add" size={20} color="#fff" />
+            <Text style={styles.createBtnText}>{t("list.create") || "Create Auction"}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Dashboard Summary */}
-        <View style={styles.dashboardContainer}>
-          <View style={styles.dashRow}>
-            <View style={[styles.dashBox, { backgroundColor: "#ECFDF5", borderColor: "#A7F3D0" }]}>
-              <Text style={styles.dashLabel}>Active{"\n"}Auctions</Text>
-              <Text style={[styles.dashValue, { color: "#059669" }]}>{activeCount}</Text>
-            </View>
-            <View style={[styles.dashBox, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}>
-              <Text style={styles.dashLabel}>Ending{"\n"}Soon</Text>
-              <Text style={[styles.dashValue, { color: "#DC2626" }]}>{endingSoonCount}</Text>
-            </View>
-            <View style={[styles.dashBox, { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }]}>
-              <Text style={styles.dashLabel}>Bids{"\n"}Today</Text>
-              <Text style={[styles.dashValue, { color: "#2563EB" }]}>{totalBidsToday}</Text>
-            </View>
-            <View style={[styles.dashBox, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE" }]}>
-              <Text style={styles.dashLabel}>Auctions{"\n"}Won/Sold</Text>
-              <Text style={[styles.dashValue, { color: "#7C3AED" }]}>{wonCount}</Text>
-            </View>
+        <View style={styles.statsContainer}>
+          <View style={[styles.statBox, { backgroundColor: '#EFF6FF' }]}>
+            <Text style={styles.statNumber}>{stats.active}</Text>
+            <Text style={styles.statLabel}>{t("list.active") || "Active\nAuctions"}</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: '#FEF2F2' }]}>
+            <Text style={[styles.statNumber, { color: '#EF4444' }]}>{stats.endingSoon}</Text>
+            <Text style={styles.statLabel}>{t("list.ending") || "Ending\nSoon"}</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: '#F0FDF4' }]}>
+            <Text style={[styles.statNumber, { color: '#10B981' }]}>{stats.bidsReceived}</Text>
+            <Text style={styles.statLabel}>{t("list.bids_today") || "Bids\nToday"}</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: '#F8FAFC' }]}>
+            <Text style={[styles.statNumber, { color: '#64748B' }]}>{stats.sold}</Text>
+            <Text style={styles.statLabel}>{t("list.won_sold") || "Auctions\nWon/Sold"}</Text>
           </View>
         </View>
 
@@ -243,7 +268,7 @@ export default function MyListings() {
               style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
               onPress={() => setFilter(f as any)}
             >
-              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
+              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{t(`list.filter_${f.toLowerCase()}`) || f}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -253,11 +278,11 @@ export default function MyListings() {
           {loading ? (
             <ActivityIndicator size="large" color="#10B981" style={{ marginTop: 40 }} />
           ) : filteredAuctions.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="basket-outline" size={48} color="#9CA3AF" />
-              <Text style={styles.emptyText}>You have no listings yet</Text>
-              <TouchableOpacity style={styles.createBtn} onPress={() => router.push("/create-auction")}>
-                <Text style={styles.createBtnText}>Create Auction</Text>
+            <View style={styles.emptyContainer}>
+              <Ionicons name="document-text-outline" size={64} color="#CBD5E1" />
+              <Text style={styles.emptyTitle}>{t("list.no_listings") || "You have no listings yet"}</Text>
+              <TouchableOpacity style={styles.createEmptyBtn} onPress={() => router.push("/create-auction")}>
+                <Text style={styles.createEmptyBtnText}>{t("list.create") || "Create Auction"}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -265,14 +290,15 @@ export default function MyListings() {
               const isActive = auction.status === "OPEN";
               const isSold = auction.status === "CLOSED" && auction.winningAmount > 0;
               const hasBids = auction.totalBids > 0;
+              const isEndingSoon = auction.endingSoon;
 
               return (
                 <View key={auction.id} style={styles.card}>
                   {/* Ending Soon Warning */}
-                  {auction.endingSoon && (
+                  {isEndingSoon && isActive && (
                     <View style={styles.warningBanner}>
                       <Ionicons name="warning" size={14} color="#B45309" />
-                      <Text style={styles.warningText}>Ending Soon (Less than 1 hr)</Text>
+                      <Text style={styles.warningText}>{t("list.warn") || "Ending Soon (Less than 1 hr)"}</Text>
                     </View>
                   )}
 
@@ -284,7 +310,7 @@ export default function MyListings() {
                       </View>
                       <View style={[styles.statusBadge, isActive ? styles.statusLive : (isSold ? styles.statusSold : styles.statusEnded)]}>
                         <Text style={[styles.statusText, isActive ? styles.statusTextLive : (isSold ? styles.statusTextSold : styles.statusTextEnded)]}>
-                          {isActive ? "LIVE" : (isSold ? "SOLD" : "ENDED")}
+                          {isActive ? (t("list.badge_live") || "LIVE") : (isSold ? (t("list.badge_sold") || "SOLD") : (t("list.badge_end") || "ENDED"))}
                         </Text>
                       </View>
                     </View>
@@ -292,23 +318,23 @@ export default function MyListings() {
                     {/* Stats Grid */}
                     <View style={styles.gridRow}>
                       <View style={styles.gridCol}>
-                        <Text style={styles.gridLabel}>Base Price</Text>
+                        <Text style={styles.gridLabel}>{t("list.base_price") || "Base Price"}</Text>
                         <Text style={styles.gridValue}>{formatCurr(auction.basePrice)}</Text>
                       </View>
                       <View style={styles.gridCol}>
-                        <Text style={styles.gridLabel}>Time Left</Text>
+                        <Text style={styles.gridLabel}>{t("list.time_left") || "Time Left"}</Text>
                         <ListingTimer createdAt={auction.createdAt} status={auction.status} />
                       </View>
                     </View>
                     <View style={[styles.gridRow, { marginTop: 12 }]}>
                       <View style={styles.gridCol}>
-                        <Text style={styles.gridLabel}>Highest Bid</Text>
+                        <Text style={styles.gridLabel}>{t("list.highest_bid") || "Highest Bid"}</Text>
                         <Text style={[styles.gridValue, hasBids ? styles.highlightValue : null]}>
                           {hasBids ? formatCurr(auction.currentHighBid) : "₹0"}
                         </Text>
                       </View>
                       <View style={styles.gridCol}>
-                        <Text style={styles.gridLabel}>Total Bids</Text>
+                        <Text style={styles.gridLabel}>{t("list.total_bids") || "Total Bids"}</Text>
                         <Text style={styles.gridValue}>{auction.totalBids}</Text>
                       </View>
                     </View>
@@ -316,8 +342,8 @@ export default function MyListings() {
                     {/* Winner Info if Sold */}
                     {isSold && (
                       <View style={styles.winnerSection}>
-                        <Text style={styles.winnerLabel}>Winning Bid: <Text style={styles.winnerAmount}>{formatCurr(auction.winningAmount)}</Text></Text>
-                        <Text style={styles.winnerLabel}>Winner: <Text style={styles.winnerName}>{auction.winnerName}</Text></Text>
+                        <Text style={styles.winnerLabel}>{t("list.winning_bid") || "Winning Bid"}: <Text style={styles.winnerAmount}>{formatCurr(auction.winningAmount)}</Text></Text>
+                        <Text style={styles.winnerLabel}>{t("list.winner") || "Winner"}: <Text style={styles.winnerName}>{auction.winnerName}</Text></Text>
                       </View>
                     )}
 
@@ -329,13 +355,13 @@ export default function MyListings() {
                             style={styles.actionBtnPrimary}
                             onPress={() => router.push("/farmer-auctions")}
                           >
-                            <Text style={styles.actionBtnPrimaryText}>Monitor Auction</Text>
+                            <Text style={styles.actionBtnPrimaryText}>{t("list.monitor_auction") || "Monitor Auction"}</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.actionBtnSecondary}
                             onPress={() => handleEndAuction(auction)}
                           >
-                            <Text style={styles.actionBtnSecondaryText}>End Auction</Text>
+                            <Text style={styles.actionBtnSecondaryText}>{t("list.end_auction_btn") || "End Auction"}</Text>
                           </TouchableOpacity>
                         </>
                       ) : (
@@ -349,23 +375,23 @@ export default function MyListings() {
                                   if (res?.success) {
                                     router.push(`/chat/${res.chat._id}?dealId=${auction.id}`);
                                   } else {
-                                    Alert.alert("Error", "Could not start chat.");
+                                    Alert.alert(t("common.error") || "Error", t("list.chat_error") || "Could not start chat.");
                                   }
                                 } catch (err) {
                                   console.log("Chat init error", err);
-                                  Alert.alert("Error", "Could not start chat.");
+                                  Alert.alert(t("common.error") || "Error", t("list.chat_error") || "Could not start chat.");
                                 }
                               }}
                             >
                               <Ionicons name="chatbubble-ellipses" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                              <Text style={styles.actionBtnPrimaryText}>Message Buyer</Text>
+                              <Text style={styles.actionBtnPrimaryText}>{t("list.message_buyer") || "Message Buyer"}</Text>
                             </TouchableOpacity>
                           )}
                           <TouchableOpacity
                             style={styles.actionBtnSecondaryNeutral}
                             onPress={() => router.push("/farmer-auctions")}
                           >
-                            <Text style={styles.actionBtnSecondaryNeutralText}>View Result</Text>
+                            <Text style={styles.actionBtnSecondaryNeutralText}>{t("list.view_result") || "View Result"}</Text>
                           </TouchableOpacity>
                         </>
                       )}
@@ -377,7 +403,7 @@ export default function MyListings() {
           )}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -387,6 +413,16 @@ const styles = StyleSheet.create({
   header: { padding: 20, paddingTop: 10, paddingBottom: 16, backgroundColor: "#FFF" },
   title: { fontSize: 24, fontWeight: "bold", color: "#111827" },
   subtitle: { fontSize: 14, color: "#6B7280", marginTop: 4 },
+  pageTitle: { fontSize: 24, fontWeight: "bold", color: "#111827" },
+  pageSubtitle: { fontSize: 14, color: "#6B7280", marginTop: 4 },
+  statsContainer: { flexDirection: "row", backgroundColor: "#FFF", padding: 16 },
+  statBox: { flex: 1, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, padding: 10, marginHorizontal: 4 },
+  statNumber: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  statLabel: { fontSize: 11, fontWeight: "600", color: "#4B5563", marginTop: 4 },
+  emptyContainer: { alignItems: "center", paddingVertical: 60 },
+  emptyTitle: { fontSize: 18, fontWeight: "bold", color: "#111827", marginTop: 16 },
+  createEmptyBtn: { backgroundColor: "#10B981", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 24 },
+  createEmptyBtnText: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
 
   // Dashboard
   dashboardContainer: { padding: 16, backgroundColor: "#FFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB", marginBottom: 16 },

@@ -56,7 +56,7 @@ export default function AnalyticsScreen() {
                 </View>
 
                 <View style={s.chartHeader}>
-                    <Text style={styles.sectionTitle}>Revenue Trend (in ₹{"'000"})</Text>
+                    <Text style={styles.sectionTitle}>Revenue Trend (in ₹&apos;000)</Text>
                     <TouchableOpacity onPress={() => router.push("/admin/yearly-stats" as any)}>
                         <Text style={s.viewFullLink}>See for year</Text>
                     </TouchableOpacity>

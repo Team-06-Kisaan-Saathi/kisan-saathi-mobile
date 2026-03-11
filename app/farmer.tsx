@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NavFarmer from "../components/navigation/NavFarmer";
 import { cleanLocation } from "../utils/formatters";
 
@@ -23,6 +24,7 @@ export default function FarmerProfile() {
 }
 
 function FarmerProfileContent() {
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -71,15 +73,15 @@ function FarmerProfileContent() {
   if (!profile) {
     return (
       <ScrollView contentContainerStyle={s.page}>
-        <Text style={s.title}>Farmer Profile</Text>
+        <Text style={s.title}>{t("farmer.profile") || "Farmer Profile"}</Text>
 
         <View style={s.card}>
           <Text style={{ fontWeight: "800", color: "#0f172a" }}>
-            No profile saved on this device
+            {t("farmer.no_profile") || "No profile saved on this device"}
           </Text>
           <Text style={{ marginTop: 8, color: "#64748b" }}>
             This page reads from AsyncStorage key:{" "}
-            <Text style={{ fontWeight: "800" }}>{"\"profile\""}</Text>. If you never
+            <Text style={{ fontWeight: "800" }}>&quot;profile&quot;</Text>. If you never
             stored it after login, it will be empty.
           </Text>
 
@@ -92,7 +94,7 @@ function FarmerProfileContent() {
         </View>
 
         <Pressable style={s.actionBtn} onPress={() => router.replace("/login")}>
-          <Text style={s.actionBtnText}>Go to Login</Text>
+          <Text style={s.actionBtnText}>{t("farmer.go_login") || "Go to Login"}</Text>
         </Pressable>
       </ScrollView>
     );
@@ -100,41 +102,41 @@ function FarmerProfileContent() {
 
   return (
     <ScrollView contentContainerStyle={s.page}>
-      <Text style={s.title}>Farmer Profile</Text>
+      <Text style={s.title}>{t("farmer.profile") || "Farmer Profile"}</Text>
 
       <View style={s.card}>
-        <Row label="Name" value={profile?.name || "—"} />
+        <Row label={t("farmer.name") || "Name"} value={profile?.name || "—"} />
         <Row
-          label="Phone"
+          label={t("farmer.phone") || "Phone"}
           value={profile?.phone ? `+91 ${profile.phone}` : "—"}
         />
         <Row
-          label="Location"
+          label={t("farmer.location") || "Location"}
           value={cleanLocation(
             profile?.location?.address ||
             profile?.location?.name ||
             profile?.location ||
-            "Not set"
+            (t("farmer.not_set") || "Not set")
           )}
         />
       </View>
 
       <View style={s.card}>
-        <Text style={s.section}>Farm Tools</Text>
+        <Text style={s.section}>{t("farmer.farm_tools") || "Farm Tools"}</Text>
 
-        <Action label="My Crops" onPress={() => { }} />
+        <Action label={t("farmer.my_crops") || "My Crops"} onPress={() => { }} />
         <Action
-          label="Add Crop"
+          label={t("farmer.add_crop") || "Add Crop"}
           onPress={() => router.push("/add-crop" as any)}
         />
         <Action
-          label="Change Location"
+          label={t("farmer.chg_loc") || "Change Location"}
           onPress={() => router.push("/change-location" as any)}
         />
       </View>
 
       <Pressable style={s.refresh} onPress={load}>
-        <Text style={s.refreshText}>Reload Profile</Text>
+        <Text style={s.refreshText}>{t("farmer.reload") || "Reload Profile"}</Text>
       </Pressable>
 
       <Logout />
@@ -160,6 +162,7 @@ function Action({ label, onPress }: any) {
 }
 
 function Logout() {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={async () => {
@@ -168,7 +171,7 @@ function Logout() {
       }}
       style={s.logout}
     >
-      <Text style={s.logoutText}>Logout</Text>
+      <Text style={s.logoutText}>{t("farmer.logout") || "Logout"}</Text>
     </Pressable>
   );
 }

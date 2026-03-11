@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../hooks/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { cleanLocation } from '../../utils/formatters';
 import { MandiPriceDoc } from '../../services/mandiService';
@@ -16,7 +17,8 @@ interface TableProps {
 export const MarketTable: React.FC<TableProps> = ({
     data, loading, refreshing, onRefresh, error
 }) => {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const renderItem = ({ item }: { item: MandiPriceDoc }) => (
         <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <View style={styles.cropCol}>
@@ -44,7 +46,7 @@ export const MarketTable: React.FC<TableProps> = ({
                         color={item.isBestPrice ? "#16A34A" : "#94A3B8"}
                     />
                 </View>
-                <Text style={styles.unit}>per quintal</Text>
+                <Text style={styles.unit}>{t('mktcomp.per_q')}</Text>
             </View>
         </View>
     );
@@ -53,7 +55,7 @@ export const MarketTable: React.FC<TableProps> = ({
         return (
             <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#3B82F6" />
-                <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>Loading market data...</Text>
+                <Text style={[styles.loadingText, highContrast && { color: "#CCC" }]}>{t('mktcomp.loading')}</Text>
             </View>
         );
     }
@@ -61,9 +63,9 @@ export const MarketTable: React.FC<TableProps> = ({
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000", borderColor: "#333" }]}>
             <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-                <Text style={[styles.headerText, styles.cropCol]}>Crop</Text>
-                <Text style={[styles.headerText, styles.mandiCol]}>Market</Text>
-                <Text style={[styles.headerText, styles.priceCol, { textAlign: 'right' }]}>Price</Text>
+                <Text style={[styles.headerText, styles.cropCol]}>{t('mktcomp.col_crop')}</Text>
+                <Text style={[styles.headerText, styles.mandiCol]}>{t('mktcomp.col_mandi')}</Text>
+                <Text style={[styles.headerText, styles.priceCol, { textAlign: 'right' }]}>{t('mktcomp.col_price')}</Text>
             </View>
 
             <FlatList

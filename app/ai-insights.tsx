@@ -19,6 +19,7 @@ import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -34,7 +35,8 @@ type ForecastData = {
 };
 
 export default function AIInsightsScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<ForecastData | null>(null);
@@ -170,24 +172,24 @@ export default function AIInsightsScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
                 <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-                    <Text style={[styles.title, highContrast && { color: "#FFF" }]} numberOfLines={1}>Market Forecast</Text>
-                    <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]} numberOfLines={2}>Find the right time to sell for higher profit</Text>
+                    <Text style={[styles.title, highContrast && { color: "#FFF" }]} numberOfLines={1}>{t("insights.forecast") || "Market Forecast"}</Text>
+                    <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]} numberOfLines={2}>{t("insights.subtitle") || "Find the right time to sell for higher profit"}</Text>
                 </View>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#3B82F6" style={{ marginTop: 40 }} />
                 ) : !data ? (
-                    <Text style={styles.errorText}>Could not load prices. Try again later.</Text>
+                    <Text style={styles.errorText}>{t("insights.err_load") || "Could not load prices. Try again later."}</Text>
                 ) : (
                     <View>
                         <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                             <View style={styles.cardHeader}>
-                                <Text style={styles.cardTitle} numberOfLines={1}>Price Trend</Text>
+                                <Text style={styles.cardTitle} numberOfLines={1}>{t("insights.trend") || "Price Trend"}</Text>
                                 <View style={styles.legend}>
                                     <View style={[styles.dot, { backgroundColor: "#3B82F6" }]} />
-                                    <Text style={styles.legendText}>Past</Text>
+                                    <Text style={styles.legendText}>{t("insights.past") || "Past"}</Text>
                                     <View style={[styles.dot, { backgroundColor: "#10B981", marginLeft: 10 }]} />
-                                    <Text style={styles.legendText}>Future</Text>
+                                    <Text style={styles.legendText}>{t("insights.future") || "Future"}</Text>
                                 </View>
                             </View>
 
@@ -218,40 +220,40 @@ export default function AIInsightsScreen() {
                                     })()}
                                 </Svg>
                                 <View style={styles.chartLabels}>
-                                    <Text style={styles.chartLabelText}>Last 30 Days</Text>
+                                    <Text style={styles.chartLabelText}>{t("insights.last_30") || "Last 30 Days"}</Text>
                                     <View style={{ alignItems: 'center' }}>
-                                        <Text style={[styles.chartLabelText, { fontWeight: 'bold', color: '#64748B' }]}>Today</Text>
+                                        <Text style={[styles.chartLabelText, { fontWeight: 'bold', color: '#64748B' }]}>{t("insights.today") || "Today"}</Text>
                                     </View>
-                                    <Text style={styles.chartLabelText}>Next 7 Days</Text>
+                                    <Text style={styles.chartLabelText}>{t("insights.next_7") || "Next 7 Days"}</Text>
                                 </View>
                             </View>
                         </View>
 
                         <View style={styles.forecastGrid}>
                             <View style={[styles.forecastCard, { backgroundColor: "#DBEAFE" }]}>
-                                <Text style={styles.forecastLabel}>Best Price</Text>
+                                <Text style={styles.forecastLabel}>{t("insights.best_price") || "Best Price"}</Text>
                                 <Text style={styles.forecastValue}>₹{peakInfo?.price?.toFixed(0)}</Text>
-                                <Text style={styles.forecastSub}>Likely on {peakInfo?.date}</Text>
+                                <Text style={styles.forecastSub}>{t("insights.likely_on") || "Likely on"} {peakInfo?.date}</Text>
                             </View>
                             <View style={[styles.forecastCard, { backgroundColor: "#DCFCE7" }]}>
-                                <Text style={styles.forecastLabel}>Market Trend</Text>
+                                <Text style={styles.forecastLabel}>{t("insights.market_trend") || "Market Trend"}</Text>
                                 <Text style={styles.forecastValue}>
-                                    {data.predicted[data.predicted.length - 1].price > data.historical[data.historical.length - 1].price ? "Going Up" : "Going Down"}
+                                    {data.predicted[data.predicted.length - 1].price > data.historical[data.historical.length - 1].price ? (t("insights.up") || "Going Up") : (t("insights.down") || "Going Down")}
                                 </Text>
-                                <Text style={styles.forecastSub}>Next 7 days</Text>
+                                <Text style={styles.forecastSub}>{t("insights.next_7") || "Next 7 Days"}</Text>
                             </View>
                         </View>
 
                         <View style={styles.adviceCard}>
                             <View style={styles.adviceHeader}>
                                 <Ionicons name="bulb" size={24} color="#F59E0B" />
-                                <Text style={styles.adviceTitle}>Advice for You</Text>
+                                <Text style={styles.adviceTitle}>{t("insights.advice") || "Advice for You"}</Text>
                             </View>
                             <Text style={styles.adviceText}>
                                 {data.recommendation}
                             </Text>
                             <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/marketplace")}>
-                                <Text style={styles.actionBtnText}>Check Live Prices</Text>
+                                <Text style={styles.actionBtnText}>{t("insights.check_live") || "Check Live Prices"}</Text>
                                 <Ionicons name="arrow-forward" size={16} color="#fff" />
                             </TouchableOpacity>
                         </View>
@@ -259,8 +261,8 @@ export default function AIInsightsScreen() {
                         <View style={styles.weatherStrip}>
                             <Ionicons name="information-circle" size={24} color="#3B82F6" />
                             <View style={{ flex: 1, marginLeft: 12 }}>
-                                <Text style={styles.weatherTitle}>Price Guide</Text>
-                                <Text style={styles.weatherDesc}>Estimates based on market trends. Use as a guide for your sales.</Text>
+                                <Text style={styles.weatherTitle}>{t("insights.guide") || "Price Guide"}</Text>
+                                <Text style={styles.weatherDesc}>{t("insights.eval") || "Estimates based on market trends. Use as a guide for your sales."}</Text>
                             </View>
                         </View>
                     </View>

@@ -50,7 +50,7 @@ export default function YearlyStatsScreen() {
                 contentContainerStyle={styles.scroll}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
             >
-                <Text style={styles.sectionTitle}>Annual Revenue Growth (₹{"'000"})</Text>
+                <Text style={styles.sectionTitle}>Annual Revenue Growth (₹&apos;000)</Text>
                 <Card style={styles.chartCard}>
                     {data?.revenueGrowth && (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>

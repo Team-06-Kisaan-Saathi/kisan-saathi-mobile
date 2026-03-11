@@ -34,7 +34,7 @@ export default function LoginScreen() {
     }
 
     if (!/^\d{4,6}$/.test(trimmedPin)) {
-      setMsg("PIN must be 4 to 6 digits");
+      setMsg(t("auth.pin_length_error") || "PIN must be 4 to 6 digits");
       return;
     }
 
@@ -51,12 +51,12 @@ export default function LoginScreen() {
       const { success, token, user, message } = res;
 
       if (!success) {
-        setMsg(message || "Login failed");
+        setMsg(message || t("auth.login_failed") || "Login failed");
         return;
       }
 
       if (!token || !user) {
-        setMsg("Invalid server response format");
+        setMsg(t("auth.invalid_server_response") || "Invalid server response format");
         return;
       }
 
@@ -76,7 +76,7 @@ export default function LoginScreen() {
         router.replace("/buyer-dashboard");
       }
     } catch (err: any) {
-      setMsg(err.message || "Connection failed. Check backend.");
+      setMsg(err.message || t("auth.connection_failed") || "Connection failed. Check backend.");
     } finally {
       setLoading(false);
     }
@@ -100,8 +100,8 @@ export default function LoginScreen() {
             />
 
             <Text style={styles.appName}>
-              <Text style={styles.green}>AGRI</Text>{" "}
-              <Text style={styles.blue}>BAZAAR</Text>
+              <Text style={styles.green}>{t("auth.agri") || "AGRI"}</Text>{" "}
+              <Text style={styles.blue}>{t("auth.bazaar") || "BAZAAR"}</Text>
             </Text>
           </View>
 
@@ -124,7 +124,7 @@ export default function LoginScreen() {
             </View>
 
             <Text style={[styles.label, { marginTop: 16, marginBottom: 8 }]}>
-              Enter PIN
+              {t("auth.enter_pin")}
             </Text>
 
             <View style={styles.phoneInput}>
@@ -151,7 +151,7 @@ export default function LoginScreen() {
               {loading ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator color="#fff" />
-                  <Text style={styles.buttonText}> Logging In...</Text>
+                  <Text style={styles.buttonText}> {t("auth.logging_in")}</Text>
                 </View>
               ) : (
                 <Text style={styles.buttonText}>{t("auth.continue")}</Text>

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { useTheme } from "../hooks/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 export default function AccessibilitySheet({
   visible,
@@ -26,6 +27,7 @@ export default function AccessibilitySheet({
     highContrast, setHighContrast,
     zoomEnabled, setZoomEnabled
   } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -33,11 +35,11 @@ export default function AccessibilitySheet({
 
       <View style={styles.sheet} accessibilityRole="summary">
 
-        <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Accessibility</Text>
+        <Text style={[styles.title, highContrast && { color: "#FFF" }]}>{t('access.title')}</Text>
 
         {/* Text size */}
         <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
-          <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Text size</Text>
+          <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('access.text_size')}</Text>
           <View style={styles.pillRow}>
             {[1, 1.15, 1.3].map((v) => (
               <Pressable
@@ -61,7 +63,7 @@ export default function AccessibilitySheet({
         {/* Contrast */}
         <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
           <View style={styles.switchRow}>
-            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>High Contrast</Text>
+            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('access.high_const')}</Text>
             <Switch
               value={highContrast}
               onValueChange={setHighContrast}
@@ -73,7 +75,7 @@ export default function AccessibilitySheet({
         {/* Zoom & Pinch */}
         <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
           <View style={styles.switchRow}>
-            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Zoom & Pinch support</Text>
+            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('access.zoom')}</Text>
             <Switch
               value={zoomEnabled}
               onValueChange={setZoomEnabled}
@@ -84,7 +86,7 @@ export default function AccessibilitySheet({
 
         {/* Language */}
         <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
-          <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Language</Text>
+          <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('access.lang')}</Text>
           <View style={styles.pillRow}>
             {[
               { k: "en", t: "English" },
@@ -110,7 +112,7 @@ export default function AccessibilitySheet({
         </View>
 
         <Pressable style={styles.closeBtn} onPress={onClose}>
-          <Text style={styles.closeText}>Done</Text>
+          <Text style={styles.closeText}>{t('access.done')}</Text>
         </Pressable>
       </View>
     </Modal>
