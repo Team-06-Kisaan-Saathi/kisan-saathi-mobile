@@ -8,7 +8,12 @@ const LOCAL_HOST = `${LOCAL_IP}:5001`;
 const RENDER_HOST = "backend-e337.onrender.com";
 
 // ─── Smart URL Selector ───
-const IS_PRODUCTION = !__DEV__ || (typeof window !== 'undefined' && window.location.hostname.includes('github.io'));
+const IS_PRODUCTION =
+    !__DEV__ ||
+    (typeof window !== 'undefined' &&
+        window.location.hostname !== 'localhost' &&
+        window.location.hostname !== '127.0.0.1' &&
+        !window.location.hostname.startsWith('192.168.'));
 export const HOST = IS_PRODUCTION ? RENDER_HOST : LOCAL_HOST;
 
 

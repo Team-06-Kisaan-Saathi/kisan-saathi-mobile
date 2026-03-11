@@ -177,22 +177,17 @@ export default function MarketplaceScreen() {
 
   // ----------------------- Loaders -----------------------
   const loadNearby = async () => {
-    if (!activeCoords) {
-      console.log("❌ loadNearby: activeCoords is null");
-      return;
-    }
+    // We now allow calling this even without coordinates. 
+    // The backend will return featured mandis as fallback.
+    const lat = activeCoords?.lat ?? 0;
+    const lng = activeCoords?.lng ?? 0;
 
-    console.log("📡 loadNearby -> calling nearby with:", {
-      lat: activeCoords.lat,
-      lng: activeCoords.lng,
-      distKm: 50,
-      limit: 5,
-    });
+    console.log("📡 loadNearby -> calling nearby with:", { lat, lng });
 
     try {
       const rows = await fetchNearbyMandis({
-        lat: activeCoords.lat,
-        lng: activeCoords.lng,
+        lat,
+        lng,
         distKm: 50,
         limit: 5,
       });
@@ -383,7 +378,7 @@ export default function MarketplaceScreen() {
   }, []);
 
   useEffect(() => {
-    if (activeCoords) loadNearby();
+    loadNearby();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCoords?.lat, activeCoords?.lng]);
 
