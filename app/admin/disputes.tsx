@@ -44,7 +44,7 @@ export default function DisputeManagement() {
 
             <View style={styles.chatPreview}>
                 <Lucide.MessageSquare size={14} color={COLORS.textLight} />
-                <Text style={styles.previewText} numberOfLines={2}>"{item.preview}"</Text>
+                <Text style={styles.previewText} numberOfLines={2}>&quot;{item.preview}&quot;</Text>
             </View>
 
             <View style={styles.actionRow}>

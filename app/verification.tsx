@@ -12,13 +12,15 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import NavAuto from "../components/navigation/NavAuto";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile, requestVerification } from "../services/userServices";
 
 export default function VerificationScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -43,11 +45,11 @@ export default function VerificationScreen() {
 
     const handleSubmit = async () => {
         if (aadhaar.length !== 12) {
-            Alert.alert("Invalid Aadhaar", "Please enter a valid 12-digit Aadhaar number.");
+            Alert.alert(t("verif.invalid_aadhaar") || "Invalid Aadhaar", t("verif.err_aadhaar") || "Please enter a valid 12-digit Aadhaar number.");
             return;
         }
         if (pan.length !== 10) {
-            Alert.alert("Invalid PAN", "Please enter a valid 10-character PAN number.");
+            Alert.alert(t("verif.invalid_pan") || "Invalid PAN", t("verif.err_pan") || "Please enter a valid 10-character PAN number.");
             return;
         }
 
@@ -55,13 +57,13 @@ export default function VerificationScreen() {
         try {
             const res = await requestVerification({ aadhaarNumber: aadhaar, panNumber: pan });
             if (res?.success) {
-                Alert.alert("Success", "Verification request submitted successfully.");
+                Alert.alert(t("verif.success_title") || "Success", t("verif.success_msg") || "Verification request submitted successfully.");
                 loadProfile();
             } else {
-                Alert.alert("Error", res?.message || "Submission failed.");
+                Alert.alert(t("verif.err_title") || "Error", res?.message || t("verif.err_submit") || "Submission failed.");
             }
         } catch (e: any) {
-            Alert.alert("Error", e.message || "Something went wrong. Please try again.");
+            Alert.alert(t("verif.err_title") || "Error", e.message || t("verif.err_generic") || "Something went wrong. Please try again.");
         } finally {
             setSubmitting(false);
         }
@@ -80,7 +82,7 @@ export default function VerificationScreen() {
 
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
-            <Stack.Screen options={{ title: "Verify Account", headerShown: false }} />
+            <Stack.Screen options={{ title: t("verif.screen_title") || "Verify Account", headerShown: false }} />
             <NavAuto />
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -93,31 +95,31 @@ export default function VerificationScreen() {
                 </View>
 
                 <Text style={[styles.title, highContrast && { color: "#FFF" }]}>
-                    {isApproved ? "You are Verified!" : "Verification Request"}
+                    {isApproved ? t("verif.title_appr") || "You are Verified!" : t("verif.title_req") || "Verification Request"}
                 </Text>
                 <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>
                     {isApproved
-                        ? "Your account is verified. You can now list crops and close deals with buyers."
-                        : "Verifying your identity helps build trust with buyers and allows you to sell faster."}
+                        ? t("verif.sub_appr") || "Your account is verified. You can now list crops and close deals with buyers."
+                        : t("verif.sub_req") || "Verifying your identity helps build trust with buyers and allows you to sell faster."}
                 </Text>
 
                 {isApproved ? (
                     <View style={styles.successBox}>
                         <Ionicons name="checkmark-circle" size={20} color="#059669" />
-                        <Text style={styles.successText}>Verified Seller Account</Text>
+                        <Text style={styles.successText}>{t("verif.success") || "Verified Seller Account"}</Text>
                     </View>
                 ) : isPending ? (
                     <View style={styles.pendingBox}>
                         <Ionicons name="time-outline" size={20} color="#D97706" />
-                        <Text style={styles.pendingText}>Verification Pending Audit</Text>
+                        <Text style={styles.pendingText}>{t("verif.pending") || "Verification Pending Audit"}</Text>
                     </View>
                 ) : (
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Aadhaar Number (12 digits)</Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("verif.aadhaar_label") || "Aadhaar Number (12 digits)"}</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="0000 0000 0000"
+                                placeholder={t("verif.aadhaar_ph") || "0000 0000 0000"}
                                 placeholderTextColor="#94A3B8"
                                 keyboardType="numeric"
                                 maxLength={12}
@@ -127,10 +129,10 @@ export default function VerificationScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>PAN Number (10 characters)</Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t("verif.pan_label") || "PAN Number (10 characters)"}</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="ABCDE1234F"
+                                placeholder={t("verif.pan_ph") || "ABCDE1234F"}
                                 placeholderTextColor="#94A3B8"
                                 autoCapitalize="characters"
                                 maxLength={10}
@@ -144,7 +146,7 @@ export default function VerificationScreen() {
                             onPress={handleSubmit}
                             disabled={submitting}
                         >
-                            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Documents</Text>}
+                            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>{t("verif.submit") || "Submit Documents"}</Text>}
                         </TouchableOpacity>
                     </View>
                 )}

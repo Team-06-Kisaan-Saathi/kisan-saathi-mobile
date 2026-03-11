@@ -70,12 +70,12 @@ export default function NavFarmer() {
       <View style={styles.navbar}>
         {/* LEFT: App Name */}
         <View style={styles.leftSection}>
-          <Text style={styles.logoText}>KrishiConnect</Text>
+          <Text style={styles.logoText}>{t('nav.brand')}</Text>
         </View>
 
         {/* CENTER: Page Title */}
         <View style={styles.centerSection}>
-          <Text style={styles.pageTitle}>{getPageTitle(pathname)}</Text>
+          <Text style={styles.pageTitle}>{t(getPageTitle(pathname))}</Text>
         </View>
 
         {/* RIGHT: Notifications + Profile */}
@@ -102,7 +102,7 @@ export default function NavFarmer() {
             transform: [{ scale: profileAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }]
           }]}>
             <View style={styles.dropdownHeader}>
-              <Text style={styles.dropdownTitle}>Farmer Account</Text>
+              <Text style={styles.dropdownTitle}>{t('nav.farmer_acc')}</Text>
             </View>
             <ProfileItem icon="person-outline" label="Edit Profile" onPress={() => { setProfileOpen(false); router.push("/edit-profile" as any); }} />
             <ProfileItem icon="cloudy-night-outline" label="Farm Weather" onPress={() => { setProfileOpen(false); router.push("/weather" as any); }} />

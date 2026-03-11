@@ -108,10 +108,10 @@ export default function VerifyScreen() {
       if (res.success) {
         router.replace({ pathname: "/set-pin", params: { phone, name, role } });
       } else {
-        setMsg(res.message || "Invalid verification code");
+        setMsg(res.message || t("auth.invalid_otp") || "Invalid verification code");
       }
     } catch (e: any) {
-      setMsg(e.message || "Connection error. Please try again.");
+      setMsg(e.message || t("auth.connection_failed") || "Connection error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -161,20 +161,25 @@ export default function VerifyScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={[styles.container, highContrast && { backgroundColor: "#000" }]}
         >
-          <View style={styles.brandHeader}>
-            <Text style={styles.brandTitle}>
-              <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
-              <Text style={styles.brandBlue}>SAATHI</Text>
-            </Text>
-            <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
-          </View>
+          <View style={styles.overlay} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+          >
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>
+                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
+                <Text style={styles.brandBlue}>SAATHI</Text>
+              </Text>
+              <Text style={styles.brandTagline}>{t("auth.verify_required")}</Text>
+            </View>
 
-          <View style={styles.formWrapper}>
-            <Text style={styles.cardHeader}>Verify Identity</Text>
-            <Text style={styles.instruction}>
-              {"We've sent a 6-digit code to"}{" "}
-              <Text style={styles.phoneHighlight}>+91 {phone}</Text>
-            </Text>
+            <View style={styles.formWrapper}>
+              <Text style={styles.cardHeader}>{t("auth.verify_identity")}</Text>
+              <Text style={styles.instruction}>
+                {t("auth.verify_subtitle_phone")}{" "}
+                <Text style={styles.phoneHighlight}>+91 {phone}</Text>
+              </Text>
 
             <View style={styles.otpContainer}>
               {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -195,23 +200,24 @@ export default function VerifyScreen() {
 
             {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
 
-            <TouchableOpacity
-              onPress={verify}
-              disabled={!canSubmit || loading}
-              style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.verifyBtnText}>Verify & Continue</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>{"Haven't received yet?"}</Text>
-              <TouchableOpacity onPress={resendCode} disabled={loading}>
-                <Text style={styles.resendText}>Resend Code</Text>
+              <TouchableOpacity
+                onPress={verify}
+                disabled={!canSubmit || loading}
+                style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.verifyBtnText}>{t("auth.verify_continue")}</Text>
+                )}
               </TouchableOpacity>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>{t("auth.didnt_get_code")}</Text>
+                <TouchableOpacity onPress={() => { }} disabled={loading}>
+                  <Text style={styles.resendText}>{t("auth.resend_code")}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </KeyboardAvoidingView>

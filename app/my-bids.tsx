@@ -15,6 +15,7 @@ import { ENDPOINTS } from "../services/api";
 import { getProfile } from "../services/userServices";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import NavBuyer from "../components/navigation/NavBuyer";
+import { useTranslation } from "react-i18next";
 
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
 
@@ -29,6 +30,7 @@ const statusColors: Record<BidStatus, { bg: string, text: string }> = {
 
 export default function MyBids() {
     const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const [bids, setBids] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -115,8 +117,8 @@ export default function MyBids() {
                     <Ionicons name="arrow-back" size={24} color="#FFF" />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>My Bids</Text>
-                    <Text style={styles.headerSub}>{bids.length} auctions participated</Text>
+                    <Text style={styles.headerTitle}>{t("my_bids.title") || "My Bids"}</Text>
+                    <Text style={styles.headerSub}>{bids.length} {t("my_bids.participated") || "auctions participated"}</Text>
                 </View>
                 <TouchableOpacity onPress={loadMyBids}>
                     <Ionicons name="refresh" size={22} color="#FFF" />
@@ -129,16 +131,16 @@ export default function MyBids() {
                 ) : bids.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="pricetag-outline" size={48} color="#CBD5E1" />
-                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{"You haven't placed any bids yet"}</Text>
+                        <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{t("my_bids.no_bids") || "You haven't placed any bids yet"}</Text>
                         <TouchableOpacity
                             style={styles.browseBtn}
                             onPress={() => router.push("/buyer-auctions" as any)}
                         >
-                            <Text style={styles.browseBtnText}>Browse Live Auctions</Text>
+                            <Text style={styles.browseBtnText}>{t("my_bids.browse") || "Browse Live Auctions"}</Text>
                         </TouchableOpacity>
                     </View>
-                ) : bids.map((bid: any) => {
-                    const sc = statusColors[bid.status as BidStatus];
+                ) : bids.map((bid) => {
+                    const sc = statusColors[bid.status as BidStatus] || { bg: "#FFF", text: "#000" };
                     return (
                         <TouchableOpacity
                             key={bid.id}
@@ -164,16 +166,16 @@ export default function MyBids() {
                             {/* Bid Details */}
                             <View style={styles.bidDetails}>
                                 <View style={styles.bidCol}>
-                                    <Text style={styles.bidLabel}>MY BID</Text>
+                                    <Text style={styles.bidLabel}>{t("my_bids.my_bid") || "MY BID"}</Text>
                                     <Text style={styles.bidValue}>{formatCurr(bid.myBidAmount)}</Text>
                                 </View>
                                 <View style={styles.bidCol}>
-                                    <Text style={styles.bidLabel}>CURRENT HIGHEST</Text>
+                                    <Text style={styles.bidLabel}>{t("my_bids.cur_high") || "CURRENT HIGHEST"}</Text>
                                     <Text style={[styles.bidValue, { color: "#2563EB" }]}>{formatCurr(bid.highestBid)}</Text>
                                 </View>
                                 <View style={styles.bidCol}>
-                                    <Text style={styles.bidLabel}>STATUS</Text>
-                                    <Text style={styles.bidValue}>{bid.auctionStatus === "CLOSED" ? "Closed" : "Live"}</Text>
+                                    <Text style={styles.bidLabel}>{t("my_bids.status") || "STATUS"}</Text>
+                                    <Text style={styles.bidValue}>{bid.auctionStatus === "CLOSED" ? (t("my_bids.st_closed") || "Closed") : (t("my_bids.st_live") || "Live")}</Text>
                                 </View>
                             </View>
 
@@ -182,7 +184,7 @@ export default function MyBids() {
                                 <View style={styles.wonBanner}>
                                     <Ionicons name="trophy" size={16} color="#D97706" />
                                     <Text style={styles.wonText}>
-                                        You won this auction! Final price: {formatCurr(bid.winningBid?.amount || bid.myBidAmount)}
+                                        {t("my_bids.won_msg") || "You won this auction! Final price:"} {formatCurr(bid.winningBid?.amount || bid.myBidAmount)}
                                     </Text>
                                 </View>
                             )}

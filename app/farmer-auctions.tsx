@@ -19,6 +19,7 @@ import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
 import NotificationBell from "../components/notifications/NotificationBell";
 import { chatService } from "../services/chatService";
+import { useTranslation } from "react-i18next";
 
 // Helper to format currency
 const formatCurr = (val: number) => `₹${val.toLocaleString("en-IN")}`;
@@ -77,13 +78,14 @@ const AuctionTimer = ({ createdAt, status, extendedHours }: { createdAt: string,
 };
 
 export default function FarmerLiveAuctions() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [auctions, setAuctions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
-    const [filter, setFilter] = useState<"All" | "Active" | "Ended">("All");
+    const [filter, setFilter] = useState<string>("All");
 
     useEffect(() => {
         loadAuctions();
@@ -209,10 +211,10 @@ export default function FarmerLiveAuctions() {
             }
         };
 
-        const confirmTitle = "End Auction?";
+        const confirmTitle = t("f_auction.confirm_title") || "End Auction?";
         const confirmMessage = hasBids
-            ? `Highest bid: ${formatCurr(highestBid)} by ${topBidderName}\n\nIf you continue, this buyer will win the auction.`
-            : "No bids have been placed. If you continue, the auction will be closed with no winner.";
+            ? `${t("f_auction.highest_bid") || "Highest bid"}: ${formatCurr(highestBid)} ${t("f_auction.by") || "by"} ${topBidderName}\n\n${t("f_auction.confirm_winner") || "If you continue, this buyer will win the auction."}`
+            : (t("f_auction.confirm_no_bids") || "No bids have been placed. If you continue, the auction will be closed with no winner.");
 
         if (Platform.OS === 'web') {
             const confirmed = window.confirm(`${confirmTitle}\n\n${confirmMessage}`);
@@ -222,8 +224,8 @@ export default function FarmerLiveAuctions() {
                 confirmTitle,
                 confirmMessage,
                 [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Confirm Winner", style: "destructive", onPress: doClose }
+                    { text: t("f_auction.cancel") || "Cancel", style: "cancel" },
+                    { text: t("f_auction.winner_confirm") || "Confirm Winner", style: "destructive", onPress: doClose }
                 ]
             );
         }
@@ -245,8 +247,8 @@ export default function FarmerLiveAuctions() {
         return (
             <View style={styles.chartContainer}>
                 <View style={styles.chartLabels}>
-                    <Text style={styles.chartLabelText}>Base: {formatCurr(base)}</Text>
-                    <Text style={styles.chartLabelText}>Reserve: {formatCurr(reserve)}{isMet ? " ✓" : ""}</Text>
+                    <Text style={styles.chartLabelText}>{t("f_auction.base") || "Base:"} {formatCurr(base)}</Text>
+                    <Text style={styles.chartLabelText}>{t("f_auction.reserve") || "Reserve:"} {formatCurr(reserve)}{isMet ? " ✓" : ""}</Text>
                 </View>
 
                 <View style={styles.barBackground}>
@@ -280,19 +282,21 @@ export default function FarmerLiveAuctions() {
                         <Ionicons name="arrow-back" size={24} color="#111827" />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle}>Live Auction Monitor</Text>
-                        <Text style={styles.headerSubtitle}>{activeCount} active auctions</Text>
+                        <Text style={styles.headerTitle}>{t("f_auction.monitor") || "Live Auction Monitor"}</Text>
+                        <Text style={styles.headerSubtitle}>{activeCount} {t("f_auction.active") || "active auctions"}</Text>
                     </View>
                     <NotificationBell color={highContrast ? "#FFF" : "#0F172A"} />
                 </View>
                 <View style={styles.filterRow}>
-                    {["All", "Active", "Ended"].map((f) => (
+                    {[{ key: "All", label: t("f_auction.all") || "All" },
+                    { key: "Active", label: t("f_auction.active") || "Active" },
+                    { key: "Ended", label: t("f_auction.ended") || "Ended" }].map((f) => (
                         <TouchableOpacity
-                            key={f}
-                            style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
-                            onPress={() => setFilter(f as any)}
+                            key={f.key}
+                            style={[styles.filterBtn, filter === f.key && styles.filterBtnActive]}
+                            onPress={() => setFilter(f.key)}
                         >
-                            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
+                            <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>{f.label}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -302,7 +306,7 @@ export default function FarmerLiveAuctions() {
                 {loading ? (
                     <ActivityIndicator size="large" color="#10B981" style={{ marginTop: 40 }} />
                 ) : filteredAuctions.length === 0 ? (
-                    <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>No auctions found.</Text>
+                    <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{t("f_auction.no_auctions") || "No auctions found."}</Text>
                 ) : filteredAuctions.map((auction, index) => {
                     const isExpanded = expandedId === auction.id;
                     const hasBids = auction.totalBids > 0;
@@ -322,7 +326,7 @@ export default function FarmerLiveAuctions() {
 
                                     <View style={[styles.statusBadge, isEnded ? styles.statusBadgeEnded : styles.statusBadgeLive]}>
                                         <Text style={[styles.statusText, isEnded ? styles.statusTextEnded : styles.statusTextLive]}>
-                                            {isEnded ? "✓ ENDED" : "● LIVE"}
+                                            {isEnded ? (t("f_auction.ended_badge") || "✓ ENDED") : (t("f_auction.live_badge") || "● LIVE")}
                                         </Text>
                                     </View>
                                 </View>
@@ -335,13 +339,13 @@ export default function FarmerLiveAuctions() {
                                 <View style={styles.statCol}>
                                     <View style={styles.statHeaderRow}>
                                         <Feather name="trending-up" size={14} color="#6B7280" />
-                                        <Text style={styles.statLabel}>HIGHEST BID</Text>
+                                        <Text style={styles.statLabel}>{t("f_auction.highest_bid") || "HIGHEST BID"}</Text>
                                     </View>
                                     <Text style={[
                                         styles.statValueBid,
                                         !hasBids ? styles.statValueGray : (isMet ? styles.statValueGreen : styles.statValueBlack)
                                     ]}>
-                                        {hasBids ? formatCurr(auction.currentHighBid) : "No Bids"}
+                                        {hasBids ? formatCurr(auction.currentHighBid) : (t("f_auction.no_bids") || "No Bids")}
                                     </Text>
                                 </View>
 
@@ -349,7 +353,7 @@ export default function FarmerLiveAuctions() {
                                 <View style={styles.statCol}>
                                     <View style={styles.statHeaderRow}>
                                         <Feather name="hash" size={14} color="#6B7280" />
-                                        <Text style={styles.statLabel}>TOTAL BIDS</Text>
+                                        <Text style={styles.statLabel}>{t("f_auction.total_bids") || "TOTAL BIDS"}</Text>
                                     </View>
                                     <Text style={styles.statValueBlack}>{auction.totalBids}</Text>
                                 </View>
@@ -358,7 +362,7 @@ export default function FarmerLiveAuctions() {
                                 <View style={styles.statCol}>
                                     <View style={styles.statHeaderRow}>
                                         <Feather name="clock" size={14} color="#6B7280" />
-                                        <Text style={styles.statLabel}>TIME LEFT</Text>
+                                        <Text style={styles.statLabel}>{t("f_auction.time_left") || "TIME LEFT"}</Text>
                                     </View>
                                     <AuctionTimer createdAt={auction.createdAt} status={auction.status} extendedHours={0} />
                                 </View>
@@ -378,23 +382,23 @@ export default function FarmerLiveAuctions() {
                                         <View style={styles.winnerCard}>
                                             <View style={styles.winnerHeader}>
                                                 <Ionicons name="trophy" size={18} color="#D97706" />
-                                                <Text style={styles.winnerHeaderText}>WINNER DETAILS</Text>
+                                                <Text style={styles.winnerHeaderText}>{t("f_auction.winner_details") || "WINNER DETAILS"}</Text>
                                             </View>
                                             <View style={styles.winnerInfo}>
                                                 <View style={styles.winnerRow}>
                                                     <Ionicons name="person" size={15} color="#374151" />
-                                                    <Text style={styles.winnerLabel}>Name:</Text>
+                                                    <Text style={styles.winnerLabel}>{t("f_auction.name") || "Name:"}</Text>
                                                     <Text style={styles.winnerValue}>{auction.winnerName}</Text>
                                                 </View>
                                                 <View style={styles.winnerRow}>
                                                     <Ionicons name="cash" size={15} color="#374151" />
-                                                    <Text style={styles.winnerLabel}>Bid:</Text>
+                                                    <Text style={styles.winnerLabel}>{t("f_auction.bid") || "Bid:"}</Text>
                                                     <Text style={[styles.winnerValue, { color: '#059669', fontWeight: '900' }]}>{formatCurr(auction.winningAmount)}</Text>
                                                 </View>
                                                 {auction.winnerPhone && (
                                                     <View style={styles.winnerRow}>
                                                         <Ionicons name="call" size={15} color="#374151" />
-                                                        <Text style={styles.winnerLabel}>Phone:</Text>
+                                                        <Text style={styles.winnerLabel}>{t("f_auction.phone") || "Phone:"}</Text>
                                                         <Text style={styles.winnerValue}>{auction.winnerPhone}</Text>
                                                     </View>
                                                 )}
@@ -414,14 +418,14 @@ export default function FarmerLiveAuctions() {
                                                         }
                                                     }}>
                                                     <Ionicons name="chatbubble-ellipses" size={14} color="#FFF" />
-                                                    <Text style={styles.msgBuyerBtnText}>Message Buyer</Text>
+                                                    <Text style={styles.msgBuyerBtnText}>{t("f_auction.msg_buyer") || "Message Buyer"}</Text>
                                                 </TouchableOpacity>
                                             </View>
                                         </View>
                                     ) : isEnded ? (
                                         <View style={styles.noBidsEndedCard}>
                                             <Ionicons name="information-circle-outline" size={18} color="#6B7280" />
-                                            <Text style={styles.noBidsEndedText}>Auction ended with no bids</Text>
+                                            <Text style={styles.noBidsEndedText}>{t("f_auction.no_bids_ended") || "Auction ended with no bids"}</Text>
                                         </View>
                                     ) : null}
 
@@ -430,15 +434,15 @@ export default function FarmerLiveAuctions() {
                                         <>
                                             <View style={styles.sectionHeaderRow}>
                                                 <Feather name="trending-up" size={16} color="#6B7280" />
-                                                <Text style={styles.sectionHeading}>BID PROGRESSION</Text>
+                                                <Text style={styles.sectionHeading}>{t("f_auction.bid_progression") || "BID PROGRESSION"}</Text>
                                             </View>
                                             <View style={styles.progressionBox}>
                                                 {hasBids ? (
                                                     <Text style={styles.bidProgressText}>
-                                                        Highest: {formatCurr(auction.currentHighBid)} · {auction.totalBids} bids placed
+                                                        {t("f_auction.highest") || "Highest:"} {formatCurr(auction.currentHighBid)} · {auction.totalBids} {t("f_auction.bids_placed") || "bids placed"}
                                                     </Text>
                                                 ) : (
-                                                    <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>Waiting for first bid...</Text>
+                                                    <Text style={[styles.emptyText, highContrast && { color: "#CCC" }]}>{t("f_auction.waiting") || "Waiting for first bid..."}</Text>
                                                 )}
                                             </View>
                                         </>
@@ -446,7 +450,7 @@ export default function FarmerLiveAuctions() {
 
                                     <View style={[styles.sectionHeaderRow, { marginTop: 16 }]}>
                                         <Feather name="clock" size={16} color="#6B7280" />
-                                        <Text style={styles.sectionHeading}>RECENT BIDS</Text>
+                                        <Text style={styles.sectionHeading}>{t("f_auction.recent_bids") || "RECENT BIDS"}</Text>
                                     </View>
                                     {hasBids ? (
                                         <View style={styles.historyBox}>
@@ -461,7 +465,7 @@ export default function FarmerLiveAuctions() {
                                             ))}
                                         </View>
                                     ) : (
-                                        <Text style={styles.emptyHistory}>No bids have been placed yet.</Text>
+                                        <Text style={styles.emptyHistory}>{t("f_auction.no_recent_bids") || "No bids have been placed yet."}</Text>
                                     )}
 
                                     {/* End Auction — only for OPEN */}
@@ -469,7 +473,7 @@ export default function FarmerLiveAuctions() {
                                         <View style={styles.actionsRow}>
                                             <TouchableOpacity style={styles.cancelBtn} onPress={() => handleEndAuction(auction)}>
                                                 <Feather name="x" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                                                <Text style={styles.cancelBtnText}>End Auction</Text>
+                                                <Text style={styles.cancelBtnText}>{t("f_auction.end_auction") || "End Auction"}</Text>
                                             </TouchableOpacity>
                                         </View>
                                     )}

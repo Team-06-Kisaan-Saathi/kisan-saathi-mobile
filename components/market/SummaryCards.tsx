@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../hooks/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 interface SummaryProps {
     totalCrops: number;
@@ -12,23 +13,24 @@ interface SummaryProps {
 export const SummaryCards: React.FC<SummaryProps> = ({
     totalCrops, highestPrice, lowestPrice, avgPrice
 }) => {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000", borderColor: "#333" }]}>
             <View style={[styles.card, { backgroundColor: '#EFF6FF', borderLeftColor: '#2563EB' }]}>
-                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Total Crops</Text>
+                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('mktcomp.tot_crops')}</Text>
                 <Text style={[styles.value, { color: '#2563EB' }]}>{totalCrops}</Text>
             </View>
             <View style={[styles.card, { backgroundColor: '#F0FDF4', borderLeftColor: '#16A34A' }]}>
-                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Highest Price</Text>
+                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('mktcomp.high_price')}</Text>
                 <Text style={[styles.value, { color: '#16A34A' }]}>₹{highestPrice}</Text>
             </View>
             <View style={[styles.card, { backgroundColor: '#FEF2F2', borderLeftColor: '#DC2626' }]}>
-                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Lowest Price</Text>
+                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('mktcomp.low_price')}</Text>
                 <Text style={[styles.value, { color: '#DC2626' }]}>₹{lowestPrice}</Text>
             </View>
             <View style={[styles.card, { backgroundColor: '#F5F3FF', borderLeftColor: '#7C3AED' }]}>
-                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Avg Price</Text>
+                <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('mktcomp.avg_price')}</Text>
                 <Text style={[styles.value, { color: '#7C3AED' }]}>₹{Math.round(avgPrice)}</Text>
             </View>
         </View>

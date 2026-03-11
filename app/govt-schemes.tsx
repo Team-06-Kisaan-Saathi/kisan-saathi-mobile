@@ -3,13 +3,14 @@ import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavAuto from "../components/navigation/NavAuto";
+import { useTranslation } from "react-i18next";
 
 import {
     FlatList,
     StyleSheet,
     Text,
     View,
-    Pressable,
+    TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
     SafeAreaView,
@@ -24,11 +25,13 @@ import { govtService, Scheme } from "../services/govtService";
  */
 
 export default function GovtSchemesScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const [schemes, setSchemes] = useState<Scheme[]>([]);
-    const [search, setSearch] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState("All"); // Added as per snippet
 
     const loadSchemes = async () => {
         try {
@@ -51,39 +54,38 @@ export default function GovtSchemesScreen() {
         loadSchemes();
     };
 
-    const filtered = schemes.filter(s =>
-        s.title.toLowerCase().includes(search.toLowerCase()) ||
-        s.category.toLowerCase().includes(search.toLowerCase())
+    const filteredSchemes = schemes.filter(s =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const renderItem = ({ item }: { item: Scheme }) => (
+    const renderSchemeCard = ({ item }: { item: Scheme }) => (
         <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
             <View style={styles.cardHeader}>
                 <View style={styles.categoryBadge}>
                     <Text style={styles.categoryText}>{item.category}</Text>
                 </View>
-                <Ionicons name="bookmark-outline" size={20} color="#64748b" />
+                <Ionicons name="bookmark-outline" size={24} color={highContrast ? "#FFF" : "#64748B"} />
             </View>
-
             <Text style={[styles.title, highContrast && { color: "#FFF" }]}>{item.title}</Text>
-            <Text style={styles.desc}>{item.description}</Text>
+            <Text style={[styles.description, highContrast && { color: "#AAA" }]}>{item.description}</Text>
 
-            <View style={styles.detailsBox}>
-                <Text style={styles.detailTitle}>Benefits:</Text>
-                <Text style={styles.detailText}>{item.benefits}</Text>
+            <View style={styles.detailsContainer}>
+                <Text style={[styles.detailLabel, highContrast && { color: "#FFF" }]}>{t("schemes.benefits") || "Benefits:"}</Text>
+                <Text style={[styles.detailText, highContrast && { color: "#AAA" }]}>{item.benefits}</Text>
 
-                <Text style={[styles.detailTitle, { marginTop: 8 }]}>Eligibility:</Text>
-                <Text style={styles.detailText}>{item.eligibility}</Text>
+                <Text style={[styles.detailLabel, { marginTop: 8 }, highContrast && { color: "#FFF" }]}>{t("schemes.eligibility") || "Eligibility:"}</Text>
+                <Text style={[styles.detailText, highContrast && { color: "#AAA" }]}>{item.eligibility}</Text>
             </View>
 
             {item.link && (
-                <Pressable
+                <TouchableOpacity
+                    style={styles.linkButton}
                     onPress={() => Linking.openURL(item.link!)}
-                    style={styles.linkBtn}
                 >
-                    <Text style={styles.linkBtnText}>Official Website</Text>
-                    <Ionicons name="open-outline" size={14} color="#2563eb" />
-                </Pressable>
+                    <Text style={styles.linkButtonText}>{t("schemes.official") || "Official Website"}</Text>
+                    <Ionicons name="open-outline" size={16} color="#fff" />
+                </TouchableOpacity>
             )}
         </View>
     );
@@ -91,43 +93,47 @@ export default function GovtSchemesScreen() {
     return (
         <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
-                title: "Govt Schemes",
+                title: t("schemes.title") || "Govt Schemes",
                 headerShadowVisible: false,
                 headerShown: false,
             }} />
             <NavAuto />
-
-
-            <View style={styles.searchBar}>
-                <Ionicons name="search" size={20} color="#94a3b8" />
-                <TextInput
-                    placeholder="Search schemes or categories..."
-                    placeholderTextColor="#94A3B8"
-                    value={search}
-                    onChangeText={setSearch}
-                    style={styles.searchInput}
-                />
-            </View>
-
-            {loading && !refreshing ? (
-                <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
-                    <ActivityIndicator size="large" color="#1e3a8a" />
+            <View style={styles.content}>
+                {/* Search Bar */}
+                <View style={[styles.searchContainer, highContrast && { backgroundColor: "#222", borderColor: "#444" }]}>
+                    <Ionicons name="search" size={20} color="#64748B" />
+                    <TextInput
+                        style={[styles.searchInput, highContrast && { color: "#FFF" }]}
+                        placeholder={t("schemes.search") || "Search schemes or categories..."}
+                        placeholderTextColor="#94A3B8"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
                 </View>
-            ) : (
-                <FlatList
-                    data={filtered}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyTitle}>No Schemes Found</Text>
-                            <Text style={styles.emptySub}>Try a different search term.</Text>
-                        </View>
-                    }
-                />
-            )}
+
+                {loading && !refreshing ? (
+                    <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
+                        <ActivityIndicator size="large" color="#1e3a8a" />
+                    </View>
+                ) : (
+                    /* List of Schemes */
+                    <FlatList
+                        data={filteredSchemes}
+                        renderItem={renderSchemeCard}
+                        keyExtractor={item => item.id}
+                        contentContainerStyle={styles.listContainer}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                        ListEmptyComponent={
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="document-text-outline" size={64} color="#CBD5E1" />
+                                <Text style={styles.emptyText}>{t("schemes.no_schemes") || "No Schemes Found"}</Text>
+                                <Text style={styles.emptySubText}>{t("schemes.try_diff") || "Try a different search term."}</Text>
+                            </View>
+                        }
+                    />
+                )}
+            </View>
         </SafeAreaView>
     );
 }

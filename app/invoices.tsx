@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NavAuto from "../components/navigation/NavAuto";
 
 import {
@@ -29,7 +30,8 @@ import { ENDPOINTS } from "../services/api";
  */
 
 export default function InvoicesScreen() {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -99,14 +101,14 @@ export default function InvoicesScreen() {
                         dialogTitle: "Save Invoice",
                     });
                 } else {
-                    Alert.alert("Success", "Invoice downloaded successfully.");
+                    Alert.alert(t("verif.success_title") || "Success", t("invoices.success") || "Invoice downloaded successfully.");
                 }
             } else {
-                Alert.alert("Error", "Failed to download invoice.");
+                Alert.alert(t("verif.err_title") || "Error", t("invoices.fail") || "Failed to download invoice.");
             }
         } catch (err) {
             console.log("Download error:", err);
-            Alert.alert("Error", "Could not download invoice.");
+            Alert.alert(t("verif.err_title") || "Error", t("invoices.err") || "Could not download invoice.");
         } finally {
             setDownloading(null);
         }
@@ -143,7 +145,7 @@ export default function InvoicesScreen() {
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
-                title: "Invoices",
+                title: t("invoices.title") || "Invoices",
                 headerShadowVisible: false,
                 headerShown: false,
             }} />
@@ -163,8 +165,8 @@ export default function InvoicesScreen() {
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Ionicons name="receipt-outline" size={64} color="#e2e8f0" />
-                            <Text style={styles.emptyTitle}>No Invoices</Text>
-                            <Text style={styles.emptySub}>Accepted deals will appear here for invoice download.</Text>
+                            <Text style={styles.emptyTitle}>{t("invoices.no_inv") || "No Invoices"}</Text>
+                            <Text style={styles.emptySub}>{t("invoices.no_inv_sub") || "Accepted deals will appear here for invoice download."}</Text>
                         </View>
                     }
                 />

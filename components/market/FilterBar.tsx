@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../../hooks/ThemeContext';
 import { Picker } from '@react-native-picker/picker';
+import { useTranslation } from 'react-i18next';
 
 interface FilterProps {
     selectedMarket: string;
@@ -15,12 +16,13 @@ export const FilterBar: React.FC<FilterProps> = ({
     selectedMarket, onMarketChange, markets,
     sortOrder, onSortChange,
 }) => {
-  const { highContrast } = useTheme();
+    const { highContrast } = useTheme();
+    const { t } = useTranslation();
     return (
         <View style={[styles.container, highContrast && { backgroundColor: "#000", borderColor: "#333" }]}>
             <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
                 <View style={styles.flex1}>
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Market</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('mktcomp.filter')}</Text>
                     <View style={[styles.pickerWrap, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                         <Picker
                             selectedValue={selectedMarket}
@@ -38,7 +40,7 @@ export const FilterBar: React.FC<FilterProps> = ({
                 </View>
 
                 <View style={styles.flex1}>
-                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Sort By</Text>
+                    <Text style={[styles.label, highContrast && { color: "#CCC" }]}>{t('mktcomp.sort')}</Text>
                     <View style={[styles.pickerWrap, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                         <Picker
                             selectedValue={sortOrder}
