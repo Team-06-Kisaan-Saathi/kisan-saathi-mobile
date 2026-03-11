@@ -195,11 +195,24 @@ export default function MarketplaceScreen() {
       console.log("✅ nearby rows count:", rows.length);
       console.log("✅ nearby rows sample:", rows[0]);
 
-      setNearbyMandis(rows);
+      if (rows.length === 0) {
+        // Last resort fallback if backend fails to provide even featured mandis
+        setNearbyMandis([
+          { id: "f1", name: "Azadpur Mandi, Delhi", lat: 28.707, lng: 77.170, distKm: 0 },
+          { id: "f2", name: "Vashi Mandi, Mumbai", lat: 19.033, lng: 73.029, distKm: 0 },
+          { id: "f3", name: "Gultekdi Mandi, Pune", lat: 18.496, lng: 73.867, distKm: 0 },
+        ]);
+      } else {
+        setNearbyMandis(rows);
+      }
     } catch (e: any) {
       console.log("❌ loadNearby error:", e?.message, e);
-      Alert.alert("Error", e?.message || "Failed to load nearby mandis.");
-      setNearbyMandis([]);
+      // Fallback on error too
+      setNearbyMandis([
+        { id: "f1", name: "Azadpur Mandi, Delhi", lat: 28.707, lng: 77.170, distKm: 0 },
+        { id: "f2", name: "Vashi Mandi, Mumbai", lat: 19.033, lng: 73.029, distKm: 0 },
+        { id: "f3", name: "Gultekdi Mandi, Pune", lat: 18.496, lng: 73.867, distKm: 0 },
+      ]);
     }
   };
 

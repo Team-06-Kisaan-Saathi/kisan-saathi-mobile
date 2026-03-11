@@ -59,11 +59,11 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
 
   const [open, setOpen] = useState(false);
 
-  const authTerms = ["login", "signin", "signup", "verify", "verification", "set-pin", "profile-setup", "profile-location", "auth"];
+  const authTerms = ["login", "signin", "signup", "verify", "verification", "set-pin", "profile-setup", "profile-location", "auth", "register"];
   const isAuthPage =
-    authTerms.some(term => segments.includes(term)) ||
-    authTerms.some(term => pathname.includes(term)) ||
-    segments[0] === "(auth)";
+    authTerms.some(term => segments.some(s => String(s).toLowerCase().includes(term))) ||
+    authTerms.some(term => pathname.toLowerCase().includes(term)) ||
+    segments.length === 0;
 
   // Zoom logic
   const scale = useSharedValue(1);
