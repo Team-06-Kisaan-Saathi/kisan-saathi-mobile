@@ -149,75 +149,83 @@ export default function VerifyScreen() {
     }
   };
 
+  const renderContent = () => (
+    <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
+      <ImageBackground
+        source={require("../assets/images/f.jpg")}
+        style={styles.bg}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+        >
+          <View style={styles.brandHeader}>
+            <Text style={styles.brandTitle}>
+              <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
+              <Text style={styles.brandBlue}>SAATHI</Text>
+            </Text>
+            <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
+          </View>
+
+          <View style={styles.formWrapper}>
+            <Text style={styles.cardHeader}>Verify Identity</Text>
+            <Text style={styles.instruction}>
+              {"We've sent a 6-digit code to"}{" "}
+              <Text style={styles.phoneHighlight}>+91 {phone}</Text>
+            </Text>
+
+            <View style={styles.otpContainer}>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <TextInput
+                  key={i}
+                  ref={(r) => { inputs.current[i] = r; }}
+                  style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
+                  value={digits[i]}
+                  onChangeText={(v) => setDigit(i, v)}
+                  onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  textAlign="center"
+                  editable={!loading}
+                />
+              ))}
+            </View>
+
+            {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+
+            <TouchableOpacity
+              onPress={verify}
+              disabled={!canSubmit || loading}
+              style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.verifyBtnText}>Verify & Continue</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>{"Haven't received yet?"}</Text>
+              <TouchableOpacity onPress={resendCode} disabled={loading}>
+                <Text style={styles.resendText}>Resend Code</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </View>
+  );
+
+  if (Platform.OS === 'web') {
+    return renderContent();
+  }
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
-        <ImageBackground
-          source={require("../assets/images/f.jpg")}
-          style={styles.bg}
-          resizeMode="cover"
-        >
-          <View style={styles.overlay} />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
-          >
-            <View style={styles.brandHeader}>
-              <Text style={styles.brandTitle}>
-                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
-                <Text style={styles.brandBlue}>SAATHI</Text>
-              </Text>
-              <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
-            </View>
-
-            <View style={styles.formWrapper}>
-              <Text style={styles.cardHeader}>Verify Identity</Text>
-              <Text style={styles.instruction}>
-                {"We've sent a 6-digit code to"}{" "}
-                <Text style={styles.phoneHighlight}>+91 {phone}</Text>
-              </Text>
-
-              <View style={styles.otpContainer}>
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <TextInput
-                    key={i}
-                    ref={(r) => { inputs.current[i] = r; }}
-                    style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
-                    value={digits[i]}
-                    onChangeText={(v) => setDigit(i, v)}
-                    onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    textAlign="center"
-                    editable={!loading}
-                  />
-                ))}
-              </View>
-
-              {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
-
-              <TouchableOpacity
-                onPress={verify}
-                disabled={!canSubmit || loading}
-                style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.verifyBtnText}>Verify & Continue</Text>
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>{"Haven't received yet?"}</Text>
-                <TouchableOpacity onPress={resendCode} disabled={loading}>
-                  <Text style={styles.resendText}>Resend Code</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </ImageBackground>
-      </View>
+      {renderContent()}
     </TouchableWithoutFeedback>
   );
 }
