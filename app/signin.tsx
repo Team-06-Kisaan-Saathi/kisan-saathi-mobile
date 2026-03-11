@@ -67,7 +67,7 @@ export default function SigninScreen() {
         }
         router.push({
           pathname: "/verify",
-          params: { phone: trimmedPhone, name: trimmedName, role },
+          params: { phone: trimmedPhone, name: trimmedName, role, otp: res.otp },
         });
       } else {
         setMsg(res?.message || "Failed to send OTP");
@@ -208,6 +208,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
     alignItems: "center",
+    width: "100%",
+    maxWidth: 500,
+    alignSelf: "center",
   },
   brandContainer: {
     alignItems: "center",
