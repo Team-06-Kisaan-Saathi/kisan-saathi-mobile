@@ -398,6 +398,7 @@ export default function ChatScreen() {
                 crop: newDealCrop.trim(),
                 quantityKg: qty,
                 originalPrice: price,
+                chatId: chatId,
             };
 
             if (myRole === "farmer") {
