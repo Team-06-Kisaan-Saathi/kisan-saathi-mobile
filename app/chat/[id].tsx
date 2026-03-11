@@ -81,6 +81,13 @@ export default function ChatScreen() {
     const [counterModalVisible, setCounterModalVisible] = useState(false);
     const [counterPrice, setCounterPrice] = useState("");
 
+    // New Deal modal
+    const [newDealModalVisible, setNewDealModalVisible] = useState(false);
+    const [newDealCrop, setNewDealCrop] = useState("");
+    const [newDealQuantity, setNewDealQuantity] = useState("");
+    const [newDealPrice, setNewDealPrice] = useState("");
+    const [creatingDeal, setCreatingDeal] = useState(false);
+
     // Image preview modal
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -372,6 +379,51 @@ export default function ChatScreen() {
         }
     };
 
+    const handleCreateDeal = async () => {
+        const price = parseFloat(newDealPrice);
+        const qty = parseFloat(newDealQuantity);
+
+        if (!newDealCrop.trim() || !price || !qty) {
+            Alert.alert("Invalid", "All fields are required.");
+            return;
+        }
+
+        try {
+            setCreatingDeal(true);
+            const other = chatParticipants.find((p) => p._id !== myId) || chatParticipants[0];
+            const profile = await AsyncStorage.getItem("profile");
+            const myRole = profile ? JSON.parse(profile).role : "farmer";
+
+            const payload: any = {
+                crop: newDealCrop.trim(),
+                quantityKg: qty,
+                originalPrice: price,
+            };
+
+            if (myRole === "farmer") {
+                payload.buyerId = other._id;
+            } else {
+                payload.sellerId = other._id;
+            }
+
+            const res = await dealService.createDeal(payload);
+            if (res.success) {
+                setDealData(res.deal);
+                setNewDealModalVisible(false);
+                setNewDealCrop("");
+                setNewDealQuantity("");
+                setNewDealPrice("");
+                Alert.alert("✅ Transaction Started", "The other party can now see and respond to your offer.");
+            }
+        } catch (err: any) {
+            console.log("Create deal error:", err);
+            Alert.alert("Error", "Could not start transaction.");
+        } finally {
+            setCreatingDeal(false);
+        }
+    };
+
+
     // ─── Invoice Download ───
     const handleDownloadInvoice = async () => {
         if (!dealData) return;
@@ -527,7 +579,7 @@ export default function ChatScreen() {
             </View>
 
             {/* ─── Deal Panel ─── */}
-            {dealData && (
+            {dealData ? (
                 <View style={styles.dealPanel}>
                     <View style={styles.dealTop}>
                         <View style={{ flex: 1 }}>
@@ -568,6 +620,28 @@ export default function ChatScreen() {
                     </View>
 
                     {/* Deal Actions */}
+                    {/* Deal Actions (Accepted State) */}
+                    {dealData.status === "ACCEPTED" && (
+                        <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+                            <TouchableOpacity
+                                style={styles.fundsHeldBtn}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="lock-closed" size={16} color="#FFF" />
+                                <Text style={styles.actionBtnText}>Funds Held</Text>
+                            </TouchableOpacity>
+                            {showInvoice && (
+                                <TouchableOpacity
+                                    style={styles.invoiceBtn}
+                                    onPress={handleDownloadInvoice}
+                                >
+                                    <Ionicons name="document-text" size={16} color="#FFF" />
+                                    <Text style={styles.actionBtnText}>Download Invoice</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+
                     <View style={styles.dealActions}>
                         {canAccept && (
                             <TouchableOpacity
@@ -599,18 +673,34 @@ export default function ChatScreen() {
                                 <Text style={styles.rejectBtnText}>Reject</Text>
                             </TouchableOpacity>
                         )}
-                        {showInvoice && (
+                        {!canCounter && !canAccept && (
                             <TouchableOpacity
-                                style={styles.invoiceBtn}
-                                onPress={handleDownloadInvoice}
+                                style={styles.newTransactionBtn}
+                                onPress={() => setNewDealModalVisible(true)}
                             >
-                                <Ionicons name="document-text" size={16} color="#FFF" />
-                                <Text style={styles.actionBtnText}>Download Invoice</Text>
+                                <Ionicons name="add-circle" size={16} color="#2563EB" />
+                                <Text style={styles.newTransactionText}>Start Another Transaction</Text>
                             </TouchableOpacity>
                         )}
                     </View>
+
+
+
+
+                </View>
+            ) : (
+                <View style={styles.noDealPanel}>
+                    <Text style={styles.noDealText}>No active negotiation</Text>
+                    <TouchableOpacity
+                        style={styles.startDealBtn}
+                        onPress={() => setNewDealModalVisible(true)}
+                    >
+                        <Ionicons name="pricetag" size={16} color="#FFF" />
+                        <Text style={styles.startDealBtnText}>Start Transaction</Text>
+                    </TouchableOpacity>
                 </View>
             )}
+
 
             {/* ─── Messages List ─── */}
             <FlatList
@@ -735,6 +825,85 @@ export default function ChatScreen() {
                 </Pressable>
             </Modal>
 
+            {/* ─── New Deal Modal ─── */}
+            <Modal
+                visible={newDealModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setNewDealModalVisible(false)}
+            >
+                <Pressable
+                    style={styles.modalOverlay}
+                    onPress={() => setNewDealModalVisible(false)}
+                >
+                    <Pressable style={styles.modalCard} onPress={() => { }}>
+                        <Text style={styles.modalTitle}>Start New Transaction</Text>
+                        <Text style={styles.modalSubtitle}>Enter details to begin negotiation</Text>
+
+                        <Text style={styles.modalLabel}>Crop Name</Text>
+                        <TextInput
+                            style={[styles.modalInput, { fontSize: 16, height: 48, letterSpacing: 0, fontWeight: "600" }]}
+                            value={newDealCrop}
+                            onChangeText={setNewDealCrop}
+                            placeholder="e.g. Wheat"
+                            placeholderTextColor="#94A3B8"
+                        />
+
+                        <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.modalLabel}>Quantity (kg)</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { fontSize: 16, height: 48, letterSpacing: 0, fontWeight: "600" }]}
+                                    value={newDealQuantity}
+                                    onChangeText={setNewDealQuantity}
+                                    keyboardType="numeric"
+                                    placeholder="500"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.modalLabel}>Price (₹/kg)</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { fontSize: 16, height: 48, letterSpacing: 0, fontWeight: "600" }]}
+                                    value={newDealPrice}
+                                    onChangeText={setNewDealPrice}
+                                    keyboardType="numeric"
+                                    placeholder="20"
+                                    placeholderTextColor="#94A3B8"
+                                />
+                            </View>
+                        </View>
+
+                        {newDealPrice && newDealQuantity && (
+                            <Text style={styles.modalTotal}>
+                                Total: ₹{(parseFloat(newDealPrice || "0") * parseFloat(newDealQuantity || "0")).toLocaleString()}
+                            </Text>
+                        )}
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={styles.modalCancelBtn}
+                                onPress={() => setNewDealModalVisible(false)}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalSubmitBtn, creatingDeal && { opacity: 0.7 }]}
+                                onPress={handleCreateDeal}
+                                disabled={creatingDeal}
+                            >
+                                {creatingDeal ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <Text style={styles.modalSubmitText}>Start Transaction</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </Pressable>
+                </Pressable>
+            </Modal>
+
+
             {/* ─── Image Preview Modal ─── */}
             <Modal
                 visible={!!previewImage}
@@ -858,12 +1027,65 @@ const styles = StyleSheet.create({
     invoiceBtn: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#7C3AED",
+        backgroundColor: "#8B5CF6",
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 2,
         gap: 6,
     },
+    fundsHeldBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#64748B",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 2,
+        gap: 6,
+    },
+
+    newTransactionBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#EFF6FF",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: "#BFDBFE",
+        gap: 6,
+    },
+    newTransactionText: { color: "#2563EB", fontSize: 13, fontWeight: "800" },
+
+    noDealPanel: {
+        backgroundColor: "#FFFFFF",
+        borderBottomWidth: 1,
+        borderBottomColor: "#E2E8F0",
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    noDealText: {
+        fontSize: 14,
+        color: "#64748B",
+        fontWeight: "600",
+    },
+    startDealBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#2563EB",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 4,
+        gap: 6,
+    },
+    startDealBtnText: {
+        color: "#FFF",
+        fontSize: 13,
+        fontWeight: "800",
+    },
+
     actionBtnText: { color: "#FFF", fontSize: 13, fontWeight: "800" },
     counterBtnText: { color: "#2563EB", fontSize: 13, fontWeight: "800" },
     rejectBtnText: { color: "#DC2626", fontSize: 13, fontWeight: "800" },

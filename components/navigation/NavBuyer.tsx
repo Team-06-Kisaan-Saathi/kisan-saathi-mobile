@@ -62,6 +62,7 @@ export default function NavBuyer() {
         router.replace("/login");
     };
 
+
     return (
         <View style={[styles.container, { paddingTop: insets.top, backgroundColor: navBg }]}>
             <View style={styles.navbar}>

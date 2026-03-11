@@ -8,7 +8,12 @@ const LOCAL_HOST = `${LOCAL_IP}:5001`;
 const RENDER_HOST = "backend-e337.onrender.com";
 
 // ─── Smart URL Selector ───
-const IS_PRODUCTION = !__DEV__ || (typeof window !== 'undefined' && window.location.hostname.includes('github.io'));
+const IS_PRODUCTION = typeof window !== 'undefined' && (
+    window.location.hostname.includes('github.io') ||
+    window.location.hostname.includes('vercel.app') ||
+    window.location.hostname.includes('onrender.com') ||
+    (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1') && !window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/))
+);
 export const HOST = IS_PRODUCTION ? RENDER_HOST : LOCAL_HOST;
 
 

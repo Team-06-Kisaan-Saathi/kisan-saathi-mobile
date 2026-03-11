@@ -42,12 +42,18 @@ export default function MessagesList() {
     const loadMyId = async () => {
         try {
             const profileRaw = await AsyncStorage.getItem("profile");
+            const storedUserId = await AsyncStorage.getItem("userId");
             if (profileRaw) {
                 const p = JSON.parse(profileRaw);
-                setMyId(p._id || "");
+                setMyId(p._id || p.id || storedUserId || "");
+            } else if (storedUserId) {
+                setMyId(storedUserId);
             }
-        } catch { }
+        } catch (e) {
+            console.error("Error loading myId:", e);
+        }
     };
+
 
     const loadChats = async () => {
         try {
