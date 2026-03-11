@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     RefreshControl,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { apiFetch } from "../services/http";
@@ -33,6 +34,11 @@ export default function NotificationsScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        AsyncStorage.getItem("role").then(setUserRole);
+    }, []);
 
     const fetchNotifications = async () => {
         try {
@@ -121,17 +127,16 @@ export default function NotificationsScreen() {
                         params: { id: item.relatedEntityId }
                     } as any);
                 } else {
-                    router.push("/farmer-auctions" as any);
+                    router.push(userRole === "buyer" ? "/buyer-auctions" : "/farmer-auctions" as any);
                 }
                 break;
             case "chat":
                 router.push("/messages" as any);
                 break;
             case "deal":
-                router.push("/negotiations" as any);
+                router.push(userRole === "buyer" ? "/negotiations" : "/negotiations" as any);
                 break;
             default:
-                // Just stay on notification page or go to dashboard
                 break;
         }
     };
