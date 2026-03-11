@@ -257,6 +257,138 @@ export default function ProfileLocation() {
   // We render the list manually since dropdown lists are typically small.
   // -------------------------------------------------------------------------
 
+  const renderContent = () => (
+    <ScrollView
+      contentContainerStyle={s.content}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={s.brandHeader}>
+        <Text style={s.brandTitle}>
+          <Text style={s.brandGreen}>KISSAAN</Text>{" "}
+          <Text style={s.brandBlue}>SAATHI</Text>
+        </Text>
+        <Text style={s.brandTagline}>STEP 2 OF 2</Text>
+      </View>
+
+      <View style={s.formWrapper}>
+        <Text style={s.title}>Set Location</Text>
+        <Text style={s.subtitle}>This helps us show nearby mandis</Text>
+
+        <View style={s.actions}>
+          <Pressable
+            onPress={useGps}
+            disabled={loading}
+            style={({ pressed }) => [
+              s.primaryAction,
+              loading && s.actionDisabled,
+              pressed && !loading && s.actionPressed,
+            ]}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={s.primaryActionText}>Use Current GPS</Text>
+            )}
+          </Pressable>
+
+          <View style={s.divider}>
+            <View style={s.dividerLine} />
+            <Text style={s.dividerText}>or</Text>
+            <View style={s.dividerLine} />
+          </View>
+
+          <View>
+            <Pressable
+              onPress={toggleDropdown}
+              style={({ pressed }) => [
+                s.dropdownHeader,
+                editing && s.dropdownHeaderActive,
+                pressed && s.actionPressed,
+              ]}
+            >
+              <Text
+                style={[
+                  s.dropdownHeaderText,
+                  editing && s.dropdownHeaderTextActive,
+                ]}
+              >
+                Choose manually
+              </Text>
+              <Text
+                style={[s.dropdownChevron, editing && s.dropdownChevronActive]}
+              >
+                {editing ? "▲" : "▼"}
+              </Text>
+            </Pressable>
+
+            {editing && (
+              <View style={s.dropdownContent}>
+                <Text style={s.label}>Search mandis/places</Text>
+                <View style={s.pillInput}>
+                  <TextInput
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Type city or market"
+                    placeholderTextColor="#9CA3AF"
+                    style={s.inputStyle}
+                    editable={!loading}
+                    autoFocus
+                  />
+                </View>
+
+                <View style={{ maxHeight: 220 }}>
+                  {filteredPlaces.length === 0 ? (
+                    <Text style={s.emptyText}>
+                      {places.length === 0 ? "Loading places..." : "No matches"}
+                    </Text>
+                  ) : (
+                    <ScrollView
+                      style={{ maxHeight: 220 }}
+                      nestedScrollEnabled
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator
+                    >
+                      {filteredPlaces.map((item) => (
+                        <Pressable
+                          key={item.id}
+                          onPress={() => onPickPlace(item)}
+                          disabled={loading}
+                          style={({ pressed }) => [
+                            s.placeRow,
+                            pressed && !loading && s.actionPressed,
+                          ]}
+                        >
+                          <Text style={s.placeName}>{item.name}</Text>
+                          <Text style={s.placeMeta}>
+                            {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {selectedPlace ? (
+              <View style={s.selectedBox}>
+                <Text style={s.selectedText}>
+                  Selected: {selectedPlace.name}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {msg ? (
+          <View style={s.errorBox}>
+            <Text style={s.errorText}>{msg}</Text>
+          </View>
+        ) : null}
+      </View>
+    </ScrollView>
+  );
+
   return (
     <View style={s.root}>
       <ImageBackground
@@ -265,141 +397,17 @@ export default function ProfileLocation() {
         resizeMode="cover"
       >
         <View style={s.overlay} />
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-        >
-          <ScrollView
-            contentContainerStyle={s.content}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={s.brandHeader}>
-              <Text style={s.brandTitle}>
-                <Text style={s.brandGreen}>KISSAAN</Text>{" "}
-                <Text style={s.brandBlue}>SAATHI</Text>
-              </Text>
-              <Text style={s.brandTagline}>STEP 2 OF 2</Text>
-            </View>
-
-            <View style={s.formWrapper}>
-              <Text style={s.title}>Set Location</Text>
-              <Text style={s.subtitle}>This helps us show nearby mandis</Text>
-
-              <View style={s.actions}>
-                <Pressable
-                  onPress={useGps}
-                  disabled={loading}
-                  style={({ pressed }) => [
-                    s.primaryAction,
-                    loading && s.actionDisabled,
-                    pressed && !loading && s.actionPressed,
-                  ]}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={s.primaryActionText}>Use Current GPS</Text>
-                  )}
-                </Pressable>
-
-                <View style={s.divider}>
-                  <View style={s.dividerLine} />
-                  <Text style={s.dividerText}>or</Text>
-                  <View style={s.dividerLine} />
-                </View>
-
-                <View>
-                  <Pressable
-                    onPress={toggleDropdown}
-                    style={({ pressed }) => [
-                      s.dropdownHeader,
-                      editing && s.dropdownHeaderActive,
-                      pressed && s.actionPressed,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        s.dropdownHeaderText,
-                        editing && s.dropdownHeaderTextActive,
-                      ]}
-                    >
-                      Choose manually
-                    </Text>
-                    <Text
-                      style={[s.dropdownChevron, editing && s.dropdownChevronActive]}
-                    >
-                      {editing ? "▲" : "▼"}
-                    </Text>
-                  </Pressable>
-
-                  {editing && (
-                    <View style={s.dropdownContent}>
-                      <Text style={s.label}>Search mandis/places</Text>
-                      <View style={s.pillInput}>
-                        <TextInput
-                          value={searchQuery}
-                          onChangeText={setSearchQuery}
-                          placeholder="Type city or market"
-                          placeholderTextColor="#9CA3AF"
-                          style={s.inputStyle}
-                          editable={!loading}
-                          autoFocus
-                        />
-                      </View>
-
-                      <View style={{ maxHeight: 220 }}>
-                        {filteredPlaces.length === 0 ? (
-                          <Text style={s.emptyText}>
-                            {places.length === 0 ? "Loading places..." : "No matches"}
-                          </Text>
-                        ) : (
-                          <ScrollView
-                            style={{ maxHeight: 220 }}
-                            nestedScrollEnabled
-                            keyboardShouldPersistTaps="handled"
-                            showsVerticalScrollIndicator
-                          >
-                            {filteredPlaces.map((item) => (
-                              <Pressable
-                                key={item.id}
-                                onPress={() => onPickPlace(item)}
-                                disabled={loading}
-                                style={({ pressed }) => [
-                                  s.placeRow,
-                                  pressed && !loading && s.actionPressed,
-                                ]}
-                              >
-                                <Text style={s.placeName}>{item.name}</Text>
-                                <Text style={s.placeMeta}>
-                                  {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </ScrollView>
-                        )}
-                      </View>
-                    </View>
-                  )}
-
-                  {selectedPlace ? (
-                    <View style={s.selectedBox}>
-                      <Text style={s.selectedText}>
-                        Selected: {selectedPlace.name}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-
-              {msg ? (
-                <View style={s.errorBox}>
-                  <Text style={s.errorText}>{msg}</Text>
-                </View>
-              ) : null}
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+        <View style={{ flex: 1 }}>
+          {Platform.OS !== 'web' ? (
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+            >
+              {renderContent()}
+            </KeyboardAvoidingView>
+          ) : renderContent()}
+        </View>
       </ImageBackground>
     </View>
   );
