@@ -463,6 +463,8 @@ export default function MarketplaceScreen() {
         <Header
           coordsSource={coordsSource}
           onUpdateLocation={onUpdateLocation}
+          onRefresh={onRefresh}
+          loading={refreshing}
         />
 
         {/* Tabs */}
@@ -563,25 +565,49 @@ export default function MarketplaceScreen() {
   );
 }
 
-/** UI Components */
 function Header({
   coordsSource,
   onUpdateLocation,
+  onRefresh,
+  loading,
 }: {
   coordsSource: CoordsSource;
   onUpdateLocation: () => void;
+  onRefresh: () => void;
+  loading: boolean;
 }) {
   const { highContrast } = useTheme();
   return (
     <View style={[styles.header, highContrast && { backgroundColor: "#000", borderBottomColor: "#333" }]}>
-      <Text style={styles.headerTitle}>Marketplace</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={styles.headerTitle}>Marketplace</Text>
+        <Pressable
+          onPress={onRefresh}
+          disabled={loading}
+          style={({ pressed }) => [
+            {
+              backgroundColor: '#f1f5f9',
+              padding: 8,
+              borderRadius: 20,
+              opacity: (pressed || loading) ? 0.6 : 1
+            }
+          ]}
+        >
+          <RefreshCw size={20} color="#2d6a4f" />
+        </Pressable>
+      </View>
 
       <Text style={styles.headerSub}>
         Today’s mandi prices, nearby markets & comparisons
       </Text>
-      <Text style={styles.headerHint}>
-        Location source: {coordsSource.toUpperCase()}
-      </Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+        <Text style={styles.headerHint}>
+          Location source: {coordsSource.toUpperCase()}
+        </Text>
+        <Pressable onPress={onUpdateLocation}>
+          <Text style={{ color: '#2d6a4f', fontSize: 12, fontWeight: '700' }}>Update Location</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
