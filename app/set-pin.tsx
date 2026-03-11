@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { useTheme } from '../hooks/ThemeContext';
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,6 +24,7 @@ type SignupCompleteResponse = {
 };
 
 export default function SetPinScreen() {
+  const { highContrast } = useTheme();
   const { t } = useTranslation();
 
   const params = useLocalSearchParams<{
@@ -61,81 +63,106 @@ export default function SetPinScreen() {
     });
   };
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.root}>
-        <ImageBackground
-          source={require("../assets/images/f.jpg")}
-          style={styles.bg}
-          resizeMode="cover"
-        >
-          <View style={styles.overlay} />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
-          >
+  const renderForm = () => (
+    <View style={styles.formWrapper}>
+      <Text style={styles.cardHeader}>Create Access PIN</Text>
+      <Text style={styles.instruction}>
+        Establish a secure PIN to protect your account and transactions.
+      </Text>
+
+      <Text style={[styles.label, highContrast && { color: "#CCC" }]}>New PIN</Text>
+      <View style={styles.pillInput}>
+        <TextInput
+          style={styles.input}
+          value={pin}
+          onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
+          placeholder="••••"
+          placeholderTextColor="#94A3B8"
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+          editable={!loading}
+        />
+      </View>
+
+      <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
+      <View style={styles.pillInput}>
+        <TextInput
+          style={styles.input}
+          value={confirmPin}
+          onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
+          placeholder="••••"
+          placeholderTextColor="#94A3B8"
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+          editable={!loading}
+          autoComplete="off"
+        />
+      </View>
+
+      {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+
+      <TouchableOpacity
+        style={[styles.saveBtn, loading && styles.btnDisabled]}
+        onPress={onSave}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveBtnText}>Secure Account</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderContent = () => (
+    <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
+      <ImageBackground
+        source={require("../assets/images/f.jpg")}
+        style={styles.bg}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay} />
+        {Platform.OS === 'web' ? (
+          <View style={styles.container}>
             <View style={styles.brandHeader}>
               <Text style={styles.brandTitle}>
-                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
+                <Text style={styles.brandGreen}>KISSAAN</Text> {" "}
                 <Text style={styles.brandBlue}>SAATHI</Text>
               </Text>
               <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
             </View>
-
-            <View style={styles.formWrapper}>
-              <Text style={styles.cardHeader}>Create Access PIN</Text>
-              <Text style={styles.instruction}>
-                Establish a secure PIN to protect your account and transactions.
+            {renderForm()}
+          </View>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+          >
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>
+                <Text style={styles.brandGreen}>KISSAAN</Text> {" "}
+                <Text style={styles.brandBlue}>SAATHI</Text>
               </Text>
-
-              <Text style={styles.label}>New PIN</Text>
-              <View style={styles.pillInput}>
-                <TextInput
-                  style={styles.input}
-                  value={pin}
-                  onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
-                  placeholder="••••"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  maxLength={6}
-                  editable={!loading}
-                />
-              </View>
-
-              <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
-              <View style={styles.pillInput}>
-                <TextInput
-                  style={styles.input}
-                  value={confirmPin}
-                  onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
-                  placeholder="••••"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  maxLength={6}
-                  editable={!loading}
-                />
-              </View>
-
-              {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
-
-              <TouchableOpacity
-                style={[styles.saveBtn, loading && styles.btnDisabled]}
-                onPress={onSave}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.saveBtnText}>Secure Account</Text>
-                )}
-              </TouchableOpacity>
+              <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
             </View>
+            {renderForm()}
           </KeyboardAvoidingView>
-        </ImageBackground>
-      </View>
+        )}
+      </ImageBackground>
+    </View>
+  );
+
+  if (Platform.OS === 'web') {
+    return renderContent();
+  }
+
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      {renderContent()}
     </TouchableWithoutFeedback>
   );
 }
@@ -153,6 +180,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
+    width: "100%",
+    alignSelf: "center",
   },
   brandHeader: {
     alignItems: "center",
@@ -174,6 +203,7 @@ const styles = StyleSheet.create({
   },
   formWrapper: {
     width: "100%",
+    maxWidth: 400,
   },
   cardHeader: {
     fontSize: 20,
@@ -204,6 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 16,
     height: 48,
+    ...(Platform.OS === 'web' && { cursor: 'text' } as any),
   },
   input: {
     flex: 1,
@@ -211,7 +242,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#333",
     textAlign: "center",
-    letterSpacing: 8,
+    letterSpacing: Platform.OS === 'web' ? 0 : 8,
+    height: "100%",
+    width: "100%",
+    ...(Platform.OS === 'web' && { outlineStyle: 'none', cursor: 'text' } as any),
   },
   errorText: {
     color: "#b00020",

@@ -13,19 +13,23 @@ import {
   Animated,
   Pressable,
 } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import LottieView from "lottie-react-native";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavBuyer from "../components/navigation/NavBuyer";
+import { useTheme } from "../hooks/ThemeContext";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
 import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
+import { cleanLocation } from "../utils/formatters";
 
 const { width } = Dimensions.get("window");
 
 export default function BuyerDashboard() {
+  const { highContrast } = useTheme();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +39,12 @@ export default function BuyerDashboard() {
 
   const loadData = async () => {
     try {
+      // 1. Try to load cached user first for instant UI
+      const cachedUser = await AsyncStorage.getItem("profile");
+      if (cachedUser) {
+        setUser(JSON.parse(cachedUser));
+      }
+
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         router.replace("/login");
@@ -42,7 +52,20 @@ export default function BuyerDashboard() {
       }
       const res = await getProfile();
       if (res?.success) {
-        setUser(res.user);
+        // --- RACE CONDITION PROTECTION ---
+        // If we just updated the profile in the last 10 seconds, ignore the server's data
+        // because it might still be propagating (stale cache).
+        const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+        const now = Date.now();
+        const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+        if (!isFresh) {
+          setUser(res.user);
+          await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+          if (res.user.name) {
+            await AsyncStorage.setItem("userName", res.user.name);
+          }
+        }
       }
 
       // --- DYNAMIC DATA LOGIC ---
@@ -124,9 +147,11 @@ export default function BuyerDashboard() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -134,55 +159,71 @@ export default function BuyerDashboard() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <NavBuyer />
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+        contentContainerStyle={[styles.scrollContent, highContrast && { backgroundColor: "#000" }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Welcome Header */}
-        <View style={styles.header}>
-          <Text style={styles.welcomeText} numberOfLines={1}>Welcome, {user?.name || "Buyer"} </Text>
-          <Text style={styles.subtext}>Find the best deals & place your bids</Text>
+        <View style={[styles.header, highContrast ? { backgroundColor: "#000", borderBottomColor: "#333" } : { backgroundColor: "transparent" }, { paddingTop: 40, marginBottom: 40, position: 'relative', minHeight: 140, justifyContent: 'center' }]}>
+          <View style={{ width: '65%', paddingRight: 10 }}>
+            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 20 }]} numberOfLines={1}>Welcome,</Text>
+            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 2 }]} numberOfLines={1}>
+              {user?.name || "..."}
+            </Text>
+            <Text style={[styles.subtext, highContrast && { color: "#CCC" }, { marginTop: 8 }]} numberOfLines={1}>Find the best deals & place bids</Text>
+          </View>
+          <View style={{ position: 'absolute', right: 0, top: 20, width: 140, height: 140 }}>
+            <LottieView
+              source={require("../assets/images/busin.json")}
+              autoPlay
+              loop
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* BID ACTIVITY */}
         {bidStats.active > 0 && (
           <>
-            <SectionHeader title="BID ACTIVITY" />
+            <SectionHeader title="BID ACTIVITY" highContrast={highContrast} />
             <View style={styles.statsRow}>
-              <View style={[styles.statCard, { borderLeftColor: '#2563EB' }]}>
+              <View style={[styles.statCard, { borderLeftColor: '#2563EB' }, highContrast && { backgroundColor: "#111", borderTopColor: "#333", borderRightColor: "#333", borderBottomColor: "#333", borderWidth: 1 }]}>
                 <Text style={styles.statNum}>{bidStats.active}</Text>
-                <Text style={styles.statLab}>Active Bids</Text>
+                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>Active Bids</Text>
               </View>
-              <View style={[styles.statCard, { borderLeftColor: '#10B981' }]}>
+              <View style={[styles.statCard, { borderLeftColor: '#10B981' }, highContrast && { backgroundColor: "#111", borderTopColor: "#333", borderRightColor: "#333", borderBottomColor: "#333", borderWidth: 1 }]}>
                 <Text style={[styles.statNum, { color: '#10B981' }]}>{bidStats.leading}</Text>
-                <Text style={styles.statLab}>Leading</Text>
+                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>Leading</Text>
               </View>
-              <View style={[styles.statCard, { borderLeftColor: '#D97706' }]}>
+              <View style={[styles.statCard, { borderLeftColor: '#D97706' }, highContrast && { backgroundColor: "#111", borderTopColor: "#333", borderRightColor: "#333", borderBottomColor: "#333", borderWidth: 1 }]}>
                 <Text style={[styles.statNum, { color: '#D97706' }]}>{bidStats.won}</Text>
-                <Text style={styles.statLab}>Won</Text>
+                <Text style={[styles.statLab, highContrast && { color: "#CCC" }]}>Won</Text>
               </View>
             </View>
           </>
         )}
 
         {/* TODAY'S TOP PRICE */}
-        <SectionHeader title="TODAY'S TOP PRICE" />
-        <View style={styles.topPriceCard}>
+        <SectionHeader title="TODAY'S TOP PRICE" highContrast={highContrast} />
+        <View style={[styles.topPriceCard, highContrast && { backgroundColor: "#111", borderColor: "#FFF", borderWidth: 1 }]}>
           <View style={styles.priceHeader}>
-            <View>
-              <Text style={styles.cropName}>{topPrice?.crop || "Wheat"}</Text>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.cropName, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || "Wheat"}</Text>
               <View style={styles.mandiRow}>
                 <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={styles.mandiName} numberOfLines={1}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
+                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>{cleanLocation(topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi")}</Text>
               </View>
-              <Text style={styles.unitText}>per quintal</Text>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.priceVal}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
+            <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <Text style={[styles.priceVal, highContrast && { color: "#FFF" }]}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
+                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4, marginTop: 0 }]}>/ quintal</Text>
+              </View>
               <View style={styles.trendRow}>
                 <MaterialCommunityIcons
                   name={topPrice?.isUp !== false ? "trending-up" : "trending-down"}
@@ -214,30 +255,33 @@ export default function BuyerDashboard() {
         </View>
 
         {/* BUY & BID */}
-        <SectionHeader title="BUY & BID" />
+        <SectionHeader title="BUY & BID" highContrast={highContrast} />
         <View style={styles.grid}>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
               title="Live Auctions"
               subtitle="Browse & bid on crops"
               icon="flash"
-              color="#3B83F6"
+              color="#FB923C"
+              highContrast={highContrast}
               onPress={() => router.push("/buyer-auctions" as any)}
             />
             <BuySellCard
               title="My Bids"
               subtitle="Track your bids"
               icon="list"
-              color="#7C3AED"
+              color="#FBBF24"
+              highContrast={highContrast}
               onPress={() => router.push("/my-bids" as any)}
             />
           </View>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
               title="Sellers"
               subtitle="Verified Directory"
               icon="people"
-              color="#F59E0B"
+              color="#94A3B8"
+              highContrast={highContrast}
               onPress={() => router.push("/buyer-marketplace")}
             />
             <BuySellCard
@@ -245,34 +289,31 @@ export default function BuyerDashboard() {
               subtitle="Your negotiations"
               icon="handshake-outline"
               iconFamily="MaterialCommunityIcons"
-              color="#111827"
+              color="#A3A3A3"
+              highContrast={highContrast}
               onPress={() => router.push("/not-available")}
             />
           </View>
         </View>
 
         {/* HELP & SUPPORT */}
-        <SectionHeader title="HELP & SUPPORT" />
+        <SectionHeader title="HELP & SUPPORT" highContrast={highContrast} />
         <View style={styles.supportList}>
           <SupportItem
             title="Messages"
             subtitle="Chat with farmers"
             icon="chatbubble-ellipses"
             color="#3B82F6"
+            highContrast={highContrast}
             onPress={() => router.push("/messages")}
           />
-          <SupportItem
-            title="Call Support"
-            subtitle="Talk to an expert"
-            icon="call"
-            color="#F59E0B"
-            onPress={() => router.push("/call-support")}
-          />
+
           <SupportItem
             title="Settings"
             subtitle="Account & preferences"
             icon="settings"
             color="#64748B"
+            highContrast={highContrast}
             onPress={() => router.push("/settings")}
           />
           <SupportItem
@@ -280,6 +321,7 @@ export default function BuyerDashboard() {
             subtitle="FAQs & guides"
             icon="help-circle"
             color="#A855F7"
+            highContrast={highContrast}
             onPress={() => Alert.alert("Help Center", "Redirecting to help portal...")}
           />
         </View>
@@ -288,13 +330,13 @@ export default function BuyerDashboard() {
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionTitle}>{title}</Text>;
+function SectionHeader({ title, highContrast }: { title: string; highContrast: boolean }) {
+  return <Text style={[styles.sectionTitle, highContrast && { color: "#FFF" }]}>{title}</Text>;
 }
 
-function MarketCard({ title, subtitle, icon, color, onPress }: any) {
+function MarketCard({ title, subtitle, icon, color, onPress, highContrast }: any) {
   return (
-    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }, highContrast && { backgroundColor: "#222", borderColor: color, borderWidth: 2 }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <Text style={styles.cardTitle}>{title}</Text>
       <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
@@ -302,9 +344,9 @@ function MarketCard({ title, subtitle, icon, color, onPress }: any) {
   );
 }
 
-function BuySellCard({ title, subtitle, icon, color, onPress, iconFamily }: any) {
+function BuySellCard({ title, subtitle, icon, color, onPress, iconFamily, highContrast }: any) {
   return (
-    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }, highContrast && { backgroundColor: "#222", borderColor: color, borderWidth: 2 }]} onPress={onPress}>
       {iconFamily === "MaterialCommunityIcons" ? (
         <MaterialCommunityIcons name={icon} size={24} color="#FFF" />
       ) : (
@@ -318,15 +360,15 @@ function BuySellCard({ title, subtitle, icon, color, onPress, iconFamily }: any)
   );
 }
 
-function SupportItem({ title, subtitle, icon, color, onPress }: any) {
+function SupportItem({ title, subtitle, icon, color, onPress, highContrast }: any) {
   return (
-    <TouchableOpacity style={styles.supportItem} onPress={onPress}>
+    <TouchableOpacity style={[styles.supportItem, highContrast && { backgroundColor: "#111", borderBottomColor: "#333" }]} onPress={onPress}>
       <View style={[styles.supportIcon, { backgroundColor: color + '15' }]}>
         <Ionicons name={icon} size={22} color={color} />
       </View>
       <View style={{ flex: 1, marginLeft: 16 }}>
-        <Text style={styles.supportTitle}>{title}</Text>
-        <Text style={styles.supportSubtitle}>{subtitle}</Text>
+        <Text style={[styles.supportTitle, highContrast && { color: "#FFF" }]}>{title}</Text>
+        <Text style={[styles.supportSubtitle, highContrast && { color: "#CCC" }]}>{subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
     </TouchableOpacity>
@@ -339,7 +381,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-  welcomeText: { fontSize: 26, fontWeight: "900", color: "#1E3A8A" },
+  welcomeText: { color: "#0F172A" }, // Dark Navy Blue close to black
   subtext: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
 
   sectionTitle: {
@@ -355,23 +397,21 @@ const styles = StyleSheet.create({
   topPriceCard: {
     backgroundColor: "#FFF",
     marginHorizontal: 20,
-    borderRadius: 4,
-    borderTopWidth: 6,
-    borderTopColor: "#2563EB",
+    borderRadius: 16,
     padding: 24,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8
   },
   priceHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  cropName: { fontSize: 28, fontWeight: "900", color: "#0F172A" },
+  cropName: { fontSize: 22, fontWeight: "900", color: "#0F172A" },
   mandiRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  mandiName: { fontSize: 15, color: "#64748B", marginLeft: 4, fontWeight: "600" },
+  mandiName: { fontSize: 13, color: "#64748B", marginLeft: 4, fontWeight: "600" },
   unitText: { fontSize: 14, color: "#94A3B8", marginTop: 4, fontWeight: "500" },
-  priceVal: { fontSize: 32, fontWeight: "900", color: "#0F172A" },
+  priceVal: { fontSize: 24, fontWeight: "900", color: "#0F172A" },
   trendRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   trendText: { fontSize: 14, color: "#22C55E", fontWeight: "700", marginLeft: 4 },
 
@@ -383,7 +423,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   seeAllText: { color: "#FFF", fontWeight: "800", fontSize: 15 },
   buyNowBtn: {
@@ -393,18 +433,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   buyNowText: { color: "#2563EB", fontWeight: "800", fontSize: 15 },
 
   grid: { paddingHorizontal: 20, gap: 12, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
 
-  marketCard: { flex: 1, padding: 20, borderRadius: 0, justifyContent: "center", minHeight: 120 },
+  marketCard: { flex: 1, padding: 20, borderRadius: 16, justifyContent: "center", minHeight: 120 },
   cardTitle: { color: "#FFF", fontSize: 18, fontWeight: "900", marginTop: 12 },
   cardSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "600", marginTop: 2 },
 
-  buySellCard: { flex: 1, padding: 20, borderRadius: 0, minHeight: 120 },
+  buySellCard: { flex: 1, padding: 20, borderRadius: 16, minHeight: 120 },
 
   supportList: { marginHorizontal: 20, backgroundColor: "#FFF", borderRadius: 12, overflow: "hidden", marginBottom: 40, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   supportItem: {

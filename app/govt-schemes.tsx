@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavAuto from "../components/navigation/NavAuto";
@@ -23,6 +24,7 @@ import { govtService, Scheme } from "../services/govtService";
  */
 
 export default function GovtSchemesScreen() {
+  const { highContrast } = useTheme();
     const [schemes, setSchemes] = useState<Scheme[]>([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function GovtSchemesScreen() {
     );
 
     const renderItem = ({ item }: { item: Scheme }) => (
-        <View style={styles.card}>
+        <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
             <View style={styles.cardHeader}>
                 <View style={styles.categoryBadge}>
                     <Text style={styles.categoryText}>{item.category}</Text>
@@ -63,7 +65,7 @@ export default function GovtSchemesScreen() {
                 <Ionicons name="bookmark-outline" size={20} color="#64748b" />
             </View>
 
-            <Text style={styles.title}>{item.title}</Text>
+            <Text style={[styles.title, highContrast && { color: "#FFF" }]}>{item.title}</Text>
             <Text style={styles.desc}>{item.description}</Text>
 
             <View style={styles.detailsBox}>
@@ -87,7 +89,7 @@ export default function GovtSchemesScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
                 title: "Govt Schemes",
                 headerShadowVisible: false,
@@ -100,6 +102,7 @@ export default function GovtSchemesScreen() {
                 <Ionicons name="search" size={20} color="#94a3b8" />
                 <TextInput
                     placeholder="Search schemes or categories..."
+                    placeholderTextColor="#94A3B8"
                     value={search}
                     onChangeText={setSearch}
                     style={styles.searchInput}
@@ -107,7 +110,7 @@ export default function GovtSchemesScreen() {
             </View>
 
             {loading && !refreshing ? (
-                <View style={styles.center}>
+                <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                     <ActivityIndicator size="large" color="#1e3a8a" />
                 </View>
             ) : (

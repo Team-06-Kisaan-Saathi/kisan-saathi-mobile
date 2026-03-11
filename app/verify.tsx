@@ -1,3 +1,4 @@
+import { useTheme } from '../hooks/ThemeContext';
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,7 @@ import {
   TouchableWithoutFeedback,
   View,
   ImageBackground,
+  Alert,
 } from "react-native";
 import { ENDPOINTS } from "../services/api";
 import { apiFetch } from "../services/http";
@@ -25,12 +27,15 @@ type VerifyOtpResponse = {
 };
 
 export default function VerifyScreen() {
+  const { highContrast, fontScale } = useTheme();
+
   const { t } = useTranslation();
 
   const params = useLocalSearchParams<{
     phone?: string;
     name?: string;
     role?: string;
+    otp?: string;
   }>();
 
   const phone = String(params.phone ?? "");
@@ -46,9 +51,23 @@ export default function VerifyScreen() {
   const canSubmit = otp.length === 6 && !digits.includes("");
 
   useEffect(() => {
-    const id = setTimeout(() => inputs.current[0]?.focus(), 150);
-    return () => clearTimeout(id);
-  }, []);
+    const focusTimer = setTimeout(() => inputs.current[0]?.focus(), 500);
+
+    if (params.otp) {
+      const alertTimer = setTimeout(() => {
+        if (Platform.OS === 'web') {
+          window.alert(`Simulated Verification Code: ${params.otp}`);
+        } else {
+          Alert.alert("Simulated Verification", `Code: ${params.otp}`);
+        }
+      }, 800);
+      return () => {
+        clearTimeout(focusTimer);
+        clearTimeout(alertTimer);
+      };
+    }
+    return () => clearTimeout(focusTimer);
+  }, [params.otp]);
 
   const setDigit = (index: number, value: string) => {
     const v = value.replace(/\D/g, "").slice(-1);
@@ -87,9 +106,6 @@ export default function VerifyScreen() {
       });
 
       if (res.success) {
-        // If the backend returns a token or user info here, store it.
-        // Usually verify-otp might return a token if it's the final step, 
-        // but here it goes to set-pin.
         router.replace({ pathname: "/set-pin", params: { phone, name, role } });
       } else {
         setMsg(res.message || "Invalid verification code");
@@ -101,75 +117,115 @@ export default function VerifyScreen() {
     }
   };
 
+  const resendCode = async () => {
+    if (loading) return;
+    try {
+      setLoading(true);
+      setMsg("");
+      const res = await apiFetch<any>(ENDPOINTS.AUTH.SEND_OTP, {
+        method: "POST",
+        body: JSON.stringify({ phone }),
+      });
+
+      if (res.success) {
+        if (res.otp) {
+          if (Platform.OS === 'web') {
+            window.alert(`New Verification Code: ${res.otp}`);
+          } else {
+            Alert.alert("Simulated OTP", `New verification code: ${res.otp}`);
+          }
+        } else {
+          Alert.alert("Success", "A new code has been sent!");
+        }
+        setDigits(["", "", "", "", "", ""]);
+        inputs.current[0]?.focus();
+      } else {
+        setMsg(res.message || "Failed to resend code");
+      }
+    } catch (e: any) {
+      setMsg(e.message || "Error resending code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderContent = () => (
+    <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
+      <ImageBackground
+        source={require("../assets/images/f.jpg")}
+        style={styles.bg}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+        >
+          <View style={styles.brandHeader}>
+            <Text style={styles.brandTitle}>
+              <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
+              <Text style={styles.brandBlue}>SAATHI</Text>
+            </Text>
+            <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
+          </View>
+
+          <View style={styles.formWrapper}>
+            <Text style={styles.cardHeader}>Verify Identity</Text>
+            <Text style={styles.instruction}>
+              {"We've sent a 6-digit code to"}{" "}
+              <Text style={styles.phoneHighlight}>+91 {phone}</Text>
+            </Text>
+
+            <View style={styles.otpContainer}>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <TextInput
+                  key={i}
+                  ref={(r) => { inputs.current[i] = r; }}
+                  style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
+                  value={digits[i]}
+                  onChangeText={(v) => setDigit(i, v)}
+                  onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  textAlign="center"
+                  editable={!loading}
+                />
+              ))}
+            </View>
+
+            {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+
+            <TouchableOpacity
+              onPress={verify}
+              disabled={!canSubmit || loading}
+              style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.verifyBtnText}>Verify & Continue</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>{"Haven't received yet?"}</Text>
+              <TouchableOpacity onPress={resendCode} disabled={loading}>
+                <Text style={styles.resendText}>Resend Code</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </View>
+  );
+
+  if (Platform.OS === 'web') {
+    return renderContent();
+  }
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.root}>
-        <ImageBackground
-          source={require("../assets/images/f.jpg")}
-          style={styles.bg}
-          resizeMode="cover"
-        >
-          <View style={styles.overlay} />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
-          >
-            <View style={styles.brandHeader}>
-              <Text style={styles.brandTitle}>
-                <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
-                <Text style={styles.brandBlue}>SAATHI</Text>
-              </Text>
-              <Text style={styles.brandTagline}>VERIFICATION REQUIRED</Text>
-            </View>
-
-            <View style={styles.formWrapper}>
-              <Text style={styles.cardHeader}>Verify Identity</Text>
-              <Text style={styles.instruction}>
-                We've sent a 6-digit code to{" "}
-                <Text style={styles.phoneHighlight}>+91 {phone}</Text>
-              </Text>
-
-              <View style={styles.otpContainer}>
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <TextInput
-                    key={i}
-                    ref={(r) => { inputs.current[i] = r; }}
-                    style={[styles.otpInput, digits[i] && styles.otpInputFilled]}
-                    value={digits[i]}
-                    onChangeText={(v) => setDigit(i, v)}
-                    onKeyPress={({ nativeEvent }) => onKeyPress(i, nativeEvent.key)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    textAlign="center"
-                    editable={!loading}
-                  />
-                ))}
-              </View>
-
-              {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
-
-              <TouchableOpacity
-                onPress={verify}
-                disabled={!canSubmit || loading}
-                style={[styles.verifyBtn, (!canSubmit || loading) && styles.btnDisabled]}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.verifyBtnText}>Verify & Continue</Text>
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>Haven't received yet?</Text>
-                <TouchableOpacity onPress={() => { }} disabled={loading}>
-                  <Text style={styles.resendText}>Resend Code</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </ImageBackground>
-      </View>
+      {renderContent()}
     </TouchableWithoutFeedback>
   );
 }
@@ -187,6 +243,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
+    width: "100%",
+    alignSelf: "center",
   },
   brandHeader: {
     alignItems: "center",
@@ -208,6 +266,7 @@ const styles = StyleSheet.create({
   },
   formWrapper: {
     width: "100%",
+    maxWidth: 400,
   },
   cardHeader: {
     fontSize: 20,
@@ -231,16 +290,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 20,
-    gap: 10,
+    gap: 8,
+    width: "100%",
   },
   otpInput: {
-    flex: 1,
+    width: 44,
     height: 52,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 30,
-    fontSize: 20,
+    borderRadius: 12,
+    fontSize: 22,
     fontWeight: "800",
     color: "#333",
   },

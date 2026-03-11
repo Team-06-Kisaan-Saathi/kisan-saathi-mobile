@@ -100,8 +100,8 @@ export default function LoginScreen() {
             />
 
             <Text style={styles.appName}>
-              <Text style={styles.green}>KISSAAN</Text>{" "}
-              <Text style={styles.blue}>SAATHI</Text>
+              <Text style={styles.green}>AGRI</Text>{" "}
+              <Text style={styles.blue}>BAZAAR</Text>
             </Text>
           </View>
 

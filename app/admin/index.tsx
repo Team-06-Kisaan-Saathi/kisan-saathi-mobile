@@ -69,6 +69,19 @@ export default function AdminDashboardHome() {
                         </View>
                     </Card>
                 )}
+                {stats?.pendingSupportRequests > 0 && (
+                    <Card style={[styles.approvalCard, { backgroundColor: COLORS.warning, marginTop: stats?.pendingApprovals > 0 ? 12 : 0 }] as any}>
+                        <View style={styles.row}>
+                            <View>
+                                <Text style={styles.approvalTitle}>Support Requests</Text>
+                                <Text style={[styles.approvalCount, { color: '#FFFBEB' }]}>{stats.pendingSupportRequests} callback requests pending</Text>
+                            </View>
+                            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/admin/support-requests")}>
+                                <Text style={[styles.actionBtnText, { color: COLORS.warning }]}>View</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Card>
+                )}
 
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Weekly Revenue Overview</Text>

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavAuto from "../components/navigation/NavAuto";
@@ -22,6 +23,7 @@ import { fetchMandiPrices, MandiPriceDoc } from "../services/mandiService";
  */
 
 export default function MarketInsightsScreen() {
+    const { highContrast } = useTheme();
     const [prices, setPrices] = useState<MandiPriceDoc[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -62,7 +64,7 @@ export default function MarketInsightsScreen() {
             )}
             <View style={styles.priceRow}>
                 <View style={styles.mandiInfo}>
-                    <Text style={styles.mandiName}>{item.mandi || "Local Mandi"}</Text>
+                    <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]}>{item.mandi || "Local Mandi"}</Text>
                     <Text style={styles.locationName}>{item.locationName || "Unknown"}</Text>
                 </View>
                 <View style={styles.priceInfo}>
@@ -74,7 +76,7 @@ export default function MarketInsightsScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{
                 title: "Price Insights",
                 headerShadowVisible: false,
@@ -99,7 +101,7 @@ export default function MarketInsightsScreen() {
             </View>
 
             {loading && !refreshing ? (
-                <View style={styles.center}>
+                <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                     <ActivityIndicator size="large" color="#1e3a8a" />
                 </View>
             ) : (
@@ -113,7 +115,7 @@ export default function MarketInsightsScreen() {
                         <View style={styles.emptyContainer}>
                             <Ionicons name="analytics-outline" size={64} color="#e2e8f0" />
                             <Text style={styles.emptyTitle}>No Data Available</Text>
-                            <Text style={styles.emptySub}>We don't have recent prices for this crop yet.</Text>
+                            <Text style={styles.emptySub}>{"We don't have recent prices for this crop yet."}</Text>
                         </View>
                     }
                 />

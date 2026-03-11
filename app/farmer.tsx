@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import NavFarmer from "../components/navigation/NavFarmer";
+import { cleanLocation } from "../utils/formatters";
 
 import {
   ActivityIndicator,
@@ -78,7 +79,7 @@ function FarmerProfileContent() {
           </Text>
           <Text style={{ marginTop: 8, color: "#64748b" }}>
             This page reads from AsyncStorage key:{" "}
-            <Text style={{ fontWeight: "800" }}>"profile"</Text>. If you never
+            <Text style={{ fontWeight: "800" }}>{"\"profile\""}</Text>. If you never
             stored it after login, it will be empty.
           </Text>
 
@@ -109,12 +110,12 @@ function FarmerProfileContent() {
         />
         <Row
           label="Location"
-          value={
+          value={cleanLocation(
             profile?.location?.address ||
             profile?.location?.name ||
             profile?.location ||
             "Not set"
-          }
+          )}
         />
       </View>
 

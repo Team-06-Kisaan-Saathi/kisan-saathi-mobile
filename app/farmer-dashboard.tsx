@@ -1,19 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  SafeAreaView,
-  Animated,
-  Pressable,
-} from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, RefreshControl, Alert, SafeAreaView, Animated, Pressable } from "react-native";
+import LottieView from "lottie-react-native";
+import { useTheme } from "../hooks/ThemeContext";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import NavFarmer from "../components/navigation/NavFarmer";
 
@@ -22,10 +11,12 @@ import { getProfile } from "../services/userServices";
 import { fetchMandiPrices } from "../services/mandiService";
 import { apiFetch } from "../services/http";
 import { ENDPOINTS } from "../services/api";
+import { cleanLocation } from "../utils/formatters";
 
 const { width } = Dimensions.get("window");
 
 export default function FarmerDashboard() {
+  const { highContrast, fontScale } = useTheme();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +26,12 @@ export default function FarmerDashboard() {
 
   const loadData = async () => {
     try {
+      // 1. Try to load cached user first for instant UI
+      const cachedUser = await AsyncStorage.getItem("profile");
+      if (cachedUser) {
+        setUser(JSON.parse(cachedUser));
+      }
+
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         router.replace("/login");
@@ -42,7 +39,20 @@ export default function FarmerDashboard() {
       }
       const res = await getProfile();
       if (res?.success) {
-        setUser(res.user);
+        // --- RACE CONDITION PROTECTION ---
+        // If we just updated the profile in the last 10 seconds, ignore the server's data
+        // because it might still be propagating (stale cache).
+        const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+        const now = Date.now();
+        const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+        if (!isFresh) {
+          setUser(res.user);
+          await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+          if (res.user.name) {
+            await AsyncStorage.setItem("userName", res.user.name);
+          }
+        }
       }
 
       // --- DYNAMIC DATA LOGIC ---
@@ -90,7 +100,7 @@ export default function FarmerDashboard() {
           });
 
           const rec = aiRes.data.recommendation;
-          setAiInsight(rec.length > 50 ? rec.substring(0, 50) + "..." : rec);
+          setAiInsight(rec.length > 35 ? rec.substring(0, 35) + "..." : rec);
         } else {
           // Standard fetch if AI fails
           const resPrices = await fetchMandiPrices({ crop: cropToLoad, limit: 1 });
@@ -109,9 +119,11 @@ export default function FarmerDashboard() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -119,37 +131,55 @@ export default function FarmerDashboard() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, highContrast && { backgroundColor: "#000" }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <NavFarmer />
 
-
       <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+        contentContainerStyle={[styles.scrollContent, highContrast && { backgroundColor: "#000" }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Jai Kisan Header */}
-        <View style={styles.header}>
-          <Text style={styles.welcomeText} numberOfLines={1}>Jai Kisan, {user?.name || "Farmer"} </Text>
-          <Text style={styles.subtext}>Today's prices & market update</Text>
+        <View style={[styles.header, highContrast ? { backgroundColor: "#000", borderBottomColor: "#333" } : { backgroundColor: "transparent" }, { paddingTop: 40, marginBottom: 40, position: 'relative', minHeight: 140, justifyContent: 'center' }]}>
+          <View style={{ width: '65%', paddingRight: 10 }}>
+            <Text style={[styles.welcomeText, highContrast && { color: "#FFF" }, { fontWeight: "600", fontSize: 24 }]} numberOfLines={1}>Jai Kisan,</Text>
+            <Text style={[styles.welcomeText, highContrast ? { color: "#FFF" } : { color: "#000" }, { fontWeight: "800", fontSize: 38, marginTop: 4 }]} numberOfLines={1}>
+              {user?.name || "..."}
+            </Text>
+          </View>
+          <View style={{ position: 'absolute', right: 0, top: 20, width: 140, height: 140 }}>
+            <LottieView
+              source={require("../assets/images/farm.json")}
+              autoPlay
+              loop
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
         {/* TODAY'S TOP PRICE */}
         <SectionHeader title="TODAY'S TOP PRICE" />
-        <View style={styles.topPriceCard}>
-          <View style={styles.priceHeader}>
-            <View>
-              <Text style={styles.cropName}>{topPrice?.crop || "Wheat"}</Text>
-              <View style={styles.mandiRow}>
-                <Ionicons name="location-sharp" size={14} color="#94A3B8" />
-                <Text style={styles.mandiName} numberOfLines={1}>{topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi"}</Text>
+        <View style={[styles.topPriceCard, highContrast && { backgroundColor: "#111", borderColor: "#FFF", borderWidth: 1 }]}>
+          <View style={{ flexDirection: 'column' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 16 }}>
+              <Text style={[styles.cropName, { flex: 1 }, highContrast && { color: "#FFF" }]} numberOfLines={1}>{topPrice?.crop || "Wheat"}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <Text style={[styles.priceVal, highContrast && { color: "#FFF" }]}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
+                <Text style={[styles.unitText, highContrast && { color: "#CCC" }, { marginLeft: 4 }]}>/ quintal</Text>
               </View>
-              <Text style={styles.unitText}>per quintal</Text>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.priceVal}>₹{topPrice?.pricePerQuintal?.toLocaleString() || "2,340"}</Text>
-              <View style={styles.trendRow}>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+              <View style={[styles.mandiRow, { marginTop: 0, flex: 1 }]}>
+                <Ionicons name="location-sharp" size={14} color="#94A3B8" />
+                <Text style={[styles.mandiName, highContrast && { color: "#CCC" }]} numberOfLines={1}>
+                  {cleanLocation(topPrice?.locationName || topPrice?.mandi || "Azadpur Mandi")}
+                </Text>
+              </View>
+
+              <View style={[styles.trendRow, { marginTop: 0, flexShrink: 0 }]}>
                 <MaterialCommunityIcons
                   name={topPrice?.isUp !== false ? "trending-up" : "trending-down"}
                   size={16}
@@ -162,7 +192,9 @@ export default function FarmerDashboard() {
             </View>
           </View>
 
-          <View style={styles.priceActions}>
+          <View style={{ height: 1, backgroundColor: highContrast ? '#333' : '#E2E8F0', marginVertical: 16 }} />
+
+          <View style={[styles.priceActions, { marginTop: 0 }]}>
             <TouchableOpacity
               style={styles.seeAllBtn}
               onPress={() => router.push("/mandi-prices")}
@@ -172,7 +204,7 @@ export default function FarmerDashboard() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.sellNowBtn}
-              onPress={() => router.push("/not-available")}
+              onPress={() => router.push("/create-auction")}
             >
               <Text style={styles.sellNowText}>Sell Now</Text>
             </TouchableOpacity>
@@ -182,35 +214,35 @@ export default function FarmerDashboard() {
         {/* MARKET INFO */}
         <SectionHeader title="MARKET INFO" />
         <View style={styles.grid}>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <MarketCard
               title="Mandi Prices"
               subtitle="Live rates near you"
               icon="stats-chart"
-              color="#2563EB"
+              color="#3B82F6"
               onPress={() => router.push("/mandi-prices")}
             />
             <MarketCard
-              title="AI Insights"
-              subtitle={aiInsight}
+              title="Smart Crop Tips"
+              subtitle="Smart crop advice"
               icon="bulb"
-              color="#EA580C"
+              color="#4F46E5"
               onPress={() => router.push("/ai-insights")}
             />
           </View>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <MarketCard
               title="Weather"
               subtitle="7-day forecast"
               icon="cloudy-night"
-              color="#0EA5E9"
+              color="#38BDF8"
               onPress={() => router.push("/weather" as any)}
             />
             <MarketCard
               title="Govt Schemes"
               subtitle="Subsidies & loans"
               icon="ribbon"
-              color="#7C3AED"
+              color="#14B8A6"
               onPress={() => router.push("/govt-schemes")}
             />
           </View>
@@ -219,35 +251,35 @@ export default function FarmerDashboard() {
         {/* BUY & SELL */}
         <SectionHeader title="BUY & SELL" />
         <View style={styles.grid}>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
               title="Marketplace"
               subtitle="Buy inputs & tools"
               icon="briefcase"
-              color="#16A34A"
+              color="#E4572E"
               onPress={() => router.push("/marketplace")}
             />
             <BuySellCard
               title="Live Auctions"
               subtitle="Host an auction"
               icon="flash"
-              color="#DC2626"
+              color="#F26B38"
               onPress={() => router.push("/create-auction")}
             />
           </View>
-          <View style={styles.row}>
+          <View style={[styles.row, highContrast && { borderBottomColor: "#333" }]}>
             <BuySellCard
               title="My Listings"
               subtitle="Manage your crops"
               icon="list"
               color="#111827"
-              onPress={() => router.push("/not-available")}
+              onPress={() => router.push("/my-listings")}
             />
             <BuySellCard
               title="Monitor Auctions"
               subtitle="View bids & status"
               icon="stats-chart"
-              color="#10B981"
+              color="#F2C14E"
               onPress={() => router.push("/farmer-auctions")}
             />
           </View>
@@ -264,13 +296,7 @@ export default function FarmerDashboard() {
             onPress={() => router.push("/messages")}
           />
 
-          <SupportItem
-            title="Call Support"
-            subtitle="Talk to an expert"
-            icon="call"
-            color="#F59E0B"
-            onPress={() => router.push("/call-support")}
-          />
+
           <SupportItem
             title="Settings"
             subtitle="Account & preferences"
@@ -292,12 +318,14 @@ export default function FarmerDashboard() {
 }
 
 function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionTitle}>{title}</Text>;
+  const { highContrast } = useTheme();
+  return <Text style={[styles.sectionTitle, highContrast && { color: "#FFF" }]}>{title}</Text>;
 }
 
 function MarketCard({ title, subtitle, icon, color, onPress }: any) {
+  const { highContrast } = useTheme();
   return (
-    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.marketCard, { backgroundColor: color }, highContrast && { backgroundColor: "#222", borderColor: color, borderWidth: 2 }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <Text style={styles.cardTitle}>{title}</Text>
       <Text style={styles.cardSubtitle} numberOfLines={2}>{subtitle}</Text>
@@ -306,8 +334,9 @@ function MarketCard({ title, subtitle, icon, color, onPress }: any) {
 }
 
 function BuySellCard({ title, subtitle, icon, color, onPress }: any) {
+  const { highContrast } = useTheme();
   return (
-    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.buySellCard, { backgroundColor: color }, highContrast && { backgroundColor: "#222", borderColor: color, borderWidth: 2 }]} onPress={onPress}>
       <Ionicons name={icon} size={24} color="#FFF" />
       <View style={{ marginTop: 12 }}>
         <Text style={styles.cardTitle}>{title}</Text>
@@ -318,14 +347,15 @@ function BuySellCard({ title, subtitle, icon, color, onPress }: any) {
 }
 
 function SupportItem({ title, subtitle, icon, color, onPress }: any) {
+  const { highContrast } = useTheme();
   return (
-    <TouchableOpacity style={styles.supportItem} onPress={onPress}>
+    <TouchableOpacity style={[styles.supportItem, highContrast && { backgroundColor: "#111", borderBottomColor: "#333" }]} onPress={onPress}>
       <View style={[styles.supportIcon, { backgroundColor: color + '15' }]}>
         <Ionicons name={icon} size={22} color={color} />
       </View>
       <View style={{ flex: 1, marginLeft: 16 }}>
-        <Text style={styles.supportTitle}>{title}</Text>
-        <Text style={styles.supportSubtitle}>{subtitle}</Text>
+        <Text style={[styles.supportTitle, highContrast && { color: "#FFF" }]}>{title}</Text>
+        <Text style={[styles.supportSubtitle, highContrast && { color: "#CCC" }]}>{subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
     </TouchableOpacity>
@@ -337,8 +367,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
   scrollContent: { paddingBottom: 100 },
 
-  header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-  welcomeText: { fontSize: 26, fontWeight: "900", color: "#0F172A" },
+  header: { paddingHorizontal: 20, paddingTop: 40, marginBottom: 60 },
+  welcomeText: { color: "#3B2F2F" },
   subtext: { fontSize: 16, color: "#64748B", marginTop: 4, fontWeight: "500" },
 
   sectionTitle: {
@@ -353,23 +383,21 @@ const styles = StyleSheet.create({
   topPriceCard: {
     backgroundColor: "#FFF",
     marginHorizontal: 20,
-    borderRadius: 4, // More square as in image
-    borderTopWidth: 6,
-    borderTopColor: "#16A34A",
+    borderRadius: 16,
     padding: 24,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8
   },
   priceHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  cropName: { fontSize: 28, fontWeight: "900", color: "#0F172A" },
+  cropName: { fontSize: 22, fontWeight: "900", color: "#0F172A" },
   mandiRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  mandiName: { fontSize: 15, color: "#64748B", marginLeft: 4, fontWeight: "600" },
+  mandiName: { fontSize: 13, color: "#64748B", marginLeft: 4, fontWeight: "600" },
   unitText: { fontSize: 14, color: "#94A3B8", marginTop: 4, fontWeight: "500" },
-  priceVal: { fontSize: 32, fontWeight: "900", color: "#0F172A" },
+  priceVal: { fontSize: 24, fontWeight: "900", color: "#0F172A" },
   trendRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
   trendText: { fontSize: 14, color: "#22C55E", fontWeight: "700", marginLeft: 4 },
 
@@ -381,7 +409,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   seeAllText: { color: "#FFF", fontWeight: "800", fontSize: 15 },
   sellNowBtn: {
@@ -391,18 +419,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 4
+    borderRadius: 12
   },
   sellNowText: { color: "#0F172A", fontWeight: "800", fontSize: 15 },
 
   grid: { paddingHorizontal: 20, gap: 12, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
 
-  marketCard: { flex: 1, padding: 20, borderRadius: 0, justifyContent: "center", minHeight: 120 },
+  marketCard: { flex: 1, padding: 20, borderRadius: 16, justifyContent: "center", minHeight: 120 },
   cardTitle: { color: "#FFF", fontSize: 18, fontWeight: "900", marginTop: 12 },
   cardSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "600", marginTop: 2 },
 
-  buySellCard: { flex: 1, padding: 20, borderRadius: 0, minHeight: 120 },
+  buySellCard: { flex: 1, padding: 20, borderRadius: 16, minHeight: 120 },
 
   supportList: { marginHorizontal: 20, backgroundColor: "#FFF", borderRadius: 12, overflow: "hidden", marginBottom: 40, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   supportItem: {

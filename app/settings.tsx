@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -22,8 +23,10 @@ import { useTranslation } from "react-i18next";
 import { getProfile, updateProfile, verifyPin, changePassword } from "../services/userServices";
 import NavAuto from "../components/navigation/NavAuto";
 import { setLanguage } from "../i18n/i18n";
+import { notificationService } from "../services/NotificationService";
 
 export default function SettingsScreen() {
+    const { highContrast } = useTheme();
     const { t, i18n } = useTranslation();
     const router = useRouter();
 
@@ -55,12 +58,38 @@ export default function SettingsScreen() {
             const storedRole = await AsyncStorage.getItem("role");
             setRole(storedRole);
 
-            const profile = await getProfile();
-            if (profile?.success) {
-                const u = profile.user;
-                setUser(u);
-                setTotalLandArea(u.totalLandArea?.toString() || "");
-                setLandUnit(u.totalLandAreaUnit || "acres");
+            const res = await getProfile();
+            if (res?.success) {
+                // --- RACE CONDITION PROTECTION ---
+                // If we just updated the profile in the last 10 seconds, ignore the server's data
+                // because it might still be propagating (stale cache).
+                const lastUpdate = await AsyncStorage.getItem("profile_updated_at");
+                const now = Date.now();
+                const isFresh = lastUpdate && (now - parseInt(lastUpdate)) < 10000;
+
+                if (!isFresh) {
+                    setUser(res.user);
+                    await AsyncStorage.setItem("profile", JSON.stringify(res.user));
+                    if (res.user.name) {
+                        await AsyncStorage.setItem("userName", res.user.name);
+                    }
+                    setTotalLandArea(res.user.totalLandArea?.toString() || "");
+                    setLandUnit(res.user.totalLandAreaUnit || "acres");
+                } else {
+                    // If data is fresh, load from local storage if available
+                    const localProfile = await AsyncStorage.getItem("profile");
+                    if (localProfile) {
+                        const u = JSON.parse(localProfile);
+                        setUser(u);
+                        setTotalLandArea(u.totalLandArea?.toString() || "");
+                        setLandUnit(u.totalLandAreaUnit || "acres");
+                    } else {
+                        // Fallback to server data if no local data
+                        setUser(res.user);
+                        setTotalLandArea(res.user.totalLandArea?.toString() || "");
+                        setLandUnit(res.user.totalLandAreaUnit || "acres");
+                    }
+                }
             }
         } catch (error) {
             console.error("Error loading settings:", error);
@@ -164,13 +193,14 @@ export default function SettingsScreen() {
 
     const handleLogout = async () => {
         setLogoutModal(false);
+        notificationService.disconnect();
         await AsyncStorage.clear();
         router.replace("/login");
     };
 
     if (loading) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#3B82F6" />
             </View>
         );
@@ -184,7 +214,7 @@ export default function SettingsScreen() {
 
                 {/* PROFILE SECTION */}
                 <SectionHeader title={t("settings.profile")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <TouchableOpacity
                         style={styles.profileRow}
                         onPress={() => router.push("/edit-profile")}
@@ -195,6 +225,9 @@ export default function SettingsScreen() {
                         <View style={styles.profileInfo}>
                             <Text style={styles.nameText}>{user?.name || "User Name"}</Text>
                             <Text style={styles.phoneText}>{user?.phone || "+91 XXXXXXXXXX"}</Text>
+                            <Text style={styles.locationText}>
+                                <Lucide.MapPin size={12} color="#94A3B8" /> {user?.location || "Location not set"}
+                            </Text>
                         </View>
                         <Lucide.ChevronRight size={20} color="#94A3B8" />
                     </TouchableOpacity>
@@ -208,7 +241,7 @@ export default function SettingsScreen() {
 
                 {/* SECURITY SECTION */}
                 <SectionHeader title={t("settings.security")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <SettingRow
                         icon={<Lucide.Lock size={18} color="#64748B" />}
                         label={t("settings.change_pin")}
@@ -218,7 +251,7 @@ export default function SettingsScreen() {
 
                 {/* PREFERENCES SECTION */}
                 <SectionHeader title={t("settings.preferences")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <SettingRow
                         icon={<Lucide.Languages size={18} color="#3B82F6" />}
                         label={t("settings.language")}
@@ -235,64 +268,9 @@ export default function SettingsScreen() {
                     />
                 </View>
 
-                {/* FARM DETAILS SECTION */}
-                {role === "farmer" && (
-                    <>
-                        <SectionHeader title={t("settings.farm_details")} />
-                        <View style={styles.card}>
-                            <SettingRow
-                                icon={<Lucide.MapPin size={18} color="#10B981" />}
-                                label={t("settings.farm_location")}
-                                value={user?.location || "Not Set"}
-                                onPress={() => router.push("/change-location")}
-                            />
-                            <View style={styles.divider} />
-
-                            <View style={styles.editRow}>
-                                <View style={styles.rowLeft}>
-                                    <View style={styles.iconContainer}>
-                                        <Lucide.Maximize size={18} color="#10B981" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.labelText}>{t("settings.total_land_area")}</Text>
-                                        <View style={styles.landInputContainer}>
-                                            <TextInput
-                                                style={styles.landInput}
-                                                placeholder="0.0"
-                                                placeholderTextColor="#94A3B8"
-                                                keyboardType="numeric"
-                                                value={totalLandArea}
-                                                onChangeText={setTotalLandArea}
-                                            />
-                                            <TouchableOpacity
-                                                style={styles.unitButton}
-                                                onPress={() => {
-                                                    Alert.alert("Select Unit", "Choose land area unit", [
-                                                        { text: "Acres", onPress: () => setLandUnit("acres") },
-                                                        { text: "Hectares", onPress: () => setLandUnit("hectares") },
-                                                    ]);
-                                                }}
-                                            >
-                                                <Text style={styles.unitButtonText}>{t(`settings.${landUnit}`)}</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.smallSaveBtn, isSavingLand && { opacity: 0.5 }]}
-                                                onPress={handleSaveLandArea}
-                                                disabled={isSavingLand}
-                                            >
-                                                {isSavingLand ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnText}>{t("settings.save")}</Text>}
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-                    </>
-                )}
-
                 {/* SUPPORT SECTION */}
                 <SectionHeader title={t("settings.support")} />
-                <View style={styles.card}>
+                <View style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                     <SettingRow
                         icon={<Lucide.HelpCircle size={18} color="#64748B" />}
                         label={t("settings.help_support")}
@@ -384,10 +362,11 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 function SettingRow({ icon, label, value, onPress }: any) {
+    const { highContrast } = useTheme();
     const isTappable = !!onPress;
     const Container = isTappable ? TouchableOpacity : View;
     return (
-        <Container style={styles.row} onPress={onPress}>
+        <Container style={[styles.row, highContrast && { borderBottomColor: "#333" }]} onPress={onPress}>
             <View style={styles.rowLeft}>
                 <View style={styles.iconContainer}>{icon}</View>
                 <Text style={styles.labelText}>{label}</Text>
@@ -412,6 +391,7 @@ const styles = StyleSheet.create({
     profileInfo: { flex: 1, marginLeft: 16 },
     nameText: { fontSize: 17, fontWeight: "800", color: "#0F172A" },
     phoneText: { fontSize: 13, color: "#94A3B8", marginTop: 2 },
+    locationText: { fontSize: 12, color: "#94A3B8", marginTop: 4, fontStyle: 'italic' },
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 12 },
     rowLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
     iconContainer: { width: 32, height: 32, borderRadius: 8, backgroundColor: "#F8FAFC", alignItems: "center", justifyContent: "center", marginRight: 12 },
@@ -420,12 +400,13 @@ const styles = StyleSheet.create({
     valueText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
     divider: { height: 1, backgroundColor: "#F1F5F9", marginHorizontal: 12 },
     editRow: { padding: 12 },
-    landInputContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
-    landInput: { flex: 1, backgroundColor: "#F8FAFC", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, color: "#0F172A", borderWidth: 1, borderColor: "#E2E8F0" },
-    unitButton: { backgroundColor: "#E2E8F0", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    landInputWrapper: { marginTop: 8, gap: 10 },
+    landInputRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    landInput: { flex: 1, backgroundColor: "#F8FAFC", borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 15, color: "#0F172A", borderWidth: 1, borderColor: "#E2E8F0" },
+    unitButton: { backgroundColor: "#E2E8F0", height: 44, paddingHorizontal: 14, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
     unitButtonText: { fontSize: 13, fontWeight: "700", color: "#475569" },
-    smallSaveBtn: { backgroundColor: "#10B981", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-    saveBtnText: { color: "#FFF", fontWeight: "800", fontSize: 13 },
+    fullSaveBtn: { backgroundColor: "#10B981", height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 4 },
+    saveBtnTextWide: { color: "#FFF", fontWeight: "800", fontSize: 14 },
     logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#FFF", marginTop: 20, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: "#FEE2E2" },
     logoutText: { color: "#EF4444", fontSize: 15, fontWeight: "800", marginLeft: 10 },
     footer: { marginTop: 40, alignItems: "center" },

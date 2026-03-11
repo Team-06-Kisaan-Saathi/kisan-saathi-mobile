@@ -115,7 +115,7 @@ export async function fetchNearbyMandis(params: {
         const meters = Number(r?.distance ?? r?.distMeters ?? r?.meters ?? 0);
         return {
           id: String(r?._id ?? r?.id ?? idx),
-          name: String(r?.locationName ?? r?.name ?? r?.mandi ?? "Unknown"),
+          name: String(r?.locationName ?? r?.name ?? r?.mandi ?? r?.mandiName ?? "Unknown"),
           lat,
           lng,
           distKm: meters ? meters / 1000 : Number(r?.distKm ?? 0),
@@ -130,7 +130,7 @@ export async function fetchNearbyMandis(params: {
       const rawRows2 = normalizeArray<any>(res2);
       return rawRows2.map((r: any, idx: number) => ({
         id: String(r?._id ?? r?.id ?? idx),
-        name: String(r?.locationName ?? r?.name ?? r?.mandi ?? "Unknown"),
+        name: String(r?.locationName ?? r?.name ?? r?.mandi ?? r?.mandiName ?? "Unknown"),
         lat: Number(r?.lat || 0),
         lng: Number(r?.lng || 0),
         distKm: Number(r?.distKm || 0),

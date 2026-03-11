@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from '../hooks/ThemeContext';
 import {
     View,
     Text,
@@ -17,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile, requestVerification } from "../services/userServices";
 
 export default function VerificationScreen() {
+  const { highContrast } = useTheme();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -67,7 +69,7 @@ export default function VerificationScreen() {
 
     if (loading) {
         return (
-            <View style={styles.center}>
+            <View style={[styles.center, highContrast && { backgroundColor: "#000" }]}>
                 <ActivityIndicator size="large" color="#1d4ed8" />
             </View>
         );
@@ -77,7 +79,7 @@ export default function VerificationScreen() {
     const isPending = user?.verificationStatus === "pending";
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ title: "Verify Account", headerShown: false }} />
             <NavAuto />
 
@@ -90,10 +92,10 @@ export default function VerificationScreen() {
                     />
                 </View>
 
-                <Text style={styles.title}>
+                <Text style={[styles.title, highContrast && { color: "#FFF" }]}>
                     {isApproved ? "You are Verified!" : "Verification Request"}
                 </Text>
-                <Text style={styles.subtitle}>
+                <Text style={[styles.subtitle, highContrast && { color: "#CCC" }]}>
                     {isApproved
                         ? "Your account is verified. You can now list crops and close deals with buyers."
                         : "Verifying your identity helps build trust with buyers and allows you to sell faster."}
@@ -112,10 +114,11 @@ export default function VerificationScreen() {
                 ) : (
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Aadhaar Number (12 digits)</Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>Aadhaar Number (12 digits)</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="0000 0000 0000"
+                                placeholderTextColor="#94A3B8"
                                 keyboardType="numeric"
                                 maxLength={12}
                                 value={aadhaar}
@@ -124,10 +127,11 @@ export default function VerificationScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>PAN Number (10 characters)</Text>
+                            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>PAN Number (10 characters)</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="ABCDE1234F"
+                                placeholderTextColor="#94A3B8"
                                 autoCapitalize="characters"
                                 maxLength={10}
                                 value={pan}

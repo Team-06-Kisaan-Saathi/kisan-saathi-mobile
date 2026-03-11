@@ -9,14 +9,23 @@ import {
     Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationBell from "../notifications/NotificationBell";
+import { notificationService } from "../../services/NotificationService";
+import { useTheme } from "../../hooks/ThemeContext";
 
 export default function NavBuyer() {
     const router = useRouter();
+    const pathname = usePathname();
+    const insets = useSafeAreaInsets();
+    const { highContrast } = useTheme();
     const [profileOpen, setProfileOpen] = useState(false);
     const profileAnim = useRef(new Animated.Value(0)).current;
+
+    const navBg = highContrast ? "#000000" : PRIMARY;
+    const textColor = highContrast ? "#FFFFFF" : "#FFF";
 
     useEffect(() => {
         Animated.spring(profileAnim, {
@@ -27,38 +36,58 @@ export default function NavBuyer() {
         }).start();
     }, [profileOpen]);
 
+    const getPageTitle = (path: string) => {
+        if (path.includes("farmer-dashboard")) return "Dashboard";
+        if (path.includes("buyer-dashboard")) return "Dashboard";
+        if (path.includes("marketplace")) return "Marketplace";
+        if (path.includes("buyer-marketplace")) return "Marketplace";
+        if (path.includes("mandi-prices")) return "Mandi Prices";
+        if (path.includes("messages")) return "Messages";
+        if (path.includes("edit-profile")) return "Profile";
+        if (path.includes("invoices")) return "Invoices";
+        if (path.includes("govt-schemes")) return "Govt Schemes";
+        if (path.includes("call-support")) return "Support Center";
+        if (path.includes("settings")) return "Settings";
+        if (path.includes("weather")) return "Weather";
+        if (path.includes("notifications")) return "Notifications";
+        return "";
+    };
+
     const handleLogout = async () => {
         setProfileOpen(false);
-        await AsyncStorage.removeItem("token");
+        notificationService.disconnect();
+        await AsyncStorage.clear();
         router.replace("/login");
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top, backgroundColor: navBg }]}>
             <View style={styles.navbar}>
-                {/* App Name — tapping goes to dashboard */}
                 <TouchableOpacity
                     style={styles.brandBtn}
                     onPress={() => router.replace("/buyer-dashboard")}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="storefront" size={20} color="#BFDBFE" style={{ marginRight: 8 }} />
-                    <Text style={styles.brandText}>Kisaan Saathi</Text>
+                    <Text style={[styles.brandText, { color: textColor }]}>Agri{"\n"}Bazaar</Text>
                 </TouchableOpacity>
 
-                <View style={{ flex: 1 }} />
+                <View style={styles.centerSection}>
+                    <Text style={[styles.pageTitle, { color: textColor }]}>{getPageTitle(pathname)}</Text>
+                </View>
 
-                <NotificationBell color="#FFF" />
+                <View style={styles.rightSection}>
+                    <NotificationBell color={textColor} />
 
-                {/* Profile */}
-                <TouchableOpacity
-                    style={styles.profileButton}
-                    onPress={() => setProfileOpen(!profileOpen)}
-                >
-                    <View style={styles.avatar}>
-                        <Ionicons name="person" size={18} color="#FFF" />
-                    </View>
-                </TouchableOpacity>
+                    {/* Profile */}
+                    <TouchableOpacity
+                        style={styles.profileButton}
+                        onPress={() => setProfileOpen(!profileOpen)}
+                    >
+                        <View style={styles.avatar}>
+                            <Ionicons name="person" size={18} color="#FFF" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Profile Dropdown */}
@@ -99,7 +128,6 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: PRIMARY,
         zIndex: 1000,
-        paddingTop: Platform.OS === "ios" ? 48 : 4,
         ...Platform.select({
             ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6 },
             android: { elevation: 6 },
@@ -108,18 +136,41 @@ const styles = StyleSheet.create({
     navbar: {
         flexDirection: "row",
         alignItems: "center",
-        height: 54,
+        justifyContent: "space-between",
+        height: 48,
         paddingHorizontal: 16,
     },
     brandBtn: {
+        flex: 1,
         flexDirection: "row",
         alignItems: "center",
     },
+    centerSection: {
+        flex: 1.5,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    pageTitle: {
+        color: "#BFDBFE",
+        fontSize: 12,
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: 1,
+    },
+    rightSection: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: 12,
+    },
     brandText: {
-        fontSize: 20,
-        fontWeight: "800",
+        fontSize: 13,
+        fontWeight: "900",
         color: "#FFF",
-        letterSpacing: 0.3,
+        lineHeight: 14,
+        textAlign: "center",
+        textTransform: "uppercase",
     },
     profileButton: {},
     avatar: {

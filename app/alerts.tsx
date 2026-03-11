@@ -1,18 +1,20 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
 import { Stack } from "expo-router";
 import NavAuto from "../components/navigation/NavAuto";
 
 
 export default function Alerts() {
+  const { highContrast } = useTheme();
     return (
         <>
             <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.container}>
+            <View style={[styles.container, highContrast && { backgroundColor: "#000" }]}>
                 <NavAuto />
 
-                <View style={styles.content}>
-                    <Text style={styles.title}>Alerts</Text>
+                <View style={[styles.content, highContrast && { backgroundColor: "#000" }]}>
+                    <Text style={[styles.title, highContrast && { color: "#FFF" }]}>Alerts</Text>
                     <Text style={styles.placeholder}>
                         Important notifications and market alerts will be shown here.
                     </Text>

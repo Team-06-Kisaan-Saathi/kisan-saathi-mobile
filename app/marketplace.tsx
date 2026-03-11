@@ -406,8 +406,14 @@ export default function MarketplaceScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadNearby(), loadPrices("manual")]);
-    setRefreshing(false);
+    try {
+      await Promise.all([loadNearby(), loadPrices("manual")]);
+    } catch (e: any) {
+      console.log("Marketplace refresh error:", e);
+      Alert.alert("Sync Error", "Could not reach the market server. Please check your data connection.");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // ✅ FIXED: Update location reliably + save to backend + re-fetch backend to confirm
@@ -649,9 +655,11 @@ function LiveFeed({
       contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}
       ListEmptyComponent={
         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
-          <Text style={styles.emptyTitle}>📭 No prices available</Text>
+          <Wheat size={48} color="#cbd5e1" strokeWidth={1.5} />
+          <Text style={styles.emptyTitle}>No prices available</Text>
           <Text style={styles.emptySub}>
-            Pull down to refresh or check again later
+            Connecting to the market server...
+            {"\n"}Pull down to refresh if data does not appear.
           </Text>
         </View>
       }
@@ -710,9 +718,10 @@ function LiveFeed({
             </View>
 
             <View style={styles.priceRow}>
-              <View>
-                <Text style={styles.priceLabel}>Price (per quintal)</Text>
+              <View style={{ flex: 1.2 }}>
+                <Text style={styles.priceLabel}>Price</Text>
                 <Text style={styles.priceAmount}>{item.displayPrice}</Text>
+                <Text style={styles.priceSubLabel}>₹{(item.pricePerQuintal / 100).toFixed(2)} / kg</Text>
               </View>
 
               <View style={styles.timeBox}>
@@ -755,25 +764,21 @@ function NearbyMandis({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Nearest Mandis (within 50 km)</Text>
 
-        {!hasCoords && (
+        {nearestMandis.length === 0 ? (
           <View style={styles.emptyBox}>
+            <MapPin size={24} color="#94a3b8" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyBoxText}>
-              {permission === "denied"
-                ? "Location permission denied. Enable it to see nearby mandis."
-                : "Location not available yet. Try updating location."}
+              {!hasCoords
+                ? "Your location is not set. Local mandis cannot be found."
+                : "No mandis found within 50km of your area."}
             </Text>
-          </View>
-        )}
-
-        {hasCoords && nearestMandis.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyBoxText}>No mandis found nearby</Text>
-            <Text style={styles.smallTip}>
-              Tip: try refreshing or updating location
-            </Text>
+            {!hasCoords && (
+              <Text style={styles.smallTip}>
+                Tip: Go to profile or use the refresh button above
+              </Text>
+            )}
           </View>
         ) : (
-          hasCoords &&
           nearestMandis.map((m, idx) => (
             <View key={idx} style={styles.mandiCard}>
               <View style={styles.mandiInfo}>
@@ -789,7 +794,7 @@ function NearbyMandis({
                     <Text style={styles.mandiCardTitle}>{m.name}</Text>
                   </View>
                   <Text style={styles.mandiDistance}>
-                    {m.distKm.toFixed(1)} km away
+                    {m.distKm > 0 ? `${m.distKm.toFixed(1)} km away` : "Featured Mandi"}
                   </Text>
                 </View>
               </View>
@@ -797,48 +802,62 @@ function NearbyMandis({
           ))
         )}
       </View>
-
-      {MapView && hasCoords && region && (
+      {Platform.OS === 'web' ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Map View</Text>
-          <View style={styles.mapWrap}>
-            <MapView
-              style={{ flex: 1 }}
-              provider={PROVIDER_GOOGLE}
-              region={region}
-            >
-              {Marker && (
-                <Marker
-                  coordinate={{
-                    latitude: Number(coords!.lat),
-                    longitude: Number(coords!.lng),
-                  }}
-                  title="You"
-                  pinColor="#2d6a4f"
-                />
-              )}
-
-              {Marker &&
-                nearestMandis
-                  .filter(
-                    (m) =>
-                      Number.isFinite((m as any).lat) &&
-                      Number.isFinite((m as any).lng),
-                  )
-                  .map((m, idx) => (
-                    <Marker
-                      key={idx}
-                      coordinate={{
-                        latitude: Number((m as any).lat),
-                        longitude: Number((m as any).lng),
-                      }}
-                      title={m.name}
-                      pinColor="#d62828"
-                    />
-                  ))}
-            </MapView>
+          <View style={[styles.mapWrap, { backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+            <MapPin size={32} color="#6c757d" />
+            <Text style={{ color: '#6c757d', marginTop: 12, textAlign: 'center', fontWeight: '600' }}>
+              Interactive Map is available on Mobile App
+            </Text>
+            <Text style={{ color: '#adb5bd', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
+              You can still see the list of nearest mandis above.
+            </Text>
           </View>
         </View>
+      ) : (
+        MapView && hasCoords && region && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Map View</Text>
+            <View style={styles.mapWrap}>
+              <MapView
+                style={{ flex: 1 }}
+                provider={PROVIDER_GOOGLE}
+                region={region}
+              >
+                {Marker && (
+                  <Marker
+                    coordinate={{
+                      latitude: Number(coords!.lat),
+                      longitude: Number(coords!.lng),
+                    }}
+                    title="You"
+                    pinColor="#2d6a4f"
+                  />
+                )}
+
+                {Marker &&
+                  nearestMandis
+                    .filter(
+                      (m) =>
+                        Number.isFinite((m as any).lat) &&
+                        Number.isFinite((m as any).lng),
+                    )
+                    .map((m, idx) => (
+                      <Marker
+                        key={idx}
+                        coordinate={{
+                          latitude: Number((m as any).lat),
+                          longitude: Number((m as any).lng),
+                        }}
+                        title={m.name}
+                        pinColor="#d62828"
+                      />
+                    ))}
+              </MapView>
+            </View>
+          </View>
+        )
       )}
     </ScrollView>
   );
@@ -1197,6 +1216,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#eef2f7",
   },
   priceLabel: { color: "#6c757d", fontSize: 12, marginBottom: 4 },
+  priceSubLabel: { color: "#2d6a4f", fontSize: 14, fontWeight: "700", opacity: 0.8 },
   priceAmount: { color: "#2d6a4f", fontSize: 28, fontWeight: "900" },
   timeBox: { alignItems: "flex-end" },
   timeLabel: { color: "#6c757d", fontSize: 11, marginBottom: 2 },

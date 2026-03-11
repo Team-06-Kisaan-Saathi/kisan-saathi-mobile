@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 export default function SmsInfoScreen() {
+  const { highContrast } = useTheme();
     const steps = [
         { title: "Price Check", cmd: "PRICE <Crop Name>", desc: "Example: PRICE Tomato" },
         { title: "Nearby Mandis", cmd: "MANDI <Pincode>", desc: "Example: MANDI 110001" },
@@ -18,7 +19,7 @@ export default function SmsInfoScreen() {
     ];
 
     return (
-        <ScrollView style={styles.root}>
+        <ScrollView style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
             <Stack.Screen options={{ title: "SMS & IVR Services", headerShown: false }} />
             <NavAuto />
 
@@ -26,13 +27,13 @@ export default function SmsInfoScreen() {
             <View style={styles.hero}>
                 <Ionicons name="chatbox-ellipses-outline" size={60} color="#3B82F6" />
                 <Text style={styles.heroTitle}>No Internet? No Problem.</Text>
-                <Text style={styles.heroSub}>Access Kisan Saathi via SMS or Call</Text>
+                <Text style={styles.heroSub}>Access Agri Bazaar via SMS or Call</Text>
             </View>
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>SMS Service (Shortcode: 56767)</Text>
                 {steps.map((s, i) => (
-                    <View key={i} style={styles.card}>
+                    <View key={i} style={[styles.card, highContrast && { backgroundColor: "#111", borderColor: "#333" }]}>
                         <Text style={styles.cardTitle}>{s.title}</Text>
                         <View style={styles.cmdBox}>
                             <Text style={styles.cmdText}>{s.cmd}</Text>
@@ -81,3 +82,4 @@ const styles = StyleSheet.create({
     footerText: { fontSize: 12, color: "#94A3B8", textAlign: "center" },
 });
 import { Platform } from "react-native";
+import { useTheme } from '../hooks/ThemeContext';
