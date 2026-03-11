@@ -51,13 +51,22 @@ export default function VerifyScreen() {
   const canSubmit = otp.length === 6 && !digits.includes("");
 
   useEffect(() => {
-    const id = setTimeout(() => inputs.current[0]?.focus(), 150);
+    const focusTimer = setTimeout(() => inputs.current[0]?.focus(), 500);
+
     if (params.otp) {
-      setTimeout(() => {
-        Alert.alert("Simulated Verification", `Code: ${params.otp}`);
-      }, 500);
+      const alertTimer = setTimeout(() => {
+        if (Platform.OS === 'web') {
+          window.alert(`Simulated Verification Code: ${params.otp}`);
+        } else {
+          Alert.alert("Simulated Verification", `Code: ${params.otp}`);
+        }
+      }, 800);
+      return () => {
+        clearTimeout(focusTimer);
+        clearTimeout(alertTimer);
+      };
     }
-    return () => clearTimeout(id);
+    return () => clearTimeout(focusTimer);
   }, [params.otp]);
 
   const setDigit = (index: number, value: string) => {
@@ -120,7 +129,11 @@ export default function VerifyScreen() {
 
       if (res.success) {
         if (res.otp) {
-          Alert.alert("Simulated OTP", `New verification code: ${res.otp}`);
+          if (Platform.OS === 'web') {
+            window.alert(`New Verification Code: ${res.otp}`);
+          } else {
+            Alert.alert("Simulated OTP", `New verification code: ${res.otp}`);
+          }
         } else {
           Alert.alert("Success", "A new code has been sent!");
         }
@@ -273,13 +286,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   otpInput: {
-    flex: 1,
+    width: 44,
     height: 52,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 30,
-    fontSize: 20,
+    borderRadius: 12,
+    fontSize: 22,
     fontWeight: "800",
     color: "#333",
   },

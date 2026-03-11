@@ -153,14 +153,13 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
       />
 
       <GestureDetector gesture={composed}>
-        <Animated.View style={[{ flex: 1, backgroundColor }, animatedStyle]}>
+        <Animated.View style={[{ flex: 1, backgroundColor, justifyContent: 'center', alignItems: 'center' }, animatedStyle]}>
           <View style={{
             flex: 1,
             width: fontScale !== 1 ? `${100 / fontScale}%` : '100%',
             height: fontScale !== 1 ? `${100 / fontScale}%` : '100%',
             transform: fontScale !== 1 ? [{ scale: fontScale }, { translateX: 0 }, { translateY: 0 }] : [],
             backgroundColor: "transparent",
-            alignSelf: 'center'
           }}>
             <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: "transparent" }}>
               <Stack
