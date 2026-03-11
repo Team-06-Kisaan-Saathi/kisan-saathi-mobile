@@ -59,14 +59,9 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
 
   const [open, setOpen] = useState(false);
 
-  const isAuthPage = (segments[0] as any) === "(auth)" ||
-    pathname === "/login" ||
-    pathname === "/verify" ||
-    pathname === "/signin" ||
-    pathname === "/verification" ||
-    pathname === "/set-pin" ||
-    pathname === "/profile-setup" ||
-    pathname === "/profile-location";
+  const isAuthPage = segments[0] === "(auth)" ||
+    ["login", "signin", "verify", "verification", "set-pin", "profile-setup", "profile-location"].includes(segments[0] as string) ||
+    ["/login", "/signin", "/verify", "/verification", "/set-pin", "/profile-setup", "/profile-location"].some(p => pathname.startsWith(p));
 
   // Zoom logic
   const scale = useSharedValue(1);
