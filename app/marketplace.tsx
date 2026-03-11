@@ -655,9 +655,11 @@ function LiveFeed({
       contentContainerStyle={{ paddingBottom: 28, paddingTop: 8 }}
       ListEmptyComponent={
         <View style={[styles.empty, highContrast && { backgroundColor: "#000" }]}>
-          <Text style={styles.emptyTitle}>📭 No prices available</Text>
+          <Wheat size={48} color="#cbd5e1" strokeWidth={1.5} />
+          <Text style={styles.emptyTitle}>No prices available</Text>
           <Text style={styles.emptySub}>
-            Pull down to refresh or check again later
+            Connecting to the market server...
+            {"\n"}Pull down to refresh if data does not appear.
           </Text>
         </View>
       }
@@ -762,25 +764,21 @@ function NearbyMandis({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Nearest Mandis (within 50 km)</Text>
 
-        {!hasCoords && (
+        {nearestMandis.length === 0 ? (
           <View style={styles.emptyBox}>
+            <MapPin size={24} color="#94a3b8" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyBoxText}>
-              {permission === "denied"
-                ? "Location permission denied. Enable it to see nearby mandis."
-                : "Location not available yet. Try updating location."}
+              {!hasCoords
+                ? "Your location is not set. Local mandis cannot be found."
+                : "No mandis found within 50km of your area."}
             </Text>
-          </View>
-        )}
-
-        {hasCoords && nearestMandis.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyBoxText}>No mandis found nearby</Text>
-            <Text style={styles.smallTip}>
-              Tip: try refreshing or updating location
-            </Text>
+            {!hasCoords && (
+              <Text style={styles.smallTip}>
+                Tip: Go to profile or use the refresh button above
+              </Text>
+            )}
           </View>
         ) : (
-          hasCoords &&
           nearestMandis.map((m, idx) => (
             <View key={idx} style={styles.mandiCard}>
               <View style={styles.mandiInfo}>
@@ -796,7 +794,7 @@ function NearbyMandis({
                     <Text style={styles.mandiCardTitle}>{m.name}</Text>
                   </View>
                   <Text style={styles.mandiDistance}>
-                    {m.distKm.toFixed(1)} km away
+                    {m.distKm > 0 ? `${m.distKm.toFixed(1)} km away` : "Featured Mandi"}
                   </Text>
                 </View>
               </View>
