@@ -63,6 +63,61 @@ export default function SetPinScreen() {
     });
   };
 
+  const renderForm = () => (
+    <View style={styles.formWrapper}>
+      <Text style={styles.cardHeader}>Create Access PIN</Text>
+      <Text style={styles.instruction}>
+        Establish a secure PIN to protect your account and transactions.
+      </Text>
+
+      <Text style={[styles.label, highContrast && { color: "#CCC" }]}>New PIN</Text>
+      <View style={styles.pillInput}>
+        <TextInput
+          style={styles.input}
+          value={pin}
+          onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
+          placeholder="••••"
+          placeholderTextColor="#94A3B8"
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+          editable={!loading}
+        />
+      </View>
+
+      <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
+      <View style={styles.pillInput}>
+        <TextInput
+          style={styles.input}
+          value={confirmPin}
+          onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
+          placeholder="••••"
+          placeholderTextColor="#94A3B8"
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+          editable={!loading}
+          autoComplete="off"
+        />
+      </View>
+
+      {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
+
+      <TouchableOpacity
+        style={[styles.saveBtn, loading && styles.btnDisabled]}
+        onPress={onSave}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveBtnText}>Secure Account</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderContent = () => (
     <View style={[styles.root, highContrast && { backgroundColor: "#000" }]}>
       <ImageBackground
@@ -71,71 +126,32 @@ export default function SetPinScreen() {
         resizeMode="cover"
       >
         <View style={styles.overlay} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={[styles.container, highContrast && { backgroundColor: "#000" }]}
-        >
-          <View style={styles.brandHeader}>
-            <Text style={styles.brandTitle}>
-              <Text style={styles.brandGreen}>KISSAAN</Text>{" "}
-              <Text style={styles.brandBlue}>SAATHI</Text>
-            </Text>
-            <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
-          </View>
-
-          <View style={styles.formWrapper}>
-            <Text style={styles.cardHeader}>Create Access PIN</Text>
-            <Text style={styles.instruction}>
-              Establish a secure PIN to protect your account and transactions.
-            </Text>
-
-            <Text style={[styles.label, highContrast && { color: "#CCC" }]}>New PIN</Text>
-            <View style={styles.pillInput}>
-              <TextInput
-                style={styles.input}
-                value={pin}
-                onChangeText={(v) => setPin(v.replace(/\D/g, ""))}
-                placeholder="••••"
-                placeholderTextColor="#94A3B8"
-                keyboardType="number-pad"
-                secureTextEntry
-                maxLength={6}
-                editable={!loading}
-              />
+        {Platform.OS === 'web' ? (
+          <View style={styles.container}>
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>
+                <Text style={styles.brandGreen}>KISSAAN</Text> {" "}
+                <Text style={styles.brandBlue}>SAATHI</Text>
+              </Text>
+              <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
             </View>
-
-            <Text style={[styles.label, { marginTop: 16 }]}>Verify PIN</Text>
-            <View style={styles.pillInput}>
-              <TextInput
-                style={styles.input}
-                value={confirmPin}
-                onChangeText={(v) => setConfirmPin(v.replace(/\D/g, ""))}
-                placeholder="••••"
-                placeholderTextColor="#94A3B8"
-                keyboardType="number-pad"
-                secureTextEntry
-                maxLength={6}
-                editable={!loading}
-                autoComplete="off"
-              />
-            </View>
-
-            {msg ? <Text style={styles.errorText}>{msg}</Text> : null}
-
-            <TouchableOpacity
-              style={[styles.saveBtn, loading && styles.btnDisabled]}
-              onPress={onSave}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.saveBtnText}>Secure Account</Text>
-              )}
-            </TouchableOpacity>
+            {renderForm()}
           </View>
-        </KeyboardAvoidingView>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={[styles.container, highContrast && { backgroundColor: "#000" }]}
+          >
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>
+                <Text style={styles.brandGreen}>KISSAAN</Text> {" "}
+                <Text style={styles.brandBlue}>SAATHI</Text>
+              </Text>
+              <Text style={styles.brandTagline}>SECURITY CONFIGURATION</Text>
+            </View>
+            {renderForm()}
+          </KeyboardAvoidingView>
+        )}
       </ImageBackground>
     </View>
   );
@@ -218,6 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 16,
     height: 48,
+    ...(Platform.OS === 'web' && { cursor: 'text' } as any),
   },
   input: {
     flex: 1,
@@ -225,10 +242,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#333",
     textAlign: "center",
-    letterSpacing: Platform.OS === 'web' ? 4 : 8,
+    letterSpacing: Platform.OS === 'web' ? 0 : 8,
     height: "100%",
     width: "100%",
-    ...(Platform.OS === 'web' && { outlineStyle: 'none' } as any),
+    ...(Platform.OS === 'web' && { outlineStyle: 'none', cursor: 'text' } as any),
   },
   errorText: {
     color: "#b00020",
