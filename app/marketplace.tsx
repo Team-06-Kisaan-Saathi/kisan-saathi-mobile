@@ -804,49 +804,63 @@ function NearbyMandis({
           ))
         )}
       </View>
-      {MapView && hasCoords && region && (
+      {Platform.OS === 'web' ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Map View</Text>
-          <View style={styles.mapWrap}>
-            <MapView
-              style={{ flex: 1 }}
-              provider={PROVIDER_GOOGLE}
-              region={region}
-            >
-              {Marker && (
-                <Marker
-                  coordinate={{
-                    latitude: Number(coords!.lat),
-                    longitude: Number(coords!.lng),
-                  }}
-                  title="You"
-                  pinColor="#2d6a4f"
-                />
-              )}
-
-              {Marker &&
-                nearestMandis
-                  .filter(
-                    (m) =>
-                      Number.isFinite((m as any).lat) &&
-                      Number.isFinite((m as any).lng),
-                  )
-                  .map((m, idx) => (
-                    <Marker
-                      key={idx}
-                      coordinate={{
-                        latitude: Number((m as any).lat),
-                        longitude: Number((m as any).lng),
-                      }}
-                      title={m.name}
-                      pinColor="#d62828"
-                    />
-                  ))}
-            </MapView>
+          <View style={[styles.mapWrap, { backgroundColor: '#f8f9fa', justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+            <MapPin size={32} color="#6c757d" />
+            <Text style={{ color: '#6c757d', marginTop: 12, textAlign: 'center', fontWeight: '600' }}>
+              Interactive Map is available on Mobile App
+            </Text>
+            <Text style={{ color: '#adb5bd', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
+              You can still see the list of nearest mandis above.
+            </Text>
           </View>
         </View>
-      )}
+      ) : (
+        MapView && hasCoords && region && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Map View</Text>
+            <View style={styles.mapWrap}>
+              <MapView
+                style={{ flex: 1 }}
+                provider={PROVIDER_GOOGLE}
+                region={region}
+              >
+                {Marker && (
+                  <Marker
+                    coordinate={{
+                      latitude: Number(coords!.lat),
+                      longitude: Number(coords!.lng),
+                    }}
+                    title="You"
+                    pinColor="#2d6a4f"
+                  />
+                )}
 
+                {Marker &&
+                  nearestMandis
+                    .filter(
+                      (m) =>
+                        Number.isFinite((m as any).lat) &&
+                        Number.isFinite((m as any).lng),
+                    )
+                    .map((m, idx) => (
+                      <Marker
+                        key={idx}
+                        coordinate={{
+                          latitude: Number((m as any).lat),
+                          longitude: Number((m as any).lng),
+                        }}
+                        title={m.name}
+                        pinColor="#d62828"
+                      />
+                    ))}
+              </MapView>
+            </View>
+          </View>
+        )
+      )}
     </ScrollView>
   );
 }
