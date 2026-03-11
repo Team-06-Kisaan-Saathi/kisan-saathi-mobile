@@ -155,6 +155,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
+    width: "100%",
+    alignSelf: "center",
   },
   brandHeader: {
     alignItems: "center",
@@ -176,6 +178,7 @@ const styles = StyleSheet.create({
   },
   formWrapper: {
     width: "100%",
+    maxWidth: 400,
   },
   cardHeader: {
     fontSize: 20,
