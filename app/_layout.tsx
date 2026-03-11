@@ -182,7 +182,7 @@ function InnerLayout({ isHighContrast, fontScale, zoomEnabled, language, setLang
       {/* Floating overlay */}
       <View pointerEvents="box-none" style={styles.overlay}>
         <AccessibilityFab onPress={() => setOpen(true)} />
-        <VoiceNavButton />
+        {!isAuthPage && <VoiceNavButton />}
       </View>
 
       <AccessibilitySheet
